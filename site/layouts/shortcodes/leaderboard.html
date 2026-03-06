@@ -157,6 +157,9 @@
   border-radius: 0;
   transition: background 0.15s ease;
 }
+.lb-row.lb-row-reconn {
+  grid-template-columns: 2.5rem 11rem 3rem 4rem 5.5rem 7rem 1fr 5.5rem 5rem 6.5rem 5.5rem;
+}
 .lb-row:not(.lb-header) { cursor: pointer; }
 .lb-row:not(.lb-header):hover { background: rgba(59, 130, 246, 0.04); }
 .lb-row.lb-hidden { display: none; }
@@ -197,6 +200,7 @@
   text-decoration: none;
 }
 .lb-popup-link:hover { text-decoration: underline; }
+.lb-popup-links { display: flex; flex-direction: column; gap: 0.5rem; }
 
 html.dark .lb-popup { background: #1e293b; color: #e2e8f0; box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4); }
 html.dark .lb-popup-close { color: #64748b; }
@@ -251,7 +255,7 @@ html.dark .lb-conn-tab.active { color: #a78bfa; border-color: #8b5cf6; backgroun
 
 {{ $profiles := slice
   (dict "id" "baseline"     "label" "Baseline"              "conns" (slice 512 4096 16384) "desc" "Each connection sends one request at a time over persistent keep-alive connections with no CPU restrictions. Mixed GET and POST requests to <code>/bench</code> with query parameter parsing, Content-Length bodies, and chunked Transfer-Encoding. Best of 3 runs, 12 threads.")
-  (dict "id" "limited-conn" "label" "Short-lived (10r)"     "conns" (slice 512 4096)       "desc" "Each connection is closed and re-established after 10 requests, forcing repeated TCP handshakes. Same mixed GET/POST workload as baseline. Measures how efficiently a framework handles connection setup and teardown — important for real-world scenarios where clients don't maintain long-lived connections.")
+  (dict "id" "limited-conn" "label" "Short-lived Connection"     "conns" (slice 512 4096)       "desc" "Each connection is closed and re-established after 10 requests, forcing repeated TCP handshakes. Same mixed GET/POST workload as baseline. Measures how efficiently a framework handles connection setup and teardown — important for real-world scenarios where clients don't maintain long-lived connections.")
   (dict "id" "cpu-limited"  "label" "CPU Limited (12 vCPU)" "conns" (slice 512 4096)       "desc" "Same workload as baseline, but the server container is restricted to 12 vCPUs via Docker's <code>--cpus</code> flag. Reveals how efficiently a framework uses limited CPU resources — frameworks with lower overhead per request will maintain higher throughput under constrained conditions.")
   (dict "id" "pipelined"    "label" "Pipelined (16)"        "conns" (slice 512 4096 16384) "desc" "16 HTTP requests are sent back-to-back on each connection before waiting for responses. Uses a lightweight <code>GET /pipeline</code> endpoint that returns a fixed response, isolating raw I/O and pipeline handling from application logic. Frameworks that batch pipelined requests from the read buffer gain a significant advantage.")
 }}
@@ -310,20 +314,23 @@ html.dark .lb-conn-tab.active { color: #a78bfa; border-color: #8b5cf6; backgroun
     {{ end }}
     </div>
   </div>
+  <div style="font-size:0.75rem; color:#94a3b8; margin:-0.5rem 0 0.75rem 0;">Click a row to expand details</div>
 
+  {{ $isReconn := eq $p.id "limited-conn" }}
   <div class="lb-conn-panel active" data-profile="{{ $p.id }}" data-conns="best">
     <div class="lb">
-      <div class="lb-row lb-header">
-        <div>#</div>
-        <div>Framework</div>
-        <div>Lang</div>
-        <div style="text-align:right">Conn</div>
-        <div style="text-align:right">Req/s</div>
+      <div class="lb-row lb-header{{ if $isReconn }} lb-row-reconn{{ end }}">
+        <div title="Rank by requests per second">#</div>
+        <div title="HTTP server framework name">Framework</div>
+        <div title="Programming language">Lang</div>
+        <div title="Number of concurrent connections maintained by the load generator" style="text-align:right">Conn</div>
+        {{ if $isReconn }}<div title="Total TCP connections established during the benchmark (reconnects)" style="text-align:right">TCP Conn</div>{{ end }}
+        <div title="Requests per second — higher is better" style="text-align:right">Req/s</div>
         <div></div>
-        <div style="text-align:right">CPU</div>
-        <div style="text-align:right">Mem</div>
-        <div style="text-align:right">Avg Latency</div>
-        <div style="text-align:right">P99</div>
+        <div title="Average CPU usage of the server container during the benchmark" style="text-align:right">CPU</div>
+        <div title="Peak memory usage of the server container" style="text-align:right">Mem</div>
+        <div title="Average request latency — lower is better" style="text-align:right">Avg Latency</div>
+        <div title="99th percentile latency — lower is better" style="text-align:right">P99</div>
       </div>
     </div>
   </div>
@@ -334,17 +341,18 @@ html.dark .lb-conn-tab.active { color: #a78bfa; border-color: #8b5cf6; backgroun
   <div class="lb-conn-panel" data-profile="{{ $p.id }}" data-conns="{{ $c }}">
   {{ if $data }}
   <div class="lb">
-    <div class="lb-row lb-header">
-      <div>#</div>
-      <div>Framework</div>
-      <div>Lang</div>
-      <div style="text-align:right">Conn</div>
-      <div style="text-align:right">Req/s</div>
+    <div class="lb-row lb-header{{ if $isReconn }} lb-row-reconn{{ end }}">
+      <div title="Rank by requests per second">#</div>
+      <div title="HTTP server framework name">Framework</div>
+      <div title="Programming language">Lang</div>
+      <div title="Number of concurrent connections maintained by the load generator" style="text-align:right">Conn</div>
+      {{ if $isReconn }}<div title="Total TCP connections established during the benchmark (reconnects)" style="text-align:right">TCP Conn</div>{{ end }}
+      <div title="Requests per second — higher is better" style="text-align:right">Req/s</div>
       <div></div>
-      <div style="text-align:right">CPU</div>
-      <div style="text-align:right">Mem</div>
-      <div style="text-align:right">Avg Latency</div>
-      <div style="text-align:right">P99</div>
+      <div title="Average CPU usage of the server container during the benchmark" style="text-align:right">CPU</div>
+      <div title="Peak memory usage of the server container" style="text-align:right">Mem</div>
+      <div title="Average request latency — lower is better" style="text-align:right">Avg Latency</div>
+      <div title="99th percentile latency — lower is better" style="text-align:right">P99</div>
     </div>
     {{ $results := sort $data "rps" "desc" }}
     {{ $maxRps := 0 }}
@@ -352,11 +360,12 @@ html.dark .lb-conn-tab.active { color: #a78bfa; border-color: #8b5cf6; backgroun
     {{ range $j, $r := $results }}
     {{ $pct := mul (div (float $r.rps) (float $maxRps)) 100.0 }}
     {{ $meta := index site.Data.frameworks $r.framework }}
-    <div class="lb-row" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ $r.rps }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}">
+    <div class="lb-row{{ if $isReconn }} lb-row-reconn{{ end }}" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ printf "%.0f" $r.rps }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}">
       <div class="lb-rank">{{ if eq $j 0 }}🥇{{ else if eq $j 1 }}🥈{{ else if eq $j 2 }}🥉{{ else }}{{ add $j 1 }}{{ end }}</div>
       <div class="lb-name">{{ $r.framework }}</div>
       <div class="lb-lang">{{ $r.language | default "—" }}</div>
       <div class="lb-conns">{{ lang.FormatNumber 0 $r.connections }}</div>
+      {{ if $isReconn }}<div class="lb-stat">{{ lang.FormatNumber 0 $r.reconnects }}</div>{{ end }}
       <div class="lb-rps">{{ lang.FormatNumber 0 $r.rps }}</div>
       <div class="lb-bar-cell">
         <div class="lb-bar lb-bar-{{ add $j 1 }}" style="width: {{ printf "%.1f" $pct }}%"></div>
@@ -393,7 +402,7 @@ function buildBestPanels() {
     connPanels.forEach(function(cp) {
       cp.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
         var name = row.dataset.name;
-        var rps = parseInt(row.dataset.rps, 10);
+        var rps = Number(row.dataset.rps);
         if (!best[name] || rps > best[name].rps) {
           best[name] = { rps: rps, row: row };
         }
@@ -473,7 +482,7 @@ function applyFilters() {
       });
       if (langMatch && textMatch) {
         row.classList.remove('lb-hidden');
-        var rps = parseInt(row.dataset.rps, 10);
+        var rps = Number(row.dataset.rps);
         if (rps > maxRps) maxRps = rps;
       } else {
         row.classList.add('lb-hidden');
@@ -487,7 +496,7 @@ function applyFilters() {
       var bar = row.querySelector('.lb-bar');
       barClasses.forEach(function(c) { bar.classList.remove(c); });
       bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
-      var rps = parseInt(row.dataset.rps, 10);
+      var rps = Number(row.dataset.rps);
       var pct = maxRps > 0 ? (rps / maxRps * 100) : 0;
       bar.style.width = pct.toFixed(1) + '%';
       visibleIdx++;
@@ -546,7 +555,17 @@ document.addEventListener('click', function(e) {
   var avgLat = row.querySelectorAll('.lb-stat')[2].textContent;
   var p99 = row.querySelectorAll('.lb-stat')[3].textContent;
 
+  var connPanel = row.closest('.lb-conn-panel');
+  var profile = connPanel ? connPanel.dataset.profile : '';
+  var connCount = connPanel ? connPanel.dataset.conns : '';
+  if (connCount === 'best') {
+    connCount = row.querySelector('.lb-conns').textContent.replace(/,/g, '').trim();
+  }
+  var baseUrl = '{{ "logs" | relURL }}';
+
   var repoHtml = repo ? '<a class="lb-popup-link" href="' + repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
+  var benchHtml = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(name) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
+  var logHtml = (profile && connCount) ? '<a class="lb-popup-link" href="' + baseUrl + '/' + profile + '/' + connCount + '/' + encodeURIComponent(name) + '.log" target="_blank" rel="noreferrer">Docker logs &rarr;</a>' : '';
 
   var overlay = document.createElement('div');
   overlay.className = 'lb-overlay';
@@ -564,7 +583,7 @@ document.addEventListener('click', function(e) {
         '<div><div class="lb-popup-stat-label">CPU</div><div class="lb-popup-stat-value">' + cpu + '</div></div>' +
         '<div><div class="lb-popup-stat-label">Memory</div><div class="lb-popup-stat-value">' + mem + '</div></div>' +
       '</div>' +
-      repoHtml +
+      '<div class="lb-popup-links">' + repoHtml + benchHtml + logHtml + '</div>' +
     '</div>';
 
   document.body.appendChild(overlay);

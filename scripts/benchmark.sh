@@ -6,6 +6,8 @@ ROOT_DIR="$SCRIPT_DIR/.."
 cd "$ROOT_DIR"
 
 GCANNON="${GCANNON:-/home/diogo/Desktop/Socket/gcannon/gcannon}"
+HARD_NOFILE=$(ulimit -Hn)
+ulimit -n "$HARD_NOFILE"
 THREADS=12
 DURATION=5s
 RUNS=3
@@ -113,7 +115,8 @@ for profile in "${profiles_to_run[@]}"; do
 
     docker_args=(-d --name "$CONTAINER_NAME" --network host
         --security-opt seccomp=unconfined
-        --ulimit memlock=-1:-1)
+        --ulimit memlock=-1:-1
+        --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
     if [ -n "$cpu_limit" ]; then
         docker_args+=(--cpus="$cpu_limit")
     fi
@@ -194,6 +197,7 @@ for profile in "${profiles_to_run[@]}"; do
     # Extract metrics
     avg_lat=$(echo "$best_output" | grep "Latency" | head -1 | awk '{print $2}')
     p99_lat=$(echo "$best_output" | grep "Latency" | head -1 | awk '{print $5}')
+    reconnects=$(echo "$best_output" | grep -oP 'Reconnects: \K\d+' || echo "0")
 
     # Save results — subdirectory per connection count
     mkdir -p "$RESULTS_DIR/$profile/$CONNS"
@@ -209,10 +213,17 @@ for profile in "${profiles_to_run[@]}"; do
   "connections": $CONNS,
   "threads": $THREADS,
   "duration": "$DURATION",
-  "pipeline": $pipeline
+  "pipeline": $pipeline,
+  "reconnects": $reconnects
 }
 EOF
     echo "[saved] results/$profile/${CONNS}/${FRAMEWORK}.json"
+
+    # Save docker logs
+    LOGS_DIR="$ROOT_DIR/site/static/logs/$profile/$CONNS"
+    mkdir -p "$LOGS_DIR"
+    docker logs "$CONTAINER_NAME" > "$LOGS_DIR/${FRAMEWORK}.log" 2>&1 || true
+    echo "[saved] site/static/logs/$profile/${CONNS}/${FRAMEWORK}.log"
 
     # Stop container before next connection count
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
