@@ -30,9 +30,17 @@ declare -A PROFILES=(
 )
 PROFILE_ORDER=(baseline pipelined limited-conn json baseline-h2 static-h2)
 
-# Usage: benchmark.sh [framework] [profile]
-FRAMEWORK="${1:-}"
-PROFILE_FILTER="${2:-}"
+# Parse flags
+SAVE_RESULTS=false
+POSITIONAL=()
+for arg in "$@"; do
+    case "$arg" in
+        --save) SAVE_RESULTS=true ;;
+        *) POSITIONAL+=("$arg") ;;
+    esac
+done
+FRAMEWORK="${POSITIONAL[0]:-}"
+PROFILE_FILTER="${POSITIONAL[1]:-}"
 
 rebuild_site_data() {
     local site_data="$ROOT_DIR/site/data"
@@ -78,6 +86,64 @@ rebuild_site_data() {
             echo "[updated] site/data/${profile}-${conns}.json"
         done
     done
+
+    # Write current round system info
+    local cpu=$(lscpu 2>/dev/null | awk -F: '/Model name/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')
+    local cores=$(nproc 2>/dev/null || echo "unknown")
+    local threads_per_core=$(lscpu 2>/dev/null | awk -F: '/Thread\(s\) per core/ {gsub(/^[ \t]+/, "", $2); print $2; exit}')
+    local ram=$(free -h 2>/dev/null | awk '/Mem:/ {print $2}')
+    local ram_speed=$(sudo dmidecode -t memory 2>/dev/null | awk '/Configured Memory Speed:/ && /MHz/ {print $4 " MHz"; exit}')
+    [ -z "$ram_speed" ] && ram_speed="unknown"
+    local governor=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo "unknown")
+    local os_info=$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME" || uname -s)
+    local kernel=$(uname -r)
+    local docker_ver=$(docker version --format '{{.Server.Version}}' 2>/dev/null || echo "unknown")
+    local docker_runtime=$(docker info --format '{{.DefaultRuntime}}' 2>/dev/null || echo "unknown")
+    local commit=$(git -C "$ROOT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    local lo_mtu=$(ip link show lo 2>/dev/null | awk '/mtu/ {print $5}')
+    local cur_date=$(date +%Y-%m-%d)
+    python3 -c "
+import json, sys, subprocess
+
+d = {'date': sys.argv[1], 'cpu': sys.argv[2], 'cores': sys.argv[3],
+     'ram': sys.argv[4], 'os': sys.argv[5], 'kernel': sys.argv[6],
+     'docker': sys.argv[7], 'commit': sys.argv[8],
+     'governor': sys.argv[11], 'docker_runtime': sys.argv[12],
+     'threads_per_core': sys.argv[13]}
+rs = sys.argv[10]
+if rs != 'unknown':
+    d['ram_speed'] = rs
+
+def sysctl(key):
+    try:
+        return subprocess.check_output(['sysctl', '-n', key], stderr=subprocess.DEVNULL).decode().strip()
+    except:
+        return None
+
+tcp = {}
+lo_mtu = sys.argv[14]
+if lo_mtu:
+    tcp['lo_mtu'] = lo_mtu
+cc = sysctl('net.ipv4.tcp_congestion_control')
+if cc:
+    tcp['congestion'] = cc
+somaxconn = sysctl('net.core.somaxconn')
+if somaxconn:
+    tcp['somaxconn'] = somaxconn
+rmem = sysctl('net.core.rmem_max')
+if rmem:
+    tcp['rmem_max'] = rmem
+wmem = sysctl('net.core.wmem_max')
+if wmem:
+    tcp['wmem_max'] = wmem
+
+if tcp:
+    d['tcp'] = tcp
+
+with open(sys.argv[9], 'w') as f:
+    json.dump(d, f, indent=2)
+" "$cur_date" "$cpu" "$cores" "$ram" "$os_info" "$kernel" "$docker_ver" "$commit" "$site_data/current.json" "$ram_speed" "$governor" "$docker_runtime" "$threads_per_core" "$lo_mtu"
+    echo "[updated] site/data/current.json"
 }
 
 # If no framework, run all enabled ones
@@ -96,9 +162,15 @@ if [ -z "$FRAMEWORK" ]; then
             fi
         fi
 
-        "$SCRIPT_DIR/benchmark.sh" "$fw" "$PROFILE_FILTER" || true
+        if [ "$SAVE_RESULTS" = "true" ]; then
+            "$SCRIPT_DIR/benchmark.sh" "$fw" "$PROFILE_FILTER" --save || true
+        else
+            "$SCRIPT_DIR/benchmark.sh" "$fw" "$PROFILE_FILTER" || true
+        fi
     done
-    rebuild_site_data
+    if [ "$SAVE_RESULTS" = "true" ]; then
+        rebuild_site_data
+    fi
     exit 0
 fi
 
@@ -309,9 +381,10 @@ for profile in "${profiles_to_run[@]}"; do
         reconnects=$(echo "$best_output" | grep -oP 'Reconnects: \K\d+' || echo "0")
     fi
 
-    # Save results — subdirectory per connection count
-    mkdir -p "$RESULTS_DIR/$profile/$CONNS"
-    cat > "$RESULTS_DIR/$profile/${CONNS}/${FRAMEWORK}.json" <<EOF
+    # Save results only with --save flag
+    if [ "$SAVE_RESULTS" = "true" ]; then
+        mkdir -p "$RESULTS_DIR/$profile/$CONNS"
+        cat > "$RESULTS_DIR/$profile/${CONNS}/${FRAMEWORK}.json" <<EOF
 {
   "framework": "$DISPLAY_NAME",
   "language": "$LANGUAGE",
@@ -327,13 +400,16 @@ for profile in "${profiles_to_run[@]}"; do
   "reconnects": $reconnects
 }
 EOF
-    echo "[saved] results/$profile/${CONNS}/${FRAMEWORK}.json"
+        echo "[saved] results/$profile/${CONNS}/${FRAMEWORK}.json"
 
-    # Save docker logs
-    LOGS_DIR="$ROOT_DIR/site/static/logs/$profile/$CONNS"
-    mkdir -p "$LOGS_DIR"
-    docker logs "$CONTAINER_NAME" > "$LOGS_DIR/${FRAMEWORK}.log" 2>&1 || true
-    echo "[saved] site/static/logs/$profile/${CONNS}/${FRAMEWORK}.log"
+        # Save docker logs
+        LOGS_DIR="$ROOT_DIR/site/static/logs/$profile/$CONNS"
+        mkdir -p "$LOGS_DIR"
+        docker logs "$CONTAINER_NAME" > "$LOGS_DIR/${FRAMEWORK}.log" 2>&1 || true
+        echo "[saved] site/static/logs/$profile/${CONNS}/${FRAMEWORK}.log"
+    else
+        echo "[dry-run] Results not saved (use --save to persist)"
+    fi
 
     # Stop container before next connection count
     docker stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
@@ -342,5 +418,7 @@ EOF
     done # CONNS loop
 done
 
-# Rebuild site data
-rebuild_site_data
+# Rebuild site data only with --save
+if [ "$SAVE_RESULTS" = "true" ]; then
+    rebuild_site_data
+fi

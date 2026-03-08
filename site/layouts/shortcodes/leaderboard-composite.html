@@ -88,9 +88,9 @@ html.dark .composite-disclaimer { color: #fff !important; background: rgba(234,1
 
 <script>
 (function() {
-var entries = compositeEntries;
+var currentEntries = compositeEntries;
+var currentMeta = compositeMeta;
 var profiles = compositeProfiles;
-var meta = compositeMeta;
 var medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
 var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
 
@@ -100,12 +100,10 @@ var profileProtos = {};
 var profileScored = {};
 profiles.forEach(function(p) { profileLabels[p.id] = p.label; profileProtos[p.id] = p.proto; profileScored[p.id] = p.scored !== false; });
 
-// Parse CPU string like "1982.2%" to number
 function parseCpu(s) {
   if (!s) return 0;
   return parseFloat(String(s).replace('%', '')) || 0;
 }
-// Parse memory string like "17.3MiB" or "1.2GiB" to MB
 function parseMem(s) {
   if (!s) return 0;
   s = String(s);
@@ -118,32 +116,66 @@ function parseMem(s) {
   return v;
 }
 
-// Precompute averages per framework per profile
-var avgByProfile = {};
-var avgCpuByProfile = {};
-var avgMemByProfile = {};
-allProfileIds.forEach(function(pid) { avgByProfile[pid] = {}; avgCpuByProfile[pid] = {}; avgMemByProfile[pid] = {}; });
-var sums = {}, cpuSums = {}, memSums = {}, counts = {};
-entries.forEach(function(e) {
-  var key = e.profile + '|' + e.framework;
-  sums[key] = (sums[key] || 0) + e.rps;
-  cpuSums[key] = (cpuSums[key] || 0) + parseCpu(e.cpu);
-  memSums[key] = (memSums[key] || 0) + parseMem(e.memory);
-  counts[key] = (counts[key] || 0) + 1;
-});
-Object.keys(sums).forEach(function(key) {
-  var parts = key.split('|');
-  var c = counts[key];
-  avgByProfile[parts[0]][parts[1]] = sums[key] / c;
-  avgCpuByProfile[parts[0]][parts[1]] = cpuSums[key] / c;
-  avgMemByProfile[parts[0]][parts[1]] = memSums[key] / c;
-});
+// Build entries from round data
+function entriesFromRound(roundData) {
+  var entries = [];
+  profiles.forEach(function(p) {
+    p.conns.forEach(function(c) {
+      var key = p.id + '-' + c;
+      var data = roundData[key];
+      if (data) {
+        data.forEach(function(d) {
+          entries.push({ profile: p.id, label: p.label, framework: d.framework, rps: d.rps, language: d.language || '', cpu: d.cpu || '', memory: d.memory || '' });
+        });
+      }
+    });
+  });
+  return entries;
+}
 
-var fwLang = {};
-entries.forEach(function(e) { if (e.language) fwLang[e.framework] = e.language; });
+var entries, meta, avgByProfile, avgCpuByProfile, avgMemByProfile, fwLang, allFw;
 
-var allFw = {};
-entries.forEach(function(e) { allFw[e.framework] = true; });
+function loadData(newEntries, newMeta) {
+  entries = newEntries;
+  meta = newMeta;
+  avgByProfile = {}; avgCpuByProfile = {}; avgMemByProfile = {};
+  allProfileIds.forEach(function(pid) { avgByProfile[pid] = {}; avgCpuByProfile[pid] = {}; avgMemByProfile[pid] = {}; });
+  var sums = {}, cpuSums = {}, memSums = {}, counts = {};
+  entries.forEach(function(e) {
+    var key = e.profile + '|' + e.framework;
+    sums[key] = (sums[key] || 0) + e.rps;
+    cpuSums[key] = (cpuSums[key] || 0) + parseCpu(e.cpu);
+    memSums[key] = (memSums[key] || 0) + parseMem(e.memory);
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  Object.keys(sums).forEach(function(key) {
+    var parts = key.split('|');
+    var c = counts[key];
+    avgByProfile[parts[0]][parts[1]] = sums[key] / c;
+    avgCpuByProfile[parts[0]][parts[1]] = cpuSums[key] / c;
+    avgMemByProfile[parts[0]][parts[1]] = memSums[key] / c;
+  });
+  fwLang = {};
+  entries.forEach(function(e) { if (e.language) fwLang[e.framework] = e.language; });
+  allFw = {};
+  entries.forEach(function(e) { allFw[e.framework] = true; });
+}
+
+loadData(currentEntries, currentMeta);
+
+// Round change handler
+window.addEventListener('roundChanged', function(ev) {
+  var roundId = ev.detail.round;
+  if (roundId === null) {
+    loadData(currentEntries, currentMeta);
+  } else {
+    var rd = window.roundsData[roundId];
+    if (rd) {
+      loadData(entriesFromRound(rd), rd._frameworks || currentMeta);
+    }
+  }
+  renderComposite();
+});
 
 function getActiveProfiles() {
   var active = [];

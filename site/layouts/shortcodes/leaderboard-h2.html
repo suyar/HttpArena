@@ -3,6 +3,24 @@
   (dict "id" "static-h2" "label" "Static Files (HTTP/2)" "conns" (slice 64 256 1024) "desc" "Serves 20 static files of various types and sizes (CSS, JS, HTML, fonts, SVG, WebP, JSON — totaling ~325 KB) over HTTP/2 with TLS. The load generator (<code>h2load</code>) requests all files using multiplexed streams, simulating a realistic browser page load. Measures static file serving throughput with HTTP/2 multiplexing.")
 }}
 
+{{/* Build JSON data blob for round switching */}}
+{{ $lbH2Data := dict }}
+{{ range $profiles }}
+  {{ $pid := .id }}
+  {{ range .conns }}
+    {{ $key := printf "%s-%d" $pid . }}
+    {{ $data := index site.Data $key }}
+    {{ if $data }}
+      {{ $lbH2Data = merge $lbH2Data (dict $key $data) }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+<script>
+var lbH2CurrentData = {{ $lbH2Data | jsonify | safeJS }};
+var lbH2CurrentMeta = {{ site.Data.frameworks | jsonify | safeJS }};
+var lbH2Profiles = {{ $profiles | jsonify | safeJS }};
+</script>
+
 {{/* Collect all unique languages across all data files */}}
 {{ $langs := slice }}
 {{ range $profiles }}
@@ -449,6 +467,63 @@ w.addEventListener('click', function(e) {
   overlay.addEventListener('click', function(ev) { if (ev.target === overlay) close(); });
   document.addEventListener('keydown', function handler(ev) {
     if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', handler); }
+  });
+});
+
+/* Round switching for H2 leaderboard */
+window.addEventListener('roundChanged', function(ev) {
+  var roundId = ev.detail.round;
+  var data = roundId === null ? lbH2CurrentData : (window.roundsData[roundId] || lbH2CurrentData);
+  var fwMeta = roundId === null ? lbH2CurrentMeta : (data._frameworks || lbH2CurrentMeta);
+
+  document.querySelectorAll('#lb-h2-wrapper .lb-conn-panel-h2:not([data-conns="best"])').forEach(function(panel) {
+    var profile = panel.dataset.profile;
+    var conns = panel.dataset.conns;
+    var key = profile + '-' + conns;
+    var results = data[key];
+    var lb = panel.querySelector('.lb');
+    if (!lb) return;
+
+    lb.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(r) { r.remove(); });
+
+    if (!results || results.length === 0) return;
+
+    var sorted = results.slice().sort(function(a, b) { return b.rps - a.rps; });
+    var maxRps = sorted[0].rps || 1;
+
+    sorted.forEach(function(r, j) {
+      var m = fwMeta[r.framework] || {};
+      var ftype = m.type || 'realistic';
+      var pct = (r.rps / maxRps * 100).toFixed(1);
+      var rank = j < 3 ? medals[j] : String(j + 1);
+      var row = document.createElement('div');
+      row.className = 'lb-row';
+      row.dataset.lang = r.language || '';
+      row.dataset.name = r.framework;
+      row.dataset.rps = String(r.rps);
+      row.dataset.type = ftype;
+      row.dataset.desc = m.description || '';
+      row.dataset.repo = m.repo || '';
+      row.innerHTML =
+        '<div class="lb-rank">' + rank + '</div>' +
+        '<div class="lb-name">' + r.framework + '</div>' +
+        '<div class="lb-lang">' + (r.language || '\u2014') + '</div>' +
+        '<div class="lb-lang">' + (m.engine || '\u2014') + '</div>' +
+        '<div><span class="lb-pill lb-pill-' + ftype + '">' + ftype + '</span></div>' +
+        '<div class="lb-conns">' + Number(r.connections).toLocaleString() + '</div>' +
+        '<div class="lb-rps">' + Number(r.rps).toLocaleString() + '</div>' +
+        '<div class="lb-bar-cell"><div class="lb-bar lb-bar-' + (j + 1) + '" style="width:' + pct + '%"></div></div>' +
+        '<div class="lb-stat">' + (r.cpu || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.memory || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.avg_latency || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.p99_latency || '\u2014') + '</div>';
+      lb.appendChild(row);
+    });
+  });
+
+  buildBest();
+  w.querySelectorAll('.lb-panel-h2').forEach(function(p) {
+    applyFilters(p);
   });
 });
 })();

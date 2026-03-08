@@ -150,21 +150,6 @@
 }
 ,
 {
-  "framework": "laravel",
-  "language": "PHP",
-  "rps": 2763,
-  "avg_latency": "183.42ms",
-  "p99_latency": "110.00ms",
-  "cpu": "308.2%",
-  "memory": "1.3GiB",
-  "connections": 512,
-  "threads": 12,
-  "duration": "5s",
-  "pipeline": 1,
-  "reconnects": 0
-}
-,
-{
   "framework": "nginx",
   "language": "C",
   "rps": 2958385,

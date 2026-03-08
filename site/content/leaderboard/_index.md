@@ -12,12 +12,15 @@ article { max-width: 100% !important; }
 
 <div style="margin-bottom:1.5rem;">
 <h1 class="not-prose hx:text-4xl hx:font-bold hx:leading-none hx:tracking-tighter hx:md:text-5xl hx:py-2 hx:bg-clip-text hx:text-transparent hx:bg-gradient-to-r hx:from-gray-900 hx:to-gray-600 hx:dark:from-gray-100 hx:dark:to-gray-400">Leaderboard</h1>
+
+{{< round-selector >}}
+
 <div class="lb-card" style="margin-top:0.75rem; padding:0.35rem;">
 <div id="http-version-tabs" style="display:flex; gap:0.35rem;">
+<span class="http-ver active" data-ver="composite">Composite</span>
 <span class="http-ver" data-ver="h1">HTTP/1.1</span>
 <span class="http-ver" data-ver="h2">HTTP/2</span>
 <span class="http-ver" data-ver="h3">HTTP/3</span>
-<span class="http-ver active" data-ver="composite">Composite</span>
 </div>
 </div>
 <style>

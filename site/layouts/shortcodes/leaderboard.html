@@ -398,6 +398,24 @@ html.dark .lb-filters-toggle:hover .lb-toggle-icon { color: #60a5fa; }
   (dict "id" "pipelined"    "label" "Pipelined (16)"        "conns" (slice 512 4096 16384) "desc" "16 HTTP requests are sent back-to-back on each connection before waiting for responses. Uses a lightweight <code>GET /pipeline</code> endpoint that returns a fixed response, isolating raw I/O and pipeline handling from application logic. Frameworks that batch pipelined requests from the read buffer gain a significant advantage.")
 }}
 
+{{/* Build JSON data blob for round switching */}}
+{{ $lbData := dict }}
+{{ range $profiles }}
+  {{ $pid := .id }}
+  {{ range .conns }}
+    {{ $key := printf "%s-%d" $pid . }}
+    {{ $data := index site.Data $key }}
+    {{ if $data }}
+      {{ $lbData = merge $lbData (dict $key $data) }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+<script>
+var lbCurrentData = {{ $lbData | jsonify | safeJS }};
+var lbCurrentMeta = {{ site.Data.frameworks | jsonify | safeJS }};
+var lbProfiles = {{ $profiles | jsonify | safeJS }};
+</script>
+
 {{/* Collect all unique languages across all data files */}}
 {{ $langs := slice }}
 {{ range $profiles }}
@@ -853,5 +871,64 @@ document.addEventListener('click', function(e) {
   document.addEventListener('keydown', function handler(ev) {
     if (ev.key === 'Escape') { close(); document.removeEventListener('keydown', handler); }
   });
+});
+
+/* Round switching — rebuild rows from round data */
+window.addEventListener('roundChanged', function(ev) {
+  var roundId = ev.detail.round;
+  var data = roundId === null ? lbCurrentData : (window.roundsData[roundId] || lbCurrentData);
+  var fwMeta = roundId === null ? lbCurrentMeta : (data._frameworks || lbCurrentMeta);
+
+  document.querySelectorAll('#lb-wrapper .lb-conn-panel:not([data-conns="best"])').forEach(function(panel) {
+    var profile = panel.dataset.profile;
+    var conns = panel.dataset.conns;
+    var key = profile + '-' + conns;
+    var results = data[key];
+    var lb = panel.querySelector('.lb');
+    if (!lb) return;
+
+    // Remove old data rows, keep header
+    lb.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(r) { r.remove(); });
+
+    if (!results || results.length === 0) return;
+
+    var isReconn = profile === 'limited-conn';
+    var sorted = results.slice().sort(function(a, b) { return b.rps - a.rps; });
+    var maxRps = sorted[0].rps || 1;
+
+    sorted.forEach(function(r, j) {
+      var m = fwMeta[r.framework] || {};
+      var ftype = m.type || 'realistic';
+      var pct = (r.rps / maxRps * 100).toFixed(1);
+      var rank = j < 3 ? medals[j] : String(j + 1);
+      var row = document.createElement('div');
+      row.className = 'lb-row' + (isReconn ? ' lb-row-reconn' : '');
+      row.dataset.lang = r.language || '';
+      row.dataset.name = r.framework;
+      row.dataset.rps = String(r.rps);
+      row.dataset.type = ftype;
+      row.dataset.desc = m.description || '';
+      row.dataset.repo = m.repo || '';
+      row.innerHTML =
+        '<div class="lb-rank">' + rank + '</div>' +
+        '<div class="lb-name">' + r.framework + '</div>' +
+        '<div class="lb-lang">' + (r.language || '\u2014') + '</div>' +
+        '<div class="lb-lang">' + (m.engine || '\u2014') + '</div>' +
+        '<div><span class="lb-pill lb-pill-' + ftype + '">' + ftype + '</span></div>' +
+        '<div class="lb-conns">' + Number(r.connections).toLocaleString() + '</div>' +
+        (isReconn ? '<div class="lb-stat">' + Number(r.reconnects || 0).toLocaleString() + '</div>' : '') +
+        '<div class="lb-rps">' + Number(r.rps).toLocaleString() + '</div>' +
+        '<div class="lb-bar-cell"><div class="lb-bar lb-bar-' + (j + 1) + '" style="width:' + pct + '%"></div></div>' +
+        '<div class="lb-stat">' + (r.cpu || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.memory || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.avg_latency || '\u2014') + '</div>' +
+        '<div class="lb-stat">' + (r.p99_latency || '\u2014') + '</div>';
+      lb.appendChild(row);
+    });
+  });
+
+  // Rebuild best panels and re-apply filters
+  buildBestPanels();
+  applyFilters();
 });
 </script>

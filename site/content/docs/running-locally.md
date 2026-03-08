@@ -54,7 +54,9 @@ openssl req -x509 -newkey rsa:2048 -keyout certs/server.key -out certs/server.cr
 
 ## Running benchmarks
 
-Run all frameworks across all profiles:
+By default, running the benchmark script does **not** modify any result files — this prevents local runs from polluting PRs with unintended data changes.
+
+Run all frameworks (dry-run, results displayed but not saved):
 
 ```bash
 ./scripts/benchmark.sh
@@ -72,7 +74,15 @@ Run a single framework with a specific profile:
 ./scripts/benchmark.sh aspnet-minimal baseline
 ```
 
-Available profiles: `baseline`, `pipelined`, `limited-conn`, `json`, `baseline-h2`.
+To persist results to `results/` and rebuild `site/data/`, add the `--save` flag:
+
+```bash
+./scripts/benchmark.sh --save
+./scripts/benchmark.sh --save aspnet-minimal
+./scripts/benchmark.sh --save aspnet-minimal baseline
+```
+
+Available profiles: `baseline`, `pipelined`, `limited-conn`, `json`, `baseline-h2`, `static-h2`.
 
 ## What happens
 
@@ -82,11 +92,39 @@ For each framework and profile combination, the script:
 2. Starts the container with `--network host`
 3. Waits for the server to respond
 4. Runs the load generator 3 times and keeps the best result
-5. Saves results to `results/<profile>/<connections>/<framework>.json`
-6. Saves Docker logs to `site/static/logs/<profile>/<connections>/<framework>.log`
-7. Rebuilds site data files in `site/data/`
+5. Displays the results
 
-For HTTP/1.1 profiles (`baseline`, `pipelined`, `limited-conn`, `json`), the load generator is **gcannon**. For `baseline-h2`, the load generator is **h2load**.
+With `--save`, it additionally:
+
+6. Saves results to `results/<profile>/<connections>/<framework>.json`
+7. Saves Docker logs to `site/static/logs/<profile>/<connections>/<framework>.log`
+8. Rebuilds site data files in `site/data/`
+
+For HTTP/1.1 profiles (`baseline`, `pipelined`, `limited-conn`, `json`), the load generator is **gcannon**. For HTTP/2 profiles (`baseline-h2`, `static-h2`), the load generator is **h2load**.
+
+## Archiving rounds
+
+You can archive the current benchmark results as a named snapshot. On the leaderboard, users can switch between archived rounds and the current ongoing results.
+
+Create a snapshot of the current results:
+
+```bash
+./scripts/archive.sh create "Round 1 — March 2026"
+```
+
+List all archived rounds:
+
+```bash
+./scripts/archive.sh list
+```
+
+Delete an archived round:
+
+```bash
+./scripts/archive.sh delete 1
+```
+
+When you create a snapshot, it bundles all current result data from `site/data/*.json` into a single `site/data/rounds/<id>.json` file. After rebuilding Hugo, the round selector will appear on the leaderboard page letting users switch between "Current" and any archived rounds.
 
 ## Configuration
 
