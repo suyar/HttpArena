@@ -15,6 +15,81 @@
 }
 ,
 {
+  "framework": "caddy",
+  "language": "Go",
+  "rps": 395117,
+  "avg_latency": "30.36ms",
+  "p99_latency": "110.00ms",
+  "cpu": "1473.4%",
+  "memory": "870.8MiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 11935
+}
+,
+{
+  "framework": "deno",
+  "language": "TypeScript",
+  "rps": 282202,
+  "avg_latency": "14.62ms",
+  "p99_latency": "49.30ms",
+  "cpu": "840.8%",
+  "memory": "768.2MiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 30744
+}
+,
+{
+  "framework": "drogon",
+  "language": "C++",
+  "rps": 638491,
+  "avg_latency": "23.89ms",
+  "p99_latency": "54.00ms",
+  "cpu": "926.5%",
+  "memory": "579.5MiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 9129
+}
+,
+{
+  "framework": "express",
+  "language": "JavaScript",
+  "rps": 209583,
+  "avg_latency": "25.95ms",
+  "p99_latency": "63.20ms",
+  "cpu": "1952.8%",
+  "memory": "3.1GiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 8365
+}
+,
+{
+  "framework": "flask",
+  "language": "Python",
+  "rps": 84,
+  "avg_latency": "0us",
+  "p99_latency": "0us",
+  "cpu": "1.1%",
+  "memory": "569.6MiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 48375
+}
+,
+{
   "framework": "go-fasthttp",
   "language": "Go",
   "rps": 260888,
@@ -45,6 +120,51 @@
 }
 ,
 {
+  "framework": "hyper",
+  "language": "Rust",
+  "rps": 440357,
+  "avg_latency": "23.23ms",
+  "p99_latency": "56.70ms",
+  "cpu": "1491.3%",
+  "memory": "814.2MiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 18512
+}
+,
+{
+  "framework": "node",
+  "language": "JavaScript",
+  "rps": 535376,
+  "avg_latency": "16.39ms",
+  "p99_latency": "42.30ms",
+  "cpu": "1490.0%",
+  "memory": "1.3GiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 12010
+}
+,
+{
+  "framework": "ntex",
+  "language": "Rust",
+  "rps": 513417,
+  "avg_latency": "23.07ms",
+  "p99_latency": "54.50ms",
+  "cpu": "1442.7%",
+  "memory": "1007.0MiB",
+  "connections": 32768,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 16832
+}
+,
+{
   "framework": "quarkus-jvm",
   "language": "Java",
   "rps": 284901,
@@ -57,36 +177,6 @@
   "duration": "5s",
   "pipeline": 1,
   "reconnects": 9650
-}
-,
-{
-  "framework": "hyper",
-  "language": "Rust",
-  "rps": 450905,
-  "avg_latency": "31.23ms",
-  "p99_latency": "110.00ms",
-  "cpu": "1472.4%",
-  "memory": "708.1MiB",
-  "connections": 32768,
-  "threads": 12,
-  "duration": "5s",
-  "pipeline": 1,
-  "reconnects": 10876
-}
-,
-{
-  "framework": "ntex",
-  "language": "Rust",
-  "rps": 456961,
-  "avg_latency": "25.74ms",
-  "p99_latency": "63.50ms",
-  "cpu": "1157.7%",
-  "memory": "1.3GiB",
-  "connections": 32768,
-  "threads": 12,
-  "duration": "5s",
-  "pipeline": 1,
-  "reconnects": 10172
 }
 ,
 {

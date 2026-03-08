@@ -1,0 +1,11 @@
+{
+  "C":          { "accent": "#e53e3e", "text": "#c53030", "textDark": "#fc8181", "rgb": "229,62,62" },
+  "C#":         { "accent": "#7c3aed", "text": "#6d28d9", "textDark": "#a78bfa", "rgb": "124,58,237" },
+  "Go":         { "accent": "#0891b2", "text": "#0e7490", "textDark": "#22d3ee", "rgb": "8,145,178" },
+  "Java":       { "accent": "#d97706", "text": "#b45309", "textDark": "#fbbf24", "rgb": "217,119,6" },
+  "Rust":       { "accent": "#b45309", "text": "#92400e", "textDark": "#f59e0b", "rgb": "180,83,9" },
+  "JavaScript": { "accent": "#eab308", "text": "#a16207", "textDark": "#facc15", "rgb": "234,179,8" },
+  "TypeScript": { "accent": "#2563eb", "text": "#1d4ed8", "textDark": "#60a5fa", "rgb": "37,99,235" },
+  "Python":     { "accent": "#16a34a", "text": "#15803d", "textDark": "#4ade80", "rgb": "22,163,74" },
+  "C++":        { "accent": "#db2777", "text": "#be185d", "textDark": "#f472b6", "rgb": "219,39,119" }
+}

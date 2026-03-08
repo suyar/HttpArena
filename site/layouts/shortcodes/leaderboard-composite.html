@@ -76,26 +76,6 @@ var meta = compositeMeta;
 var medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
 var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
 
-// Language color scheme
-var langColors = {
-  'C':    { accent: '#e53e3e', bg: 'rgba(229,62,62,0.06)',  pill: '#e53e3e', pillBg: 'rgba(229,62,62,0.10)', border: 'rgba(229,62,62,0.4)' },
-  'C#':   { accent: '#7c3aed', bg: 'rgba(124,58,237,0.06)', pill: '#7c3aed', pillBg: 'rgba(124,58,237,0.10)', border: 'rgba(124,58,237,0.4)' },
-  'Go':   { accent: '#0891b2', bg: 'rgba(8,145,178,0.06)',  pill: '#0891b2', pillBg: 'rgba(8,145,178,0.10)', border: 'rgba(8,145,178,0.4)' },
-  'Java': { accent: '#d97706', bg: 'rgba(217,119,6,0.06)',  pill: '#d97706', pillBg: 'rgba(217,119,6,0.10)', border: 'rgba(217,119,6,0.4)' },
-  'Rust': { accent: '#b45309', bg: 'rgba(180,83,9,0.06)',   pill: '#b45309', pillBg: 'rgba(180,83,9,0.10)', border: 'rgba(180,83,9,0.4)' }
-};
-var langColorsDark = {
-  'C':    { accent: '#fc8181', bg: 'rgba(229,62,62,0.08)',  pill: '#fc8181', pillBg: 'rgba(229,62,62,0.15)', border: 'rgba(229,62,62,0.4)' },
-  'C#':   { accent: '#a78bfa', bg: 'rgba(124,58,237,0.08)', pill: '#a78bfa', pillBg: 'rgba(124,58,237,0.15)', border: 'rgba(124,58,237,0.4)' },
-  'Go':   { accent: '#22d3ee', bg: 'rgba(8,145,178,0.08)',  pill: '#22d3ee', pillBg: 'rgba(8,145,178,0.15)', border: 'rgba(8,145,178,0.4)' },
-  'Java': { accent: '#fbbf24', bg: 'rgba(217,119,6,0.08)',  pill: '#fbbf24', pillBg: 'rgba(217,119,6,0.15)', border: 'rgba(217,119,6,0.4)' },
-  'Rust': { accent: '#f59e0b', bg: 'rgba(180,83,9,0.08)',   pill: '#f59e0b', pillBg: 'rgba(180,83,9,0.15)', border: 'rgba(180,83,9,0.4)' }
-};
-function isDark() { return document.documentElement.classList.contains('dark'); }
-function getLangColor(lang) {
-  var scheme = isDark() ? langColorsDark : langColors;
-  return scheme[lang] || { accent: '#94a3b8', bg: 'transparent', pill: '#94a3b8', pillBg: 'rgba(148,163,184,0.10)', border: 'rgba(148,163,184,0.3)' };
-}
 var allProfileIds = profiles.map(function(p) { return p.id; });
 var profileLabels = {};
 var profileProtos = {};
@@ -182,7 +162,7 @@ function renderComposite() {
   // Header
   var header = document.createElement('div');
   header.className = 'lb-row lb-header';
-  header.style.gridTemplateColumns = '2.5rem 10rem 4rem 4.5rem 4rem 3.5rem 1fr repeat(' + activeCount + ', 5.5rem)';
+  header.style.gridTemplateColumns = '2.5rem 10rem 5.5rem 4.5rem 4rem 3.5rem 1fr repeat(' + activeCount + ', 5.5rem)';
   var headerHtml = '<div title="Rank by composite score">#</div>' +
     '<div>Framework</div>' +
     '<div>Lang</div>' +
@@ -209,11 +189,8 @@ function renderComposite() {
     row.dataset.name = r.framework;
     row.dataset.lang = r.language;
     row.dataset.type = ftype;
-    row.style.gridTemplateColumns = '2.5rem 10rem 4rem 4.5rem 4rem 3.5rem 1fr repeat(' + activeCount + ', 5.5rem)';
+    row.style.gridTemplateColumns = '2.5rem 10rem 5.5rem 4.5rem 4rem 3.5rem 1fr repeat(' + activeCount + ', 5.5rem)';
     row.style.cursor = 'pointer';
-    var lc = getLangColor(r.language);
-    row.style.background = lc.bg;
-    row.style.borderLeft = '3px solid ' + lc.accent;
 
     var rank = idx < 3 ? medals[idx] : String(idx + 1);
     var pct = maxComposite > 0 ? (r.composite / maxComposite * 100) : 0;
@@ -237,11 +214,11 @@ function renderComposite() {
     row.innerHTML =
       '<div class="lb-rank">' + rank + '</div>' +
       '<div class="lb-name">' + r.framework + '</div>' +
-      '<div class="lb-lang" style="color:' + lc.accent + '; font-weight:600;">' + r.language + '</div>' +
+      '<div class="lb-lang" style="font-weight:600;">' + r.language + '</div>' +
       '<div class="lb-lang">' + (fmeta.engine || '—') + '</div>' +
       '<div><span class="lb-pill lb-pill-' + ftype + '">' + ftype + '</span></div>' +
       '<div class="lb-rps" style="font-weight:700; text-align:left; padding-left:0.5rem;">' + r.composite.toFixed(1) + '</div>' +
-      '<div class="lb-bar-cell"><div class="lb-bar ' + barClass + '" style="width:' + pct.toFixed(1) + '%;"></div></div>' +
+      '<div class="lb-bar-cell"><div class="lb-bar" style="width:' + pct.toFixed(1) + '%;"></div></div>' +
       profileCells;
 
     row.addEventListener('click', function() {

@@ -1,16 +1,16 @@
 Listening on 0.0.0.0:8080 (fd=3)
 Server started with 12 reactors + 1 acceptor
 ringzero listening on :8080 with 12 reactors
-[r8] initialized
-[r11] initialized
-[r9] initialized
+[r7] initialized
 [r10] initialized
 [r4] initialized
-[r2] initialized
+[r9] initialized
 [r0] initialized
-[r7] initialized
-[r5] initialized
 [r1] initialized
+[r5] initialized
+[r11] initialized
+[r2] initialized
+[r8] initialized
 [r6] initialized
 [r3] initialized
 [acceptor] initialized

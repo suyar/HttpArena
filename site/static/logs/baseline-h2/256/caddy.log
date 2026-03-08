@@ -1,0 +1,17 @@
+{"level":"info","ts":1772926266.7502837,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+{"level":"info","ts":1772926266.7505593,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1772926266.7506602,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1772926266.750724,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc0004d7780"}
+{"level":"warn","ts":1772926266.7508082,"logger":"tls","msg":"stapling OCSP","error":"no OCSP stapling for [localhost]: no OCSP server specified in certificate"}
+{"level":"info","ts":1772926266.7508214,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1772926266.7508235,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
+{"level":"warn","ts":1772926266.751291,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"warn","ts":1772926266.7512932,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"info","ts":1772926266.7512941,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1772926266.751307,"logger":"http","msg":"enabling HTTP/3 listener","addr":":8443"}
+{"level":"info","ts":1772926266.751329,"msg":"failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB). See https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes for details."}
+{"level":"info","ts":1772926266.75136,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1772926266.7526817,"msg":"autosaved config (load with --resume flag)","file":"/root/.config/caddy/autosave.json"}
+{"level":"info","ts":1772926266.7526832,"msg":"serving initial configuration"}
+{"level":"info","ts":1772926266.7541716,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/root/.local/share/caddy"}
+{"level":"info","ts":1772926266.7554703,"logger":"tls","msg":"finished cleaning storage units"}

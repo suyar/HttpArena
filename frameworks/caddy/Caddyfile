@@ -1,0 +1,14 @@
+{
+	admin off
+	auto_https off
+	order httparena first
+}
+
+:8080 {
+	httparena
+}
+
+:8443 {
+	tls /certs/server.crt /certs/server.key
+	httparena
+}

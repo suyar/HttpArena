@@ -1,0 +1,10 @@
+{
+  "display_name": "flask",
+  "language": "Python",
+  "type": "realistic",
+  "engine": "gunicorn",
+  "description": "Flask web framework on Gunicorn with sync workers, one worker per CPU core.",
+  "repo": "https://github.com/pallets/flask",
+  "enabled": true,
+  "tests": ["baseline", "limited-conn", "json"]
+}

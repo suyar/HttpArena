@@ -1,0 +1,10 @@
+{
+  "display_name": "drogon",
+  "language": "C++",
+  "type": "realistic",
+  "engine": "drogon",
+  "description": "Drogon C++ framework with sync advice for fast dispatch, mimalloc allocator, and -flto optimization.",
+  "repo": "https://github.com/drogonframework/drogon",
+  "enabled": true,
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "baseline-h2"]
+}
