@@ -51,8 +51,9 @@ type staticFile struct {
 }
 
 type Handler struct {
-	jsonResponse []byte
-	staticFiles  map[string]staticFile
+	jsonResponse      []byte
+	jsonLargeResponse []byte
+	staticFiles       map[string]staticFile
 }
 
 func (Handler) CaddyModule() caddy.ModuleInfo {
@@ -94,6 +95,33 @@ func (h *Handler) Provision(ctx caddy.Context) error {
 		}
 	}
 	h.jsonResponse, _ = json.Marshal(ProcessResponse{Items: items, Count: len(items)})
+
+	// Load large dataset for /compression
+	largeData, err := os.ReadFile("/data/dataset-large.json")
+	if err == nil {
+		var largeDataset []struct {
+			ID       int      `json:"id"`
+			Name     string   `json:"name"`
+			Category string   `json:"category"`
+			Price    float64  `json:"price"`
+			Quantity int      `json:"quantity"`
+			Active   bool     `json:"active"`
+			Tags     []string `json:"tags"`
+			Rating   Rating   `json:"rating"`
+		}
+		if err := json.Unmarshal(largeData, &largeDataset); err == nil {
+			largeItems := make([]ProcessedItem, len(largeDataset))
+			for i, d := range largeDataset {
+				largeItems[i] = ProcessedItem{
+					ID: d.ID, Name: d.Name, Category: d.Category,
+					Price: d.Price, Quantity: d.Quantity, Active: d.Active,
+					Tags: d.Tags, Rating: d.Rating,
+					Total: math.Round(d.Price*float64(d.Quantity)*100) / 100,
+				}
+			}
+			h.jsonLargeResponse, _ = json.Marshal(ProcessResponse{Items: largeItems, Count: len(largeItems)})
+		}
+	}
 
 	// Load static files
 	mimeTypes := map[string]string{
@@ -185,6 +213,29 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 			fmt.Fprintf(w, "%08x", checksum)
 		} else {
 			http.Error(w, "POST required", 405)
+		}
+		return nil
+
+	case "/caching":
+		inm := r.Header.Get("If-None-Match")
+		w.Header().Set("ETag", `"AOK"`)
+		w.Header().Set("Server", "caddy")
+		if inm == `"AOK"` {
+			w.WriteHeader(304)
+		} else {
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Length", "2")
+			w.Write([]byte("OK"))
+		}
+		return nil
+
+	case "/compression":
+		if h.jsonLargeResponse != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Server", "caddy")
+			w.Write(h.jsonLargeResponse)
+		} else {
+			http.Error(w, "No dataset", 500)
 		}
 		return nil
 	}

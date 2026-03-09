@@ -59,6 +59,7 @@ struct StaticFile {
 struct AppState {
     dataset: Vec<DatasetItem>,
     json_cache: Vec<u8>,
+    json_large_cache: Vec<u8>,
     static_files: HashMap<String, StaticFile>,
 }
 
@@ -230,6 +231,13 @@ async fn json_endpoint(state: web::Data<Arc<AppState>>) -> HttpResponse {
         .body(state.json_cache.clone())
 }
 
+async fn compression(state: web::Data<Arc<AppState>>) -> HttpResponse {
+    HttpResponse::Ok()
+        .insert_header(("Content-Type", "application/json"))
+        .insert_header(("Server", "actix"))
+        .body(state.json_large_cache.clone())
+}
+
 async fn static_file(
     state: web::Data<Arc<AppState>>,
     path: web::Path<String>,
@@ -266,9 +274,17 @@ fn load_tls_config() -> Option<ServerConfig> {
 async fn main() -> io::Result<()> {
     let dataset = load_dataset();
     let json_cache = build_json_cache(&dataset);
+
+    let large_dataset: Vec<DatasetItem> = match std::fs::read_to_string("/data/dataset-large.json") {
+        Ok(data) => serde_json::from_str(&data).unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    let json_large_cache = build_json_cache(&large_dataset);
+
     let state = Arc::new(AppState {
         dataset,
         json_cache,
+        json_large_cache,
         static_files: load_static_files(),
     });
 
@@ -279,6 +295,7 @@ async fn main() -> io::Result<()> {
         let state = state.clone();
         move || {
             App::new()
+                .wrap(actix_web::middleware::Compress::default())
                 .app_data(web::Data::new(state.clone()))
                 .app_data(web::PayloadConfig::new(25 * 1024 * 1024))
                 .route("/pipeline", web::get().to(pipeline))
@@ -286,6 +303,7 @@ async fn main() -> io::Result<()> {
                 .route("/baseline11", web::post().to(baseline11_post))
                 .route("/baseline2", web::get().to(baseline2))
                 .route("/json", web::get().to(json_endpoint))
+                .route("/compression", web::get().to(compression))
                 .route("/upload", web::post().to(upload))
                 .route("/static/{filename}", web::get().to(static_file))
         }

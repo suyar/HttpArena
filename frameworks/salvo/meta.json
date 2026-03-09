@@ -6,5 +6,5 @@
   "description": "Salvo web framework with Quinn HTTP/3 support on Tokio runtime, compiled with -O3 and thin LTO.",
   "repo": "https://github.com/salvo-rs/salvo",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "baseline-h2", "static-h2", "baseline-h3"]
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "compression", "baseline-h2", "static-h2", "baseline-h3"]
 }

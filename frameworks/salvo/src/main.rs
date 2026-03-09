@@ -1,4 +1,5 @@
 use salvo::conn::rustls::{Keycert, RustlsConfig};
+use salvo::compression::Compression;
 use salvo::http::header::{self, HeaderValue};
 use salvo::http::StatusCode;
 use salvo::prelude::*;
@@ -49,6 +50,7 @@ static SERVER_HDR: HeaderValue = HeaderValue::from_static("salvo");
 
 struct AppState {
     json_cache: Vec<u8>,
+    json_large_cache: Vec<u8>,
     static_files: HashMap<String, StaticFile>,
 }
 
@@ -228,6 +230,16 @@ async fn json_endpoint(res: &mut Response) {
 }
 
 #[handler]
+async fn compression(res: &mut Response) {
+    let state = STATE.get().unwrap();
+    res.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+    res.write_body(state.json_large_cache.clone()).ok();
+}
+
+#[handler]
 async fn upload(req: &mut Request, res: &mut Response) {
     if let Ok(body) = req.payload_with_max_size(25 * 1024 * 1024).await {
         let crc = crc32_compute(body);
@@ -258,9 +270,17 @@ async fn static_file(req: &mut Request, res: &mut Response) {
 async fn main() {
     let dataset = load_dataset();
     let json_cache = build_json_cache(&dataset);
+
+    let large_dataset: Vec<DatasetItem> = match std::fs::read_to_string("/data/dataset-large.json") {
+        Ok(data) => serde_json::from_str(&data).unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    let json_large_cache = build_json_cache(&large_dataset);
+
     STATE
         .set(AppState {
             json_cache,
+            json_large_cache,
             static_files: load_static_files(),
         })
         .ok();
@@ -275,6 +295,11 @@ async fn main() {
         )
         .push(Router::with_path("baseline2").get(baseline2))
         .push(Router::with_path("json").get(json_endpoint))
+        .push(
+            Router::with_path("compression")
+                .hoop(Compression::new().enable_gzip(salvo::compression::CompressionLevel::Fastest))
+                .get(compression),
+        )
         .push(Router::with_path("upload").post(upload))
         .push(
             Router::with_path("static").push(

@@ -1,5 +1,7 @@
+using System.IO.Compression;
 using System.Text.Json;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,7 +30,20 @@ builder.WebHost.ConfigureKestrel(options =>
     }
 });
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.MimeTypes = new[] { "application/json" };
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
 var app = builder.Build();
+
+app.UseResponseCompression();
 
 app.Use(async (ctx, next) =>
 {
@@ -36,13 +51,43 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
+// Shared JSON options: camelCase matching for deserialization, camelCase output for serialization
+var jsonOptions = new JsonSerializerOptions
+{
+    PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+};
+
 // Load dataset at startup
 var datasetPath = Environment.GetEnvironmentVariable("DATASET_PATH") ?? "/data/dataset.json";
 List<DatasetItem>? datasetItems = null;
 if (File.Exists(datasetPath))
 {
     var json = File.ReadAllText(datasetPath);
-    datasetItems = JsonSerializer.Deserialize<List<DatasetItem>>(json);
+    datasetItems = JsonSerializer.Deserialize<List<DatasetItem>>(json, jsonOptions);
+}
+
+// Load large dataset for compression endpoint
+var largePath = "/data/dataset-large.json";
+byte[]? largeJsonResponse = null;
+if (File.Exists(largePath))
+{
+    var largeItems = JsonSerializer.Deserialize<List<DatasetItem>>(File.ReadAllText(largePath), jsonOptions);
+    if (largeItems != null)
+    {
+        var responseItems = new List<ProcessedItem>(largeItems.Count);
+        foreach (var item in largeItems)
+        {
+            responseItems.Add(new ProcessedItem
+            {
+                Id = item.Id, Name = item.Name, Category = item.Category,
+                Price = item.Price, Quantity = item.Quantity, Active = item.Active,
+                Tags = item.Tags, Rating = item.Rating,
+                Total = Math.Round(item.Price * item.Quantity, 2)
+            });
+        }
+        largeJsonResponse = JsonSerializer.SerializeToUtf8Bytes(new { items = responseItems, count = responseItems.Count }, jsonOptions);
+    }
 }
 
 // Pre-load static files
@@ -130,6 +175,32 @@ app.MapGet("/json", () =>
     }
 
     return Results.Json(new { items = responseItems, count = responseItems.Count });
+});
+
+app.MapGet("/compression", async (HttpContext ctx) =>
+{
+    if (largeJsonResponse == null)
+    {
+        ctx.Response.StatusCode = 500;
+        return;
+    }
+    ctx.Response.ContentType = "application/json";
+    await ctx.Response.Body.WriteAsync(largeJsonResponse);
+});
+
+const string CachingETag = "\"AOK\"";
+app.MapGet("/caching", (HttpContext ctx) =>
+{
+    var inm = ctx.Request.Headers.IfNoneMatch.ToString();
+    ctx.Response.Headers.ETag = CachingETag;
+    if (inm == CachingETag)
+    {
+        ctx.Response.StatusCode = 304;
+        return;
+    }
+    ctx.Response.ContentType = "text/plain";
+    ctx.Response.ContentLength = 2;
+    ctx.Response.Body.Write("OK"u8);
 });
 
 app.Run();

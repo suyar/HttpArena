@@ -121,7 +121,7 @@
 ,
 {
   "framework": "node",
-  "language": "JavaScript",
+  "language": "JS",
   "rps": 965940,
   "avg_latency": "6.76ms",
   "p99_latency": "6.76ms",

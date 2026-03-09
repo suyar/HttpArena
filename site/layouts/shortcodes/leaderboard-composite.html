@@ -4,6 +4,8 @@
   (dict "id" "limited-conn" "label" "Short-lived" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096) "scored" true)
   (dict "id" "json" "label" "JSON" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096 16384 32768) "scored" true)
   (dict "id" "upload" "label" "Upload" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 64 256 512) "scored" true)
+  (dict "id" "compression" "label" "Compression" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 4096 16384) "scored" true)
+  (dict "id" "caching" "label" "Caching" "sublabel" "HTTP/1.1" "proto" "h1" "conns" (slice 512 4096 16384) "scored" true)
   (dict "id" "baseline-h2" "label" "Baseline" "sublabel" "HTTP/2" "proto" "h2" "conns" (slice 64 256 1024) "scored" true)
   (dict "id" "static-h2" "label" "Static" "sublabel" "HTTP/2" "proto" "h2" "conns" (slice 64 256 1024) "scored" true)
   (dict "id" "baseline-h3" "label" "Baseline" "sublabel" "HTTP/3" "proto" "h3" "conns" (slice 64 512) "scored" true)
@@ -18,7 +20,7 @@
     {{ $data := index site.Data $key }}
     {{ if $data }}
       {{ range $data }}
-        {{ $entries = $entries | append (dict "profile" $p.id "label" $p.label "framework" .framework "rps" .rps "language" (.language | default "") "cpu" (.cpu | default "") "memory" (.memory | default "")) }}
+        {{ $entries = $entries | append (dict "profile" $p.id "label" $p.label "framework" .framework "rps" .rps "language" (.language | default "") "cpu" (.cpu | default "") "memory" (.memory | default "") "bandwidth" (.bandwidth | default "")) }}
       {{ end }}
     {{ end }}
   {{ end }}
@@ -88,7 +90,9 @@ html.dark .composite-disclaimer { color: #fff !important; background: rgba(234,1
   html.dark .composite-resource-toggle.active { color:#34d399; border-color:#059669; background:rgba(5,150,105,0.12); }
   </style>
 
-  <div id="composite-table" class="lb" style="margin-top:1rem;">
+  <div style="overflow-x:auto; margin-top:1rem;">
+  <div id="composite-table" class="lb" style="min-width:50rem;">
+  </div>
   </div>
 </div>
 
@@ -121,6 +125,17 @@ function parseMem(s) {
   if (u === 'kib' || u === 'kb') return v / 1024;
   return v;
 }
+function parseBandwidth(s) {
+  if (!s) return 0;
+  s = String(s);
+  var m = s.match(/([\d.]+)\s*(GB|MB|KB)\/s/i);
+  if (!m) return 0;
+  var v = parseFloat(m[1]);
+  var u = m[2].toUpperCase();
+  if (u === 'GB') return v * 1024;
+  if (u === 'KB') return v / 1024;
+  return v;
+}
 
 // Build entries from round data
 function entriesFromRound(roundData) {
@@ -131,7 +146,7 @@ function entriesFromRound(roundData) {
       var data = roundData[key];
       if (data) {
         data.forEach(function(d) {
-          entries.push({ profile: p.id, label: p.label, framework: d.framework, rps: d.rps, language: d.language || '', cpu: d.cpu || '', memory: d.memory || '' });
+          entries.push({ profile: p.id, label: p.label, framework: d.framework, rps: d.rps, language: d.language || '', cpu: d.cpu || '', memory: d.memory || '', bandwidth: d.bandwidth || '' });
         });
       }
     });
@@ -139,19 +154,20 @@ function entriesFromRound(roundData) {
   return entries;
 }
 
-var entries, meta, avgByProfile, avgCpuByProfile, avgMemByProfile, fwLang, allFw;
+var entries, meta, avgByProfile, avgCpuByProfile, avgMemByProfile, avgBwByProfile, fwLang, allFw;
 
 function loadData(newEntries, newMeta) {
   entries = newEntries;
   meta = newMeta;
-  avgByProfile = {}; avgCpuByProfile = {}; avgMemByProfile = {};
-  allProfileIds.forEach(function(pid) { avgByProfile[pid] = {}; avgCpuByProfile[pid] = {}; avgMemByProfile[pid] = {}; });
-  var sums = {}, cpuSums = {}, memSums = {}, counts = {};
+  avgByProfile = {}; avgCpuByProfile = {}; avgMemByProfile = {}; avgBwByProfile = {};
+  allProfileIds.forEach(function(pid) { avgByProfile[pid] = {}; avgCpuByProfile[pid] = {}; avgMemByProfile[pid] = {}; avgBwByProfile[pid] = {}; });
+  var sums = {}, cpuSums = {}, memSums = {}, bwSums = {}, counts = {};
   entries.forEach(function(e) {
     var key = e.profile + '|' + e.framework;
     sums[key] = (sums[key] || 0) + e.rps;
     cpuSums[key] = (cpuSums[key] || 0) + parseCpu(e.cpu);
     memSums[key] = (memSums[key] || 0) + parseMem(e.memory);
+    bwSums[key] = (bwSums[key] || 0) + parseBandwidth(e.bandwidth);
     counts[key] = (counts[key] || 0) + 1;
   });
   Object.keys(sums).forEach(function(key) {
@@ -160,6 +176,7 @@ function loadData(newEntries, newMeta) {
     avgByProfile[parts[0]][parts[1]] = sums[key] / c;
     avgCpuByProfile[parts[0]][parts[1]] = cpuSums[key] / c;
     avgMemByProfile[parts[0]][parts[1]] = memSums[key] / c;
+    avgBwByProfile[parts[0]][parts[1]] = bwSums[key] / c;
   });
   fwLang = {};
   entries.forEach(function(e) { if (e.language) fwLang[e.framework] = e.language; });
@@ -230,6 +247,40 @@ function renderComposite() {
     });
   });
 
+  // For compression: compute bandwidth-adjusted RPS and re-normalize
+  // Frameworks with larger responses (worse compression) get penalized
+  var minBwPerReq = {};
+  activeIds.forEach(function(pid) {
+    if (pid !== 'compression') return;
+    var minVal = Infinity;
+    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
+      var fmeta = meta[fw] || {};
+      if ((fmeta.type || 'realistic') === 'stripped') return;
+      var rps = avgByProfile[pid][fw] || 0;
+      var bw = avgBwByProfile[pid][fw] || 0;
+      if (rps > 0 && bw > 0) {
+        var bpr = bw / rps;
+        if (bpr < minVal) minVal = bpr;
+      }
+    });
+    if (minVal < Infinity) {
+      minBwPerReq[pid] = minVal;
+      // Recompute max using adjusted RPS so top scorer = 100
+      var maxAdj = 0;
+      Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
+        var fmeta = meta[fw] || {};
+        if ((fmeta.type || 'realistic') === 'stripped') return;
+        var rps = avgByProfile[pid][fw] || 0;
+        var bw = avgBwByProfile[pid][fw] || 0;
+        if (rps > 0 && bw > 0) {
+          var adj = rps * Math.pow(minVal / (bw / rps), 2);
+          if (adj > maxAdj) maxAdj = adj;
+        }
+      });
+      if (maxAdj > 0) maxRpsByProfile[pid] = maxAdj;
+    }
+  });
+
   // Weight config
   var wRps = 1, wCpu = useCpu ? 1 : 0, wMem = useMem ? 0.5 : 0;
   var totalWeight = wRps + wCpu + wMem;
@@ -244,7 +295,15 @@ function renderComposite() {
     activeIds.forEach(function(pid) {
       if (avgByProfile[pid] && avgByProfile[pid][fw] && maxRpsByProfile[pid] > 0) {
         var rps = avgByProfile[pid][fw];
-        var rpsScore = (rps / maxRpsByProfile[pid]) * 100;
+        var effectiveRps = rps;
+        // For compression: use bandwidth-adjusted RPS
+        if (pid === 'compression' && minBwPerReq[pid]) {
+          var bw = avgBwByProfile[pid][fw] || 0;
+          if (bw > 0 && rps > 0) {
+            effectiveRps = rps * Math.pow(minBwPerReq[pid] / (bw / rps), 2);
+          }
+        }
+        var rpsScore = (effectiveRps / maxRpsByProfile[pid]) * 100;
         var profileScore = rpsScore * wRps;
         if (wCpu > 0 && maxCpuEffByProfile[pid] > 0) {
           var fwCpu = avgCpuByProfile[pid][fw] || 0;
@@ -285,12 +344,11 @@ function renderComposite() {
   // Header
   var header = document.createElement('div');
   header.className = 'lb-row lb-header';
-  header.style.gridTemplateColumns = '2.5rem 10rem 5.5rem 3.5rem 1fr repeat(' + activeCount + ', 5.5rem)';
+  header.style.gridTemplateColumns = '2rem 9rem 3.5rem 3.5rem repeat(' + activeCount + ', minmax(4.2rem, 5.5rem))';
   var headerHtml = '<div title="Rank by composite score">#</div>' +
     '<div>Framework</div>' +
     '<div>Lang</div>' +
-    '<div style="font-weight:700; padding-left:0.5rem;" title="Composite score: average of normalized profile scores">Score</div>' +
-    '<div></div>';
+    '<div style="font-weight:700; padding-left:0.5rem;" title="Composite score: average of normalized profile scores">Score</div>';
   activeIds.forEach(function(pid) {
     var proto = profileProtos[pid];
     var scored = profileScored[pid];
@@ -306,7 +364,7 @@ function renderComposite() {
     }
     var sublabel = proto === 'h3' ? 'HTTP/3' : proto === 'h2' ? 'HTTP/2' : 'HTTP/1.1';
     var label = profileLabels[pid] + (scored ? '' : ' *');
-    headerHtml += '<div style="text-align:right; font-size:0.7rem; line-height:1.2;' + bgStyle + '" title="' + profileLabels[pid] + ' (' + sublabel + ')' + (scored ? ' — counts toward composite score' : ' — reference only, does not count toward composite score') + '">' + label + '<br><span style="color:#94a3b8; font-size:0.6rem;">(' + sublabel + ')</span></div>';
+    headerHtml += '<div style="text-align:right; font-size:0.62rem; line-height:1.2;' + bgStyle + '" title="' + profileLabels[pid] + ' (' + sublabel + ')' + (scored ? ' — counts toward composite score' : ' — reference only, does not count toward composite score') + '">' + label + '<br><span style="color:#94a3b8; font-size:0.6rem;">(' + sublabel + ')</span></div>';
   });
   header.innerHTML = headerHtml;
   table.appendChild(header);
@@ -321,7 +379,7 @@ function renderComposite() {
     row.dataset.name = r.framework;
     row.dataset.lang = r.language;
     row.dataset.type = ftype;
-    row.style.gridTemplateColumns = '2.5rem 10rem 5.5rem 3.5rem 1fr repeat(' + activeCount + ', 5.5rem)';
+    row.style.gridTemplateColumns = '2rem 9rem 3.5rem 3.5rem repeat(' + activeCount + ', minmax(4.2rem, 5.5rem))';
     row.style.cursor = 'pointer';
 
     var rank = idx < 3 ? medals[idx] : String(idx + 1);
@@ -358,7 +416,6 @@ function renderComposite() {
       '<div class="lb-name">' + r.framework + '</div>' +
       '<div class="lb-lang" style="font-weight:600;">' + r.language + '</div>' +
       '<div class="lb-rps" style="font-weight:700; text-align:left; padding-left:0.5rem;">' + r.composite.toFixed(1) + '</div>' +
-      '<div class="lb-bar-cell"><div class="lb-bar" style="width:' + pct.toFixed(1) + '%;"></div></div>' +
       profileCells;
 
     row.addEventListener('click', function() {

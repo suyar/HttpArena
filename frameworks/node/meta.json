@@ -1,10 +1,10 @@
 {
   "display_name": "node",
-  "language": "JavaScript",
+  "language": "JS",
   "type": "realistic",
   "engine": "V8",
   "description": "Bare Node.js HTTP server using the cluster module for multi-core scaling.",
   "repo": "https://github.com/nodejs/node",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "baseline-h2", "static-h2"]
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "caching", "baseline-h2", "static-h2"]
 }

@@ -1,6 +1,6 @@
 {
   "display_name": "express",
-  "language": "JavaScript",
+  "language": "JS",
   "type": "realistic",
   "engine": "express",
   "description": "Express.js on Node.js with cluster mode, etag/x-powered-by disabled, raw writeHead responses.",

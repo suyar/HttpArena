@@ -1,0 +1,20 @@
+[
+{
+  "framework": "nginx",
+  "language": "C",
+  "rps": 410485,
+  "avg_latency": "38.33ms",
+  "p99_latency": "72.00ms",
+  "cpu": "2696.5%",
+  "memory": "1023.0MiB",
+  "connections": 16384,
+  "threads": 12,
+  "duration": "5s",
+  "pipeline": 1,
+  "reconnects": 0,
+  "status_2xx": 2052428,
+  "status_3xx": 0,
+  "status_4xx": 0,
+  "status_5xx": 0
+}
+]

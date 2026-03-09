@@ -46,7 +46,7 @@
 ,
 {
   "framework": "deno",
-  "language": "TypeScript",
+  "language": "TS",
   "rps": 722321,
   "avg_latency": "18.77ms",
   "p99_latency": "75.50ms",
@@ -76,7 +76,7 @@
 ,
 {
   "framework": "express",
-  "language": "JavaScript",
+  "language": "JS",
   "rps": 323752,
   "avg_latency": "23.44ms",
   "p99_latency": "46.80ms",
@@ -181,7 +181,7 @@
 ,
 {
   "framework": "node",
-  "language": "JavaScript",
+  "language": "JS",
   "rps": 900282,
   "avg_latency": "7.64ms",
   "p99_latency": "33.80ms",

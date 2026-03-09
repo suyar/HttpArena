@@ -30,7 +30,7 @@ RUN cmake \
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libyajl2 libssl3 && \
+    libyajl2 libssl3 libbrotli1 && \
     rm -rf /var/lib/apt/lists/*
 COPY --from=build /usr/local/lib/libh2o-evloop.so* /usr/local/lib/
 COPY --from=build /app/build/h2o-app /server

@@ -85,6 +85,15 @@ const server = http.createServer((req, res) => {
         const body = String(sumQuery(url));
         res.writeHead(200, { 'content-type': 'text/plain', ...SERVER_HEADERS });
         res.end(body);
+    } else if (path === '/caching') {
+        const inm = req.headers['if-none-match'];
+        if (inm === '"AOK"') {
+            res.writeHead(304, { 'etag': '"AOK"', ...SERVER_HEADERS });
+            res.end();
+        } else {
+            res.writeHead(200, { 'content-type': 'text/plain', 'etag': '"AOK"', 'content-length': 2, ...SERVER_HEADERS });
+            res.end('OK');
+        }
     } else if (path === '/upload' && req.method === 'POST') {
         const chunks = [];
         req.on('data', chunk => chunks.push(chunk));

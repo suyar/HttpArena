@@ -6,5 +6,5 @@
   "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
   "repo": "https://github.com/quarkusio/quarkus",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "baseline-h2", "static-h2"]
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "compression", "caching", "baseline-h2", "static-h2"]
 }

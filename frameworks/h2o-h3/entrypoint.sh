@@ -9,6 +9,12 @@ if [ -f /data/dataset.json ]; then
         /data/dataset.json > /tmp/response.json
 fi
 
+# Preprocess dataset-large.json → response-large.json for /compression
+if [ -f /data/dataset-large.json ]; then
+    jq '{ items: [.[] | . + { total: ((.price * .quantity * 100 | round) / 100) }], count: length }' \
+        /data/dataset-large.json > /tmp/response-large.json
+fi
+
 # Generate h2o.conf
 cat > /tmp/h2o.conf << EOF
 num-threads: ${NPROC}
@@ -69,6 +75,24 @@ hosts:
       "/json":
         file.file: /tmp/response.json
         header.add: "content-type: application/json"
+
+      "/caching":
+        mruby.handler: |
+          etag = '"AOK"'
+          Proc.new do |env|
+            inm = env["HTTP_IF_NONE_MATCH"]
+            if inm == etag
+              [304, {"etag" => etag}, []]
+            else
+              [200, {"content-type" => "text/plain", "etag" => etag}, ["OK"]]
+            end
+          end
+
+      "/compression":
+        file.file: /tmp/response-large.json
+        header.add: "content-type: application/json"
+        compress:
+          gzip: 1
 
       "/static":
         file.dir: /data/static

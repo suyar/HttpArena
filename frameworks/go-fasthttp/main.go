@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"compress/flate"
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -43,6 +45,7 @@ type ProcessResponse struct {
 }
 
 var dataset []DatasetItem
+var jsonLargeResponse []byte
 
 func loadDataset() {
 	path := os.Getenv("DATASET_PATH")
@@ -54,6 +57,36 @@ func loadDataset() {
 		return
 	}
 	json.Unmarshal(data, &dataset)
+}
+
+func loadDatasetLarge() {
+	data, err := os.ReadFile("/data/dataset-large.json")
+	if err != nil {
+		return
+	}
+	var raw []struct {
+		ID       int      `json:"id"`
+		Name     string   `json:"name"`
+		Category string   `json:"category"`
+		Price    float64  `json:"price"`
+		Quantity int      `json:"quantity"`
+		Active   bool     `json:"active"`
+		Tags     []string `json:"tags"`
+		Rating   Rating   `json:"rating"`
+	}
+	if json.Unmarshal(data, &raw) != nil {
+		return
+	}
+	items := make([]ProcessedItem, len(raw))
+	for i, d := range raw {
+		items[i] = ProcessedItem{
+			ID: d.ID, Name: d.Name, Category: d.Category,
+			Price: d.Price, Quantity: d.Quantity, Active: d.Active,
+			Tags: d.Tags, Rating: d.Rating,
+			Total: math.Round(d.Price*float64(d.Quantity)*100) / 100,
+		}
+	}
+	jsonLargeResponse, _ = json.Marshal(ProcessResponse{Items: items, Count: len(items)})
 }
 
 func baseline11Handler(ctx *fasthttp.RequestCtx) {
@@ -106,8 +139,17 @@ func processHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody(body)
 }
 
+var compressedHandler fasthttp.RequestHandler
+
 func main() {
 	loadDataset()
+	loadDatasetLarge()
+
+	compressedHandler = fasthttp.CompressHandlerLevel(func(ctx *fasthttp.RequestCtx) {
+		ctx.Response.Header.Set("Server", "go-fasthttp")
+		ctx.SetContentType("application/json")
+		ctx.SetBody(jsonLargeResponse)
+	}, flate.BestSpeed)
 
 	handler := func(ctx *fasthttp.RequestCtx) {
 		switch string(ctx.Path()) {
@@ -115,6 +157,8 @@ func main() {
 			pipelineHandler(ctx)
 		case "/json":
 			processHandler(ctx)
+		case "/compression":
+			compressedHandler(ctx)
 		default:
 			baseline11Handler(ctx)
 		}

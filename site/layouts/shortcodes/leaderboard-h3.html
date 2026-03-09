@@ -104,6 +104,7 @@ html.dark .h3-disclaimer { color: #fff !important; background: rgba(234,179,8,0.
         <div title="realistic = production-ready framework, stripped = custom bare-metal implementation">Type</div>
         <div title="Number of concurrent connections" style="text-align:right">Conn</div>
         <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+        <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
         <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
         <div></div>
         <div class="lb-sortable" data-sort="cpu" title="Average CPU usage" style="text-align:right">CPU</div>
@@ -151,6 +152,7 @@ html.dark .h3-disclaimer { color: #fff !important; background: rgba(234,179,8,0.
       <div><span class="lb-pill lb-pill-{{ $ftype }}">{{ $ftype }}</span></div>
       <div class="lb-conns">{{ lang.FormatNumber 0 $r.connections }}</div>
       <div class="lb-rps">{{ lang.FormatNumber 0 $r.rps }}</div>
+      <div class="lb-stat">{{ $r.bandwidth | default "—" }}</div>
       <div class="lb-status">{{ if or (gt $s2xx 0) (gt $errs 0) }}<span class="{{ if gt $errs 0 }}lb-status-err{{ else }}lb-status-ok{{ end }}">{{ if gt $errs 0 }}{{ lang.FormatNumber 0 $errs }}{{ else }}✓{{ end }}</span><div class="lb-status-tip"><div><b>2xx:</b> {{ lang.FormatNumber 0 $s2xx }}</div><div><b>3xx:</b> {{ lang.FormatNumber 0 $s3xx }}</div><div><b>4xx:</b> {{ lang.FormatNumber 0 $s4xx }}</div><div><b>5xx:</b> {{ lang.FormatNumber 0 $s5xx }}</div></div>{{ else }}<span class="lb-status-na">—</span>{{ end }}</div>
       <div class="lb-bar-cell">
         <div class="lb-bar lb-bar-{{ add $j 1 }}" style="width: {{ printf "%.1f" $pct }}%"></div>
@@ -367,12 +369,14 @@ function parseSortValue(row, key) {
   if (key === 'errors') return Number(row.dataset.s4xx || 0) + Number(row.dataset.s5xx || 0);
   var text = '';
   switch (key) {
-    case 'cpu': text = stats[0] ? stats[0].textContent.trim() : ''; break;
-    case 'mem': text = stats[1] ? stats[1].textContent.trim() : ''; break;
-    case 'avglat': text = stats[2] ? stats[2].textContent.trim() : ''; break;
-    case 'p99': text = stats[3] ? stats[3].textContent.trim() : ''; break;
+    case 'bandwidth': text = stats[0] ? stats[0].textContent.trim() : ''; break;
+    case 'cpu': text = stats[1] ? stats[1].textContent.trim() : ''; break;
+    case 'mem': text = stats[2] ? stats[2].textContent.trim() : ''; break;
+    case 'avglat': text = stats[3] ? stats[3].textContent.trim() : ''; break;
+    case 'p99': text = stats[4] ? stats[4].textContent.trim() : ''; break;
   }
-  if (!text || text === '\u2014') return key === 'rps' ? -Infinity : Infinity;
+  if (!text || text === '\u2014') return (key === 'rps' || key === 'bandwidth') ? -Infinity : Infinity;
+  if (key === 'bandwidth') { var bm = text.match(/([\d.]+)/); return bm ? parseFloat(bm[1]) : 0; }
   if (key === 'cpu') return parseFloat(text) || 0;
   if (key === 'mem') {
     var m = text.match(/([\d.]+)\s*(KiB|MiB|GiB|KB|MB|GB)/i);
@@ -400,7 +404,7 @@ w.querySelectorAll('.lb-sortable').forEach(function(hdr) {
     var wasDesc = hdr.classList.contains('sort-desc');
     lb.querySelectorAll('.lb-sortable').forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
     var dir;
-    if (!wasAsc && !wasDesc) dir = (key === 'rps') ? 'desc' : 'asc';
+    if (!wasAsc && !wasDesc) dir = (key === 'rps' || key === 'bandwidth') ? 'desc' : 'asc';
     else if (wasDesc) dir = 'asc';
     else dir = 'desc';
     hdr.classList.add('sort-' + dir);
@@ -443,10 +447,11 @@ w.addEventListener('click', function(e) {
   var rps = row.querySelector('.lb-rps').textContent;
   var conns = row.querySelector('.lb-conns').textContent;
   var stats = row.querySelectorAll('.lb-stat');
-  var cpu = stats[0].textContent;
-  var mem = stats[1].textContent;
-  var avgLat = stats[2].textContent;
-  var p99 = stats[3].textContent;
+  var bw = stats[0].textContent;
+  var cpu = stats[1].textContent;
+  var mem = stats[2].textContent;
+  var avgLat = stats[3].textContent;
+  var p99 = stats[4].textContent;
   var s2xx = Number(row.dataset.s2xx || 0);
   var s3xx = Number(row.dataset.s3xx || 0);
   var s4xx = Number(row.dataset.s4xx || 0);
@@ -542,6 +547,7 @@ window.addEventListener('roundChanged', function(ev) {
         '<div><span class="lb-pill lb-pill-' + ftype + '">' + ftype + '</span></div>' +
         '<div class="lb-conns">' + Number(r.connections).toLocaleString() + '</div>' +
         '<div class="lb-rps">' + Number(r.rps).toLocaleString() + '</div>' +
+        '<div class="lb-stat">' + (r.bandwidth || '\u2014') + '</div>' +
         statusCell +
         '<div class="lb-bar-cell"><div class="lb-bar lb-bar-' + (j + 1) + '" style="width:' + pct + '%"></div></div>' +
         '<div class="lb-stat">' + (r.cpu || '\u2014') + '</div>' +

@@ -20,19 +20,22 @@ RESULTS_DIR="$ROOT_DIR/results"
 CERTS_DIR="$ROOT_DIR/certs"
 
 # Profile definitions: pipeline|req_per_conn|cpu_limit|connections|endpoint
-# endpoint: empty = /baseline11 (raw), "json" = /json (GET), "pipeline" = /pipeline, "h2" = /baseline2 (h2load), "static-h2" = multi-URI h2load, "h3" = /baseline2 (oha HTTP/3)
+# endpoint: empty = /baseline11 (raw), "json" = /json (GET), "compression" = /compression (GET+gzip), "pipeline" = /pipeline, "upload" = POST /upload (raw),
+#           "h2" = /baseline2 (h2load), "static-h2" = multi-URI h2load, "h3" = /baseline2 (oha HTTP/3), "static-h3" = multi-URI oha
 declare -A PROFILES=(
     [baseline]="1|0||512,4096,16384|"
     [pipelined]="16|0||512,4096,16384|pipeline"
     [limited-conn]="1|10||512,4096|"
     [json]="1|0||4096,16384,32768|json"
     [upload]="1|0||64,256,512|upload"
+    [compression]="1|0||4096,16384|compression"
+    [caching]="1|0||512,4096,16384|caching"
     [baseline-h2]="1|0||64,256,1024|h2"
     [static-h2]="1|0||64,256,1024|static-h2"
     [baseline-h3]="128|0||64,512|h3"
     [static-h3]="128|0||64,512|static-h3"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json upload baseline-h2 static-h2 baseline-h3 static-h3)
+PROFILE_ORDER=(baseline pipelined limited-conn json upload compression caching baseline-h2 static-h2 baseline-h3 static-h3)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -262,6 +265,7 @@ for profile in "${profiles_to_run[@]}"; do
         --ulimit memlock=-1:-1
         --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE"
         -v "$ROOT_DIR/data/dataset.json:/data/dataset.json:ro"
+        -v "$ROOT_DIR/data/dataset-large.json:/data/dataset-large.json:ro"
         -v "$ROOT_DIR/data/static:/data/static:ro"
         -v "$CERTS_DIR:/certs:ro")
     if [ -n "$cpu_limit" ]; then
@@ -278,6 +282,8 @@ for profile in "${profiles_to_run[@]}"; do
         [ "$endpoint" = "h2" ] && local_check_url="https://localhost:$H2PORT/baseline2?a=1&b=1"
     elif [ "$endpoint" = "upload" ]; then
         local_check_url="http://localhost:$PORT/baseline11?a=1&b=1"
+    elif [ "$endpoint" = "caching" ]; then
+        local_check_url="http://localhost:$PORT/caching"
     elif [ "$endpoint" = "json" ]; then
         local_check_url="http://localhost:$PORT/json"
     else
@@ -332,6 +338,14 @@ for profile in "${profiles_to_run[@]}"; do
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/upload.raw"
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+    elif [ "$endpoint" = "compression" ]; then
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/json-gzip.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
+    elif [ "$endpoint" = "caching" ]; then
+        gc_args=("http://localhost:$PORT"
+            --raw "$REQUESTS_DIR/caching-etag.raw"
+            -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline" -s 304)
     elif [ "$endpoint" = "json" ]; then
         gc_args=("http://localhost:$PORT/json"
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
@@ -389,8 +403,12 @@ for profile in "${profiles_to_run[@]}"; do
             rps_int=${rps_int:-0}
         else
             duration_secs=$(echo "$output" | grep -oP 'requests in ([\d.]+)s' | grep -oP '[\d.]+' || echo "1")
-            run_2xx=$(echo "$output" | grep -oP '2xx=\K\d+' || echo "0")
-            rps_int=$(echo "$run_2xx / $duration_secs" | bc | cut -d. -f1)
+            if [ "$endpoint" = "caching" ]; then
+                run_ok=$(echo "$output" | grep -oP '3xx=\K\d+' || echo "0")
+            else
+                run_ok=$(echo "$output" | grep -oP '2xx=\K\d+' || echo "0")
+            fi
+            rps_int=$(echo "$run_ok / $duration_secs" | bc | cut -d. -f1)
             rps_int=${rps_int:-0}
         fi
 
@@ -413,15 +431,18 @@ for profile in "${profiles_to_run[@]}"; do
         avg_lat=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d['summary']['average']; print(f'{v*1e6:.0f}us' if v<0.001 else f'{v*1000:.2f}ms')" 2>/dev/null || echo "—")
         p99_lat=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d['latencyPercentiles']['p99']; print(f'{v*1e6:.0f}us' if v<0.001 else f'{v*1000:.2f}ms')" 2>/dev/null || echo "—")
         reconnects="0"
+        bandwidth=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d['summary']['sizePerSec']; print(f'{v/1024/1024:.2f}MB/s' if v>0 else '0')" 2>/dev/null || echo "0")
     elif [ "$USE_H2LOAD" = "true" ]; then
         # h2load: "time for request:  min  max  mean  sd  +/-sd" all on one line
         avg_lat=$(echo "$best_output" | awk '/time for request:/{print $6}')
         p99_lat="$avg_lat"  # h2load doesn't report p99; use mean as placeholder
         reconnects="0"
+        bandwidth=$(echo "$best_output" | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' || echo "0")
     else
         avg_lat=$(echo "$best_output" | grep "Latency" | head -1 | awk '{print $2}')
         p99_lat=$(echo "$best_output" | grep "Latency" | head -1 | awk '{print $5}')
         reconnects=$(echo "$best_output" | grep -oP 'Reconnects: \K\d+' || echo "0")
+        bandwidth=$(echo "$best_output" | grep -oP 'Bandwidth:\s+\K\S+' || echo "0")
     fi
 
     # Extract status codes
@@ -459,6 +480,7 @@ for profile in "${profiles_to_run[@]}"; do
   "threads": $THREADS,
   "duration": "$DURATION",
   "pipeline": $pipeline,
+  "bandwidth": "$bandwidth",
   "reconnects": $reconnects,
   "status_2xx": ${status_2xx:-0},
   "status_3xx": ${status_3xx:-0},

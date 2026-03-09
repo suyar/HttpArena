@@ -243,7 +243,7 @@ html.dark .lb-sortable.sort-desc::after { color: #60a5fa; }
 .lb { width: 100%; font-family: inherit; }
 .lb-row {
   display: grid;
-  grid-template-columns: 2.5rem 11rem 5.5rem 4.5rem 4.5rem 3.5rem 7rem 4rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
+  grid-template-columns: 2.5rem 11rem 5.5rem 4.5rem 4.5rem 3.5rem 7rem 5.5rem 4rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
   align-items: center;
   gap: 0.4rem;
   padding: 0.1rem 0.75rem;
@@ -251,7 +251,7 @@ html.dark .lb-sortable.sort-desc::after { color: #60a5fa; }
   transition: background 0.15s ease;
 }
 .lb-row.lb-row-reconn {
-  grid-template-columns: 2.5rem 11rem 5.5rem 4.5rem 4.5rem 3.5rem 5.5rem 7rem 4rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
+  grid-template-columns: 2.5rem 11rem 5.5rem 4.5rem 4.5rem 3.5rem 5.5rem 7rem 5.5rem 4rem 1fr 5.5rem 5rem 5.5rem 4.5rem;
 }
 .lb-row:not(.lb-header) { cursor: pointer; }
 .lb-row:not(.lb-header):hover { background: rgba(59, 130, 246, 0.04); }
@@ -409,9 +409,11 @@ html.dark .lb-filters-toggle:hover .lb-toggle-icon { color: #60a5fa; }
 
 {{ $profiles := slice
   (dict "id" "baseline"     "label" "Baseline"              "conns" (slice 512 4096 16384) "desc" "Each connection sends one request at a time over persistent keep-alive connections with no CPU restrictions. Mixed GET and POST requests to <code>/baseline11</code> with query parameter parsing, Content-Length bodies, and chunked Transfer-Encoding. Best of 3 runs, 12 threads.")
-  (dict "id" "limited-conn" "label" "Short-lived Connection"     "conns" (slice 512 4096)       "desc" "Each connection is closed and re-established after 10 requests, forcing repeated TCP handshakes. Same mixed GET/POST workload as baseline. Measures how efficiently a framework handles connection setup and teardown — important for real-world scenarios where clients don't maintain long-lived connections.")
+  (dict "id" "limited-conn" "label" "Short-lived Con."     "conns" (slice 512 4096)       "desc" "Each connection is closed and re-established after 10 requests, forcing repeated TCP handshakes. Same mixed GET/POST workload as baseline. Measures how efficiently a framework handles connection setup and teardown — important for real-world scenarios where clients don't maintain long-lived connections.")
   (dict "id" "json"      "label" "JSON Processing"       "conns" (slice 4096 16384 32768)       "desc" "Each request hits <code>GET /json</code>. The server loads a 50-item dataset at startup, computes a derived <code>total</code> field per item, and returns the full result as a JSON response (~10 KB). Measures object allocation, JSON serialization performance, and framework response overhead — the typical workload of a real-world API.")
   (dict "id" "upload"       "label" "Upload (20 MB)"        "conns" (slice 64 256 512)     "desc" "Each request sends a 20 MB binary payload via <code>POST /upload</code>. The server reads the entire body and returns its CRC32 checksum. Measures request body ingestion throughput — how efficiently a framework handles large uploads, including buffering, memory management, and I/O handling under sustained load.")
+  (dict "id" "compression" "label" "Compression"           "conns" (slice 4096 16384) "desc" "Requests <code>GET /compression</code> with <code>Accept-Encoding: gzip</code>. The server loads a 6000-item dataset (~1 MB JSON) at startup and serves it gzip-compressed on the fly. Measures the throughput cost of real-time compression — only frameworks with built-in gzip support are eligible.")
+  (dict "id" "caching"     "label" "Caching (ETag 304)"    "conns" (slice 512 4096 16384) "desc" "Requests <code>GET /caching</code> with <code>If-None-Match</code> matching the server's ETag. The server returns <code>304 Not Modified</code> with no body. Measures conditional request handling efficiency — ETag comparison and minimal-overhead response path.")
   (dict "id" "pipelined"    "label" "Pipelined (16)"        "conns" (slice 512 4096 16384) "desc" "16 HTTP requests are sent back-to-back on each connection before waiting for responses. Uses a lightweight <code>GET /pipeline</code> endpoint that returns a fixed response, isolating raw I/O and pipeline handling from application logic. Frameworks that batch pipelined requests from the read buffer gain a significant advantage.")
 }}
 
@@ -511,6 +513,7 @@ var lbProfiles = {{ $profiles | jsonify | safeJS }};
         <div title="Number of concurrent connections maintained by the load generator" style="text-align:right">Conn</div>
         {{ if $isReconn }}<div title="Total TCP connections established during the benchmark (reconnects)" style="text-align:right">TCP Conn</div>{{ end }}
         <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+        <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
         <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
         <div></div>
         <div class="lb-sortable" data-sort="cpu" title="Average CPU usage of the server container during the benchmark" style="text-align:right">CPU</div>
@@ -536,6 +539,7 @@ var lbProfiles = {{ $profiles | jsonify | safeJS }};
       <div title="Number of concurrent connections maintained by the load generator" style="text-align:right">Conn</div>
       {{ if $isReconn }}<div title="Total TCP connections established during the benchmark (reconnects)" style="text-align:right">TCP Conn</div>{{ end }}
       <div class="lb-sortable" data-sort="rps" title="Requests per second — higher is better" style="text-align:right">Req/s</div>
+      <div class="lb-sortable" data-sort="bandwidth" title="Bandwidth — MB/s transferred" style="text-align:right">BW</div>
       <div class="lb-sortable" data-sort="errors" title="HTTP error count (4xx+5xx) — hover for breakdown" style="text-align:right">Err</div>
       <div></div>
       <div class="lb-sortable" data-sort="cpu" title="Average CPU usage of the server container during the benchmark" style="text-align:right">CPU</div>
@@ -550,7 +554,7 @@ var lbProfiles = {{ $profiles | jsonify | safeJS }};
     {{ $pct := mul (div (float $r.rps) (float $maxRps)) 100.0 }}
     {{ $meta := index site.Data.frameworks $r.framework }}
     {{ $s2xx := int ($r.status_2xx | default 0) }}{{ $s3xx := int ($r.status_3xx | default 0) }}{{ $s4xx := int ($r.status_4xx | default 0) }}{{ $s5xx := int ($r.status_5xx | default 0) }}{{ $errs := add $s4xx $s5xx }}
-    <div class="lb-row{{ if $isReconn }} lb-row-reconn{{ end }}" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ printf "%.0f" $r.rps }}" data-type="{{ with $meta }}{{ .type | default "realistic" }}{{ end }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}" data-s2xx="{{ $s2xx }}" data-s3xx="{{ $s3xx }}" data-s4xx="{{ $s4xx }}" data-s5xx="{{ $s5xx }}">
+    <div class="lb-row{{ if $isReconn }} lb-row-reconn{{ end }}" data-lang="{{ $r.language | default "" }}" data-name="{{ $r.framework }}" data-rps="{{ printf "%.0f" $r.rps }}" data-bandwidth="{{ $r.bandwidth | default "" }}" data-type="{{ with $meta }}{{ .type | default "realistic" }}{{ end }}" data-desc="{{ with $meta }}{{ .description }}{{ end }}" data-repo="{{ with $meta }}{{ .repo }}{{ end }}" data-s2xx="{{ $s2xx }}" data-s3xx="{{ $s3xx }}" data-s4xx="{{ $s4xx }}" data-s5xx="{{ $s5xx }}">
       {{ $ftype := "realistic" }}{{ with $meta }}{{ $ftype = .type | default "realistic" }}{{ end }}
       <div class="lb-rank">{{ if eq $j 0 }}🥇{{ else if eq $j 1 }}🥈{{ else if eq $j 2 }}🥉{{ else }}{{ add $j 1 }}{{ end }}</div>
       <div class="lb-name">{{ $r.framework }}</div>
@@ -560,7 +564,8 @@ var lbProfiles = {{ $profiles | jsonify | safeJS }};
       <div class="lb-conns">{{ lang.FormatNumber 0 $r.connections }}</div>
       {{ if $isReconn }}<div class="lb-stat">{{ lang.FormatNumber 0 $r.reconnects }}</div>{{ end }}
       <div class="lb-rps">{{ lang.FormatNumber 0 $r.rps }}</div>
-      <div class="lb-status">{{ if or (gt $s2xx 0) (gt $errs 0) }}<span class="{{ if gt $errs 0 }}lb-status-err{{ else }}lb-status-ok{{ end }}">{{ if gt $errs 0 }}{{ lang.FormatNumber 0 $errs }}{{ else }}✓{{ end }}</span><div class="lb-status-tip"><div><b>2xx:</b> {{ lang.FormatNumber 0 $s2xx }}</div><div><b>3xx:</b> {{ lang.FormatNumber 0 $s3xx }}</div><div><b>4xx:</b> {{ lang.FormatNumber 0 $s4xx }}</div><div><b>5xx:</b> {{ lang.FormatNumber 0 $s5xx }}</div></div>{{ else }}<span class="lb-status-na">—</span>{{ end }}</div>
+      <div class="lb-stat">{{ $r.bandwidth | default "—" }}</div>
+      <div class="lb-status">{{ if or (gt $s2xx 0) (gt $s3xx 0) (gt $errs 0) }}<span class="{{ if gt $errs 0 }}lb-status-err{{ else }}lb-status-ok{{ end }}">{{ if gt $errs 0 }}{{ lang.FormatNumber 0 $errs }}{{ else }}✓{{ end }}</span><div class="lb-status-tip"><div><b>2xx:</b> {{ lang.FormatNumber 0 $s2xx }}</div><div><b>3xx:</b> {{ lang.FormatNumber 0 $s3xx }}</div><div><b>4xx:</b> {{ lang.FormatNumber 0 $s4xx }}</div><div><b>5xx:</b> {{ lang.FormatNumber 0 $s5xx }}</div></div>{{ else }}<span class="lb-status-na">—</span>{{ end }}</div>
       <div class="lb-bar-cell">
         <div class="lb-bar lb-bar-{{ add $j 1 }}" style="width: {{ printf "%.1f" $pct }}%"></div>
       </div>
@@ -588,6 +593,9 @@ var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
 /* Build "Best" panels — pick best RPS per framework across all conn counts */
 function buildBestPanels() {
   document.querySelectorAll('.lb-conn-panel[data-conns="best"]').forEach(function(bestPanel) {
+    /* Skip compression — handled by applyCompressionScores() */
+    if (bestPanel.dataset.profile === 'compression') return;
+
     var parentPanel = bestPanel.closest('.lb-panel');
     var connPanels = parentPanel.querySelectorAll('.lb-conn-panel:not([data-conns="best"])');
     var best = {};
@@ -676,6 +684,7 @@ function applyFilters() {
   buildBestPanels();
 
   document.querySelectorAll('.lb-conn-panel').forEach(function(connPanel) {
+    var isCompression = connPanel.dataset.profile === 'compression';
     var rows = connPanel.querySelectorAll('.lb-row:not(.lb-header)');
     var visibleIdx = 0;
     var maxRps = 0;
@@ -698,19 +707,23 @@ function applyFilters() {
       }
     });
 
-    rows.forEach(function(row) {
-      if (row.classList.contains('lb-hidden')) return;
-      var rankEl = row.querySelector('.lb-rank');
-      rankEl.textContent = visibleIdx < 3 ? medals[visibleIdx] : String(visibleIdx + 1);
-      var bar = row.querySelector('.lb-bar');
-      barClasses.forEach(function(c) { bar.classList.remove(c); });
-      bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
-      var rps = Number(row.dataset.rps);
-      var pct = maxRps > 0 ? (rps / maxRps * 100) : 0;
-      bar.style.width = pct.toFixed(1) + '%';
-      visibleIdx++;
-    });
+    if (!isCompression) {
+      rows.forEach(function(row) {
+        if (row.classList.contains('lb-hidden')) return;
+        var rankEl = row.querySelector('.lb-rank');
+        rankEl.textContent = visibleIdx < 3 ? medals[visibleIdx] : String(visibleIdx + 1);
+        var bar = row.querySelector('.lb-bar');
+        barClasses.forEach(function(c) { bar.classList.remove(c); });
+        bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
+        var rps = Number(row.dataset.rps);
+        var pct = maxRps > 0 ? (rps / maxRps * 100) : 0;
+        bar.style.width = pct.toFixed(1) + '%';
+        visibleIdx++;
+      });
+    }
   });
+
+  applyCompressionScores();
 }
 
 /* Language filters */
@@ -757,18 +770,22 @@ document.querySelectorAll('.lb-type-filter').forEach(function(btn) {
 /* Column sorting */
 function parseSortValue(row, key) {
   var isReconn = row.classList.contains('lb-row-reconn');
+  var isCompression = row.dataset.compressionDone === '1';
   var offset = isReconn ? 1 : 0;
+  var extraOffset = isCompression ? 1 : 0; /* BW/req cell */
   var stats = row.querySelectorAll('.lb-stat');
   if (key === 'rps') return Number(row.dataset.rps);
   if (key === 'errors') return Number(row.dataset.s4xx || 0) + Number(row.dataset.s5xx || 0);
   var text = '';
   switch (key) {
-    case 'cpu': text = stats[offset] ? stats[offset].textContent.trim() : ''; break;
-    case 'mem': text = stats[offset + 1] ? stats[offset + 1].textContent.trim() : ''; break;
-    case 'avglat': text = stats[offset + 2] ? stats[offset + 2].textContent.trim() : ''; break;
-    case 'p99': text = stats[offset + 3] ? stats[offset + 3].textContent.trim() : ''; break;
+    case 'bandwidth': text = stats[offset] ? stats[offset].textContent.trim() : ''; break;
+    case 'cpu': text = stats[offset + 1 + extraOffset] ? stats[offset + 1 + extraOffset].textContent.trim() : ''; break;
+    case 'mem': text = stats[offset + 2 + extraOffset] ? stats[offset + 2 + extraOffset].textContent.trim() : ''; break;
+    case 'avglat': text = stats[offset + 3 + extraOffset] ? stats[offset + 3 + extraOffset].textContent.trim() : ''; break;
+    case 'p99': text = stats[offset + 4 + extraOffset] ? stats[offset + 4 + extraOffset].textContent.trim() : ''; break;
   }
-  if (!text || text === '\u2014') return key === 'rps' ? -Infinity : Infinity;
+  if (!text || text === '\u2014') return (key === 'rps' || key === 'bandwidth') ? -Infinity : Infinity;
+  if (key === 'bandwidth') { var bm = text.match(/([\d.]+)/); return bm ? parseFloat(bm[1]) : 0; }
   if (key === 'cpu') return parseFloat(text) || 0;
   if (key === 'mem') {
     var m = text.match(/([\d.]+)\s*(KiB|MiB|GiB|KB|MB|GB)/i);
@@ -799,7 +816,7 @@ document.querySelectorAll('.lb-sortable').forEach(function(hdr) {
     lb.querySelectorAll('.lb-sortable').forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
 
     var dir;
-    if (!wasAsc && !wasDesc) dir = (key === 'rps') ? 'desc' : 'asc';
+    if (!wasAsc && !wasDesc) dir = (key === 'rps' || key === 'bandwidth') ? 'desc' : 'asc';
     else if (wasDesc) dir = 'asc';
     else dir = 'desc';
     hdr.classList.add('sort-' + dir);
@@ -812,27 +829,31 @@ document.querySelectorAll('.lb-sortable').forEach(function(hdr) {
     });
     rows.forEach(function(row) { lb.appendChild(row); });
 
-    /* Re-rank visible rows */
-    var visibleIdx = 0;
-    var maxRps = 0;
-    rows.forEach(function(row) {
-      if (!row.classList.contains('lb-hidden')) {
+    /* Re-rank visible rows (skip for compression — handled by applyCompressionScores) */
+    var connPanel = lb.closest('.lb-conn-panel');
+    var isCompression = connPanel && connPanel.dataset.profile === 'compression';
+    if (!isCompression) {
+      var visibleIdx = 0;
+      var maxRps = 0;
+      rows.forEach(function(row) {
+        if (!row.classList.contains('lb-hidden')) {
+          var rps = Number(row.dataset.rps);
+          if (rps > maxRps) maxRps = rps;
+        }
+      });
+      rows.forEach(function(row) {
+        if (row.classList.contains('lb-hidden')) return;
+        var rankEl = row.querySelector('.lb-rank');
+        rankEl.textContent = visibleIdx < 3 ? medals[visibleIdx] : String(visibleIdx + 1);
+        var bar = row.querySelector('.lb-bar');
+        barClasses.forEach(function(c) { bar.classList.remove(c); });
+        bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
         var rps = Number(row.dataset.rps);
-        if (rps > maxRps) maxRps = rps;
-      }
-    });
-    rows.forEach(function(row) {
-      if (row.classList.contains('lb-hidden')) return;
-      var rankEl = row.querySelector('.lb-rank');
-      rankEl.textContent = visibleIdx < 3 ? medals[visibleIdx] : String(visibleIdx + 1);
-      var bar = row.querySelector('.lb-bar');
-      barClasses.forEach(function(c) { bar.classList.remove(c); });
-      bar.classList.add(barClasses[Math.min(visibleIdx, barClasses.length - 1)]);
-      var rps = Number(row.dataset.rps);
-      var pct = maxRps > 0 ? (rps / maxRps * 100) : 0;
-      bar.style.width = pct.toFixed(1) + '%';
-      visibleIdx++;
-    });
+        var pct = maxRps > 0 ? (rps / maxRps * 100) : 0;
+        bar.style.width = pct.toFixed(1) + '%';
+        visibleIdx++;
+      });
+    }
   });
 });
 
@@ -849,10 +870,12 @@ document.addEventListener('click', function(e) {
   var rps = row.querySelector('.lb-rps').textContent;
   var conns = row.querySelector('.lb-conns').textContent;
   var statOffset = isReconn ? 1 : 0;
-  var cpu = row.querySelectorAll('.lb-stat')[statOffset].textContent;
-  var mem = row.querySelectorAll('.lb-stat')[statOffset + 1].textContent;
-  var avgLat = row.querySelectorAll('.lb-stat')[statOffset + 2].textContent;
-  var p99 = row.querySelectorAll('.lb-stat')[statOffset + 3].textContent;
+  var extraOffset = row.dataset.compressionDone === '1' ? 1 : 0;
+  var bw = row.querySelectorAll('.lb-stat')[statOffset].textContent;
+  var cpu = row.querySelectorAll('.lb-stat')[statOffset + 1 + extraOffset].textContent;
+  var mem = row.querySelectorAll('.lb-stat')[statOffset + 2 + extraOffset].textContent;
+  var avgLat = row.querySelectorAll('.lb-stat')[statOffset + 3 + extraOffset].textContent;
+  var p99 = row.querySelectorAll('.lb-stat')[statOffset + 4 + extraOffset].textContent;
 
   var s2xx = Number(row.dataset.s2xx || 0);
   var s3xx = Number(row.dataset.s3xx || 0);
@@ -935,7 +958,7 @@ window.addEventListener('roundChanged', function(ev) {
       var rank = j < 3 ? medals[j] : String(j + 1);
       var rs2 = r.status_2xx || 0, rs3 = r.status_3xx || 0, rs4 = r.status_4xx || 0, rs5 = r.status_5xx || 0;
       var rErrs = rs4 + rs5;
-      var statusCell = (rs2 > 0 || rErrs > 0)
+      var statusCell = (rs2 > 0 || rs3 > 0 || rErrs > 0)
         ? '<div class="lb-status"><span class="' + (rErrs > 0 ? 'lb-status-err' : 'lb-status-ok') + '">' + (rErrs > 0 ? rErrs.toLocaleString() : '\u2713') + '</span>' +
           '<div class="lb-status-tip"><div><b>2xx:</b> ' + rs2.toLocaleString() + '</div><div><b>3xx:</b> ' + rs3.toLocaleString() + '</div><div><b>4xx:</b> ' + rs4.toLocaleString() + '</div><div><b>5xx:</b> ' + rs5.toLocaleString() + '</div></div></div>'
         : '<div class="lb-status"><span class="lb-status-na">\u2014</span></div>';
@@ -951,6 +974,7 @@ window.addEventListener('roundChanged', function(ev) {
       row.dataset.s3xx = String(rs3);
       row.dataset.s4xx = String(rs4);
       row.dataset.s5xx = String(rs5);
+      row.dataset.bandwidth = r.bandwidth || '';
       row.innerHTML =
         '<div class="lb-rank">' + rank + '</div>' +
         '<div class="lb-name">' + r.framework + '</div>' +
@@ -960,6 +984,7 @@ window.addEventListener('roundChanged', function(ev) {
         '<div class="lb-conns">' + Number(r.connections).toLocaleString() + '</div>' +
         (isReconn ? '<div class="lb-stat">' + Number(r.reconnects || 0).toLocaleString() + '</div>' : '') +
         '<div class="lb-rps">' + Number(r.rps).toLocaleString() + '</div>' +
+        '<div class="lb-stat">' + (r.bandwidth || '\u2014') + '</div>' +
         statusCell +
         '<div class="lb-bar-cell"><div class="lb-bar lb-bar-' + (j + 1) + '" style="width:' + pct + '%"></div></div>' +
         '<div class="lb-stat">' + (r.cpu || '\u2014') + '</div>' +
@@ -974,4 +999,171 @@ window.addEventListener('roundChanged', function(ev) {
   buildBestPanels();
   applyFilters();
 });
+
+/* Compression score: replace bar with bandwidth-adjusted score */
+function parseBw(s) {
+  if (!s) return 0;
+  var m = String(s).match(/([\d.]+)\s*(GB|MB|KB)\/s/i);
+  if (!m) return 0;
+  var v = parseFloat(m[1]), u = m[2].toUpperCase();
+  if (u === 'GB') return v * 1024;
+  if (u === 'KB') return v / 1024;
+  return v;
+}
+
+var compressionGrid = '2.5rem 10rem 5.5rem 4.5rem 4.5rem 3.5rem 6.5rem 5rem 5rem 3.5rem 4.5rem 5.5rem 5rem 5rem 4rem';
+
+function applyCompressionPanel(panel) {
+  var rows = Array.from(panel.querySelectorAll('.lb-row:not(.lb-header)'));
+  if (rows.length === 0) return;
+
+  var header = panel.querySelector('.lb-row.lb-header');
+
+  // Add BW/req header and Score header (only once)
+  if (header && !header.dataset.compressionDone) {
+    header.style.gridTemplateColumns = compressionGrid;
+    var divs = header.querySelectorAll(':scope > div');
+    // Insert BW/req header after BW (index 7)
+    var bprHeader = document.createElement('div');
+    bprHeader.style.textAlign = 'right';
+    bprHeader.title = 'Average bandwidth per request — lower means better compression';
+    bprHeader.textContent = 'BW/req';
+    bprHeader.style.fontWeight = '600';
+    bprHeader.style.fontSize = '0.75rem';
+    header.insertBefore(bprHeader, divs[8]);
+    // Replace bar div (now index 10) with Score
+    divs = header.querySelectorAll(':scope > div');
+    var barDiv = divs[10];
+    if (barDiv && !barDiv.dataset.sort) {
+      barDiv.textContent = 'Score';
+      barDiv.style.textAlign = 'right';
+      barDiv.style.fontWeight = '600';
+      barDiv.title = 'Bandwidth-adjusted score — penalizes larger (worse-compressed) responses';
+    }
+    header.dataset.compressionDone = '1';
+  }
+
+  // Compute min bw/req and adjusted scores
+  var minBpr = Infinity;
+  var rowData = [];
+  rows.forEach(function(row) {
+    if (row.classList.contains('lb-hidden')) return;
+    var rps = Number(row.dataset.rps);
+    var bw = parseBw(row.dataset.bandwidth);
+    var bpr = (rps > 0 && bw > 0) ? bw / rps : 0;
+    rowData.push({ row: row, rps: rps, bw: bw, bpr: bpr });
+    if (bpr > 0 && bpr < minBpr) minBpr = bpr;
+  });
+
+  if (minBpr === Infinity) return;
+
+  var maxAdj = 0;
+  rowData.forEach(function(d) {
+    d.adj = (d.bpr > 0) ? d.rps * Math.pow(minBpr / d.bpr, 2) : 0;
+    if (d.adj > maxAdj) maxAdj = d.adj;
+  });
+
+  rowData.sort(function(a, b) { return b.adj - a.adj; });
+  var lb = panel.querySelector('.lb');
+  rowData.forEach(function(d, idx) {
+    var score = maxAdj > 0 ? (d.adj / maxAdj * 100) : 0;
+    d.row.style.gridTemplateColumns = compressionGrid;
+
+    // Insert BW/req cell (only once)
+    if (!d.row.dataset.compressionDone) {
+      var children = d.row.querySelectorAll(':scope > div');
+      var bprCell = document.createElement('div');
+      bprCell.className = 'lb-stat lb-bpr-cell';
+      bprCell.style.textAlign = 'right';
+      var bprKB = d.bpr > 0 ? (d.bpr * 1024).toFixed(0) : '\u2014';
+      bprCell.textContent = bprKB !== '\u2014' ? bprKB + ' KB' : bprKB;
+      d.row.insertBefore(bprCell, children[8]);
+      d.row.dataset.compressionDone = '1';
+    } else {
+      var bprCell = d.row.querySelector('.lb-bpr-cell');
+      if (bprCell) {
+        var bprKB = d.bpr > 0 ? (d.bpr * 1024).toFixed(0) : '\u2014';
+        bprCell.textContent = bprKB !== '\u2014' ? bprKB + ' KB' : bprKB;
+      }
+    }
+
+    // Replace bar with score or update existing score
+    var barCell = d.row.querySelector('.lb-bar-cell');
+    if (barCell) {
+      var color = score >= 80 ? '#16a34a' : score >= 50 ? '#ca8a04' : '#dc2626';
+      barCell.outerHTML = '<div class="lb-stat lb-score-cell" style="text-align:right; font-weight:700; color:' + color + ';">' + score.toFixed(1) + '</div>';
+    } else {
+      var scoreCell = d.row.querySelector('.lb-score-cell');
+      if (scoreCell) {
+        var color = score >= 80 ? '#16a34a' : score >= 50 ? '#ca8a04' : '#dc2626';
+        scoreCell.textContent = score.toFixed(1);
+        scoreCell.style.color = color;
+      }
+    }
+
+    var rankEl = d.row.querySelector('.lb-rank');
+    if (rankEl) rankEl.textContent = idx < 3 ? medals[idx] : String(idx + 1);
+    d.row.dataset.adjScore = score.toFixed(1);
+    lb.appendChild(d.row);
+  });
+}
+
+function applyCompressionScores() {
+  // Process connection panels
+  document.querySelectorAll('.lb-conn-panel[data-profile="compression"]:not([data-conns="best"])').forEach(applyCompressionPanel);
+
+  // Build best panel using adjusted scores
+  document.querySelectorAll('.lb-conn-panel[data-profile="compression"][data-conns="best"]').forEach(function(bestPanel) {
+    var parentPanel = bestPanel.closest('.lb-panel');
+    var connPanels = parentPanel.querySelectorAll('.lb-conn-panel[data-profile="compression"]:not([data-conns="best"])');
+    var best = {};
+
+    connPanels.forEach(function(cp) {
+      cp.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
+        var name = row.dataset.name;
+        var score = parseFloat(row.dataset.adjScore || '0');
+        if (!best[name] || score > best[name].score) {
+          best[name] = { score: score, row: row };
+        }
+      });
+    });
+
+    var lb = bestPanel.querySelector('.lb');
+    lb.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(r) { r.remove(); });
+
+    // Update best header
+    var header = bestPanel.querySelector('.lb-row.lb-header');
+    if (header && !header.dataset.compressionDone) {
+      header.style.gridTemplateColumns = compressionGrid;
+      var divs = header.querySelectorAll(':scope > div');
+      var bprHeader = document.createElement('div');
+      bprHeader.style.textAlign = 'right';
+      bprHeader.title = 'Average bandwidth per request — lower means better compression';
+      bprHeader.textContent = 'BW/req';
+      bprHeader.style.fontWeight = '600';
+      bprHeader.style.fontSize = '0.75rem';
+      header.insertBefore(bprHeader, divs[8]);
+      divs = header.querySelectorAll(':scope > div');
+      var barDiv = divs[10];
+      if (barDiv && !barDiv.dataset.sort) {
+        barDiv.textContent = 'Score';
+        barDiv.style.textAlign = 'right';
+        barDiv.style.fontWeight = '600';
+        barDiv.title = 'Bandwidth-adjusted score — penalizes larger (worse-compressed) responses';
+      }
+      header.dataset.compressionDone = '1';
+    }
+
+    var entries = Object.values(best).sort(function(a, b) { return b.score - a.score; });
+    entries.forEach(function(entry, idx) {
+      var clone = entry.row.cloneNode(true);
+      clone.dataset.adjScore = entry.score;
+      clone.style.gridTemplateColumns = compressionGrid;
+      var rankEl = clone.querySelector('.lb-rank');
+      rankEl.textContent = idx < 3 ? medals[idx] : String(idx + 1);
+      lb.appendChild(clone);
+    });
+  });
+}
+applyCompressionScores();
 </script>

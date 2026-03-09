@@ -22,6 +22,7 @@ public class BenchmarkResource {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private List<Map<String, Object>> dataset;
+    private byte[] largeJsonResponse;
     private final Map<String, byte[]> staticFiles = new ConcurrentHashMap<>();
     private static final Map<String, String> MIME_TYPES = Map.ofEntries(
         Map.entry(".css", "text/css"),
@@ -40,6 +41,19 @@ public class BenchmarkResource {
         File f = new File(path);
         if (f.exists()) {
             dataset = mapper.readValue(f, new TypeReference<>() {});
+        }
+        File largef = new File("/data/dataset-large.json");
+        if (largef.exists()) {
+            List<Map<String, Object>> largeDataset = mapper.readValue(largef, new TypeReference<>() {});
+            List<Map<String, Object>> largeItems = new ArrayList<>(largeDataset.size());
+            for (Map<String, Object> item : largeDataset) {
+                Map<String, Object> processed = new LinkedHashMap<>(item);
+                double price = ((Number) item.get("price")).doubleValue();
+                int quantity = ((Number) item.get("quantity")).intValue();
+                processed.put("total", Math.round(price * quantity * 100.0) / 100.0);
+                largeItems.add(processed);
+            }
+            largeJsonResponse = mapper.writeValueAsBytes(Map.of("items", largeItems, "count", largeItems.size()));
         }
         // Pre-load static files
         File staticDir = new File("/data/static");
@@ -118,6 +132,26 @@ public class BenchmarkResource {
             items.add(processed);
         }
         return Map.of("items", items, "count", items.size());
+    }
+
+    @GET
+    @Path("/compression")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NonBlocking
+    public byte[] compression() {
+        return largeJsonResponse;
+    }
+
+    private static final String CACHING_ETAG = "\"AOK\"";
+
+    @GET
+    @Path("/caching")
+    @NonBlocking
+    public jakarta.ws.rs.core.Response caching(@HeaderParam("If-None-Match") String ifNoneMatch) {
+        if (CACHING_ETAG.equals(ifNoneMatch)) {
+            return jakarta.ws.rs.core.Response.notModified().header("ETag", CACHING_ETAG).build();
+        }
+        return jakarta.ws.rs.core.Response.ok("OK", MediaType.TEXT_PLAIN).header("ETag", CACHING_ETAG).build();
     }
 
     @GET

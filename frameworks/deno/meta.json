@@ -1,6 +1,6 @@
 {
   "display_name": "deno",
-  "language": "TypeScript",
+  "language": "TS",
   "type": "realistic",
   "engine": "V8",
   "description": "Deno HTTP server using deno serve --parallel with zero-dependency native fetch handler.",

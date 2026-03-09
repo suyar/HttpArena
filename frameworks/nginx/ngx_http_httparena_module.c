@@ -8,6 +8,8 @@
 
 static u_char *g_json_resp = NULL;
 static size_t g_json_resp_len = 0;
+static u_char *g_json_large_resp = NULL;
+static size_t g_json_large_resp_len = 0;
 
 #define MAX_STATIC 32
 typedef struct {
@@ -231,6 +233,47 @@ ngx_http_httparena_handler(ngx_http_request_t *r)
         return NGX_DONE;
     }
 
+    /* /caching */
+    if (uri_len == 8 && ngx_strncmp(uri, "/caching", 8) == 0) {
+        ngx_http_discard_request_body(r);
+
+        static const u_char etag_val[] = "\"AOK\"";
+        ngx_table_elt_t *etag_hdr = ngx_list_push(&r->headers_out.headers);
+        if (!etag_hdr) return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        etag_hdr->hash = 1;
+        ngx_str_set(&etag_hdr->key, "ETag");
+        etag_hdr->value.data = (u_char *)etag_val;
+        etag_hdr->value.len = sizeof(etag_val) - 1;
+
+        /* Check If-None-Match */
+        if (r->headers_in.if_none_match &&
+            r->headers_in.if_none_match->value.len == sizeof(etag_val) - 1 &&
+            ngx_strncmp(r->headers_in.if_none_match->value.data,
+                        etag_val, sizeof(etag_val) - 1) == 0) {
+            r->headers_out.status = NGX_HTTP_NOT_MODIFIED;
+            r->headers_out.content_length_n = -1;
+            r->header_only = 1;
+            return ngx_http_send_header(r);
+        }
+
+        return send_resp(r, 200,
+                         (u_char *)"text/plain", 10,
+                         (u_char *)"OK", 2, 0);
+    }
+
+    /* /compression */
+    if (uri_len == 12 && ngx_strncmp(uri, "/compression", 12) == 0) {
+        ngx_http_discard_request_body(r);
+        if (g_json_large_resp) {
+            return send_resp(r, 200,
+                             (u_char *)"application/json", 16,
+                             g_json_large_resp, g_json_large_resp_len, 0);
+        }
+        return send_resp(r, 500,
+                         (u_char *)"text/plain", 10,
+                         (u_char *)"No dataset", 10, 0);
+    }
+
     /* /json */
     if (uri_len == 5 && ngx_strncmp(uri, "/json", 5) == 0) {
         ngx_http_discard_request_body(r);
@@ -269,10 +312,8 @@ ngx_http_httparena_handler(ngx_http_request_t *r)
 /* ---------- Data loading ---------- */
 
 static void
-load_dataset(void)
+load_json_file(const char *path, u_char **out_data, size_t *out_len)
 {
-    const char *path = getenv("DATASET_PATH");
-    if (!path) path = "/data/dataset.json";
     FILE *f = fopen(path, "r");
     if (!f) return;
     fseek(f, 0, SEEK_END);
@@ -309,12 +350,21 @@ load_dataset(void)
 
     char *json_str = cJSON_PrintUnformatted(result);
     if (json_str) {
-        g_json_resp_len = strlen(json_str);
-        g_json_resp = (u_char *)json_str;
+        *out_len = strlen(json_str);
+        *out_data = (u_char *)json_str;
     }
 
     cJSON_Delete(result);
     cJSON_Delete(arr);
+}
+
+static void
+load_dataset(void)
+{
+    const char *path = getenv("DATASET_PATH");
+    if (!path) path = "/data/dataset.json";
+    load_json_file(path, &g_json_resp, &g_json_resp_len);
+    load_json_file("/data/dataset-large.json", &g_json_large_resp, &g_json_large_resp_len);
 }
 
 static void

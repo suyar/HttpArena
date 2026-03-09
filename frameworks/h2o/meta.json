@@ -6,5 +6,5 @@
   "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
   "repo": "https://github.com/h2o/h2o",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "baseline-h2", "static-h2"]
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "compression", "caching", "baseline-h2", "static-h2"]
 }

@@ -6,5 +6,5 @@
   "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
   "repo": "https://github.com/h2o/h2o",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "baseline-h2", "static-h2", "baseline-h3", "static-h3"]
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "compression", "caching", "baseline-h2", "static-h2", "baseline-h3", "static-h3"]
 }

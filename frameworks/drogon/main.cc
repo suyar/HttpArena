@@ -35,6 +35,7 @@ static uint32_t crc32_compute(const void *data, size_t len) {
 }
 
 static std::string json_response;
+static std::string json_large_response;
 
 struct StaticFile {
     std::string data;
@@ -84,6 +85,47 @@ static void loadDataset()
     json_response = Json::writeString(wb, resp);
 }
 
+static void loadDatasetLarge()
+{
+    const char *path = "/data/dataset-large.json";
+    std::ifstream f(path);
+    if (!f.is_open()) return;
+
+    std::stringstream ss;
+    ss << f.rdbuf();
+    f.close();
+
+    Json::CharReaderBuilder rb;
+    Json::Value root;
+    std::string errs;
+    std::istringstream is(ss.str());
+    if (!Json::parseFromStream(rb, is, &root, &errs) || !root.isArray()) return;
+
+    Json::Value resp;
+    Json::Value items(Json::arrayValue);
+    for (const auto &d : root) {
+        Json::Value item;
+        item["id"] = d["id"];
+        item["name"] = d["name"];
+        item["category"] = d["category"];
+        item["price"] = d["price"];
+        item["quantity"] = d["quantity"];
+        item["active"] = d["active"];
+        item["tags"] = d["tags"];
+        item["rating"] = d["rating"];
+        double price = d["price"].asDouble();
+        int qty = d["quantity"].asInt();
+        item["total"] = std::round(price * qty * 100.0) / 100.0;
+        items.append(std::move(item));
+    }
+    resp["items"] = std::move(items);
+    resp["count"] = static_cast<int>(root.size());
+
+    Json::StreamWriterBuilder wb;
+    wb["indentation"] = "";
+    json_large_response = Json::writeString(wb, resp);
+}
+
 static void loadStaticFiles()
 {
     static const std::unordered_map<std::string, std::string> mime = {
@@ -123,6 +165,7 @@ int main()
 {
     crc32_init();
     loadDataset();
+    loadDatasetLarge();
     loadStaticFiles();
 
     // Register sync advice for fastest dispatch (bypasses controller pipeline)
@@ -145,6 +188,20 @@ int main()
                 if (!json_response.empty()) {
                     auto resp = HttpResponse::newHttpResponse();
                     resp->setBody(json_response);
+                    resp->setContentTypeCode(CT_APPLICATION_JSON);
+                    resp->addHeader("Server", "drogon");
+                    return resp;
+                }
+                auto resp = HttpResponse::newHttpResponse();
+                resp->setStatusCode(k500InternalServerError);
+                resp->setBody("No dataset");
+                return resp;
+            }
+
+            if (path == "/compression") {
+                if (!json_large_response.empty()) {
+                    auto resp = HttpResponse::newHttpResponse();
+                    resp->setBody(json_large_response);
                     resp->setContentTypeCode(CT_APPLICATION_JSON);
                     resp->addHeader("Server", "drogon");
                     return resp;
@@ -225,6 +282,7 @@ int main()
     if (access(cert, R_OK) == 0 && access(key, R_OK) == 0)
         app().addListener("0.0.0.0", 8443, true, cert, key);
 
+    app().enableGzip(true);
     app().run();
     return 0;
 }
