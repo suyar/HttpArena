@@ -90,7 +90,7 @@ html.dark .composite-disclaimer { color: #fff !important; background: rgba(234,1
   html.dark .composite-resource-toggle.active { color:#34d399; border-color:#059669; background:rgba(5,150,105,0.12); }
   </style>
 
-  <div style="overflow-x:auto; margin-top:1rem;">
+  <div style="overflow-x:auto; overflow-y:hidden; margin-top:1rem;">
   <div id="composite-table" class="lb" style="min-width:50rem;">
   </div>
   </div>
@@ -364,7 +364,8 @@ function renderComposite() {
     }
     var sublabel = proto === 'h3' ? 'HTTP/3' : proto === 'h2' ? 'HTTP/2' : 'HTTP/1.1';
     var label = profileLabels[pid] + (scored ? '' : ' *');
-    headerHtml += '<div style="text-align:right; font-size:0.62rem; line-height:1.2;' + bgStyle + '" title="' + profileLabels[pid] + ' (' + sublabel + ')' + (scored ? ' — counts toward composite score' : ' — reference only, does not count toward composite score') + '">' + label + '<br><span style="color:#94a3b8; font-size:0.6rem;">(' + sublabel + ')</span></div>';
+    var shortProto = proto === 'h3' ? 'H3' : proto === 'h2' ? 'H2' : 'H1';
+    headerHtml += '<div style="text-align:right; font-size:0.62rem; line-height:1.2;' + bgStyle + '" title="' + profileLabels[pid] + ' (' + sublabel + ')' + (scored ? ' — counts toward composite score' : ' — reference only, does not count toward composite score') + '">' + label + '<br><span style="font-weight:700; font-size:0.6rem;">' + shortProto + '</span></div>';
   });
   header.innerHTML = headerHtml;
   table.appendChild(header);

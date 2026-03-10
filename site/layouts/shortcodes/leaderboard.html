@@ -404,7 +404,7 @@ html.dark .lb-filters-toggle:hover .lb-toggle-icon { color: #60a5fa; }
   .lb-tab { padding: 0.5rem 0.4rem; font-size: 0.75rem; }
   .lb-filters { flex-wrap: wrap; }
   .lb-search-input { width: 100%; }
-  .lb { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .lb { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
   .lb-row { min-width: 58rem; }
   .lb-row.lb-row-reconn { min-width: 64rem; }
   .lb-popup { padding: 1.5rem; max-width: 95vw; }
@@ -867,6 +867,7 @@ document.querySelectorAll('.lb-sortable').forEach(function(hdr) {
 document.addEventListener('click', function(e) {
   var row = e.target.closest('.lb-row:not(.lb-header)');
   if (!row) return;
+  if (!row.closest('#lb-wrapper')) return;
 
   var name = row.dataset.name;
   var lang = row.dataset.lang;
