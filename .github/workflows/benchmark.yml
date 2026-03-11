@@ -54,7 +54,7 @@ jobs:
         run: |
           git config user.name "HttpArena Bot"
           git config user.email "bot@httparena"
-          git add results/ site/data/ site/static/logs/
+          git add site/data/ site/static/logs/ 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "benchmark: update results for ${{ steps.detect.outputs.list }}"
             git push
