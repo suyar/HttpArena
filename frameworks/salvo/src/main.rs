@@ -50,7 +50,7 @@ static STATE: OnceLock<AppState> = OnceLock::new();
 static SERVER_HDR: HeaderValue = HeaderValue::from_static("salvo");
 
 struct AppState {
-    json_cache: Vec<u8>,
+    dataset: Vec<DatasetItem>,
     json_large_cache: Vec<u8>,
     static_files: HashMap<String, StaticFile>,
     db: Option<Mutex<Connection>>,
@@ -224,11 +224,28 @@ async fn baseline2(req: &mut Request, res: &mut Response) {
 #[handler]
 async fn json_endpoint(res: &mut Response) {
     let state = STATE.get().unwrap();
+    if state.dataset.is_empty() {
+        res.status_code(StatusCode::INTERNAL_SERVER_ERROR);
+        return;
+    }
+    let items: Vec<ProcessedItem> = state.dataset.iter().map(|d| ProcessedItem {
+        id: d.id,
+        name: d.name.clone(),
+        category: d.category.clone(),
+        price: d.price,
+        quantity: d.quantity,
+        active: d.active,
+        tags: d.tags.clone(),
+        rating: RatingOut { score: d.rating.score, count: d.rating.count },
+        total: (d.price * d.quantity as f64 * 100.0).round() / 100.0,
+    }).collect();
+    let resp = JsonResponse { count: items.len(), items };
+    let body = serde_json::to_vec(&resp).unwrap_or_default();
     res.headers_mut().insert(
         header::CONTENT_TYPE,
         HeaderValue::from_static("application/json"),
     );
-    res.write_body(state.json_cache.clone()).ok();
+    res.write_body(body).ok();
 }
 
 #[handler]
@@ -328,7 +345,6 @@ async fn static_file(req: &mut Request, res: &mut Response) {
 #[tokio::main]
 async fn main() {
     let dataset = load_dataset();
-    let json_cache = build_json_cache(&dataset);
 
     let large_dataset: Vec<DatasetItem> = match std::fs::read_to_string("/data/dataset-large.json") {
         Ok(data) => serde_json::from_str(&data).unwrap_or_default(),
@@ -348,7 +364,7 @@ async fn main() {
 
     STATE
         .set(AppState {
-            json_cache,
+            dataset,
             json_large_cache,
             static_files: load_static_files(),
             db,

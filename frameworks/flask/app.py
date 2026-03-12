@@ -6,18 +6,12 @@ from flask import Flask, request, make_response
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
 
-# Pre-serialize JSON response
-json_response = None
+# Load raw dataset for per-request processing
+dataset_items = None
 dataset_path = os.environ.get('DATASET_PATH', '/data/dataset.json')
 try:
     with open(dataset_path) as f:
-        data = json.load(f)
-    items = []
-    for d in data:
-        item = dict(d)
-        item['total'] = round(d['price'] * d['quantity'] * 100) / 100
-        items.append(item)
-    json_response = json.dumps({'items': items, 'count': len(items)})
+        dataset_items = json.load(f)
 except Exception:
     pass
 
@@ -65,8 +59,13 @@ def baseline2():
 
 @app.route('/json')
 def json_endpoint():
-    if json_response:
-        resp = make_response(json_response)
+    if dataset_items:
+        items = []
+        for d in dataset_items:
+            item = dict(d)
+            item['total'] = round(d['price'] * d['quantity'] * 100) / 100
+            items.append(item)
+        resp = make_response(json.dumps({'items': items, 'count': len(items)}))
         resp.content_type = 'application/json'
         resp.headers['Server'] = 'flask'
         return resp

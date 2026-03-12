@@ -1,15 +1,8 @@
 const datasetPath = Deno.env.get("DATASET_PATH") || "/data/dataset.json";
-let jsonResponseBytes: Uint8Array | undefined;
+let datasetItems: any[] | undefined;
 
 try {
-    const raw = JSON.parse(Deno.readTextFileSync(datasetPath));
-    const items = raw.map((d: any) => ({
-        id: d.id, name: d.name, category: d.category,
-        price: d.price, quantity: d.quantity, active: d.active,
-        tags: d.tags, rating: d.rating,
-        total: Math.round(d.price * d.quantity * 100) / 100,
-    }));
-    jsonResponseBytes = new TextEncoder().encode(JSON.stringify({ items, count: items.length }));
+    datasetItems = JSON.parse(Deno.readTextFileSync(datasetPath));
 } catch { /* dataset not available */ }
 
 const PLAIN = { "content-type": "text/plain", "server": "deno" };
@@ -44,8 +37,15 @@ export default {
         }
 
         if (path === "/json") {
-            if (jsonResponseBytes) {
-                return new Response(jsonResponseBytes, {
+            if (datasetItems) {
+                const items = datasetItems.map((d: any) => ({
+                    id: d.id, name: d.name, category: d.category,
+                    price: d.price, quantity: d.quantity, active: d.active,
+                    tags: d.tags, rating: d.rating,
+                    total: Math.round(d.price * d.quantity * 100) / 100,
+                }));
+                const body = JSON.stringify({ items, count: items.length });
+                return new Response(body, {
                     headers: { "content-type": "application/json", "server": "deno" },
                 });
             }

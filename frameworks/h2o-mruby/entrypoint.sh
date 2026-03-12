@@ -3,12 +3,6 @@ set -e
 
 NPROC=$(nproc)
 
-# Preprocess dataset.json → response.json (add total field, wrap in {items,count})
-if [ -f /data/dataset.json ]; then
-    jq '{ items: [.[] | . + { total: ((.price * .quantity * 100 | round) / 100) }], count: length }' \
-        /data/dataset.json > /tmp/response.json
-fi
-
 # Preprocess dataset-large.json → response-large.json for /compression
 if [ -f /data/dataset-large.json ]; then
     jq '{ items: [.[] | . + { total: ((.price * .quantity * 100 | round) / 100) }], count: length }' \
@@ -73,8 +67,21 @@ hosts:
           end
 
       "/json":
-        file.file: /tmp/response.json
-        header.add: "content-type: application/json"
+        mruby.handler: |
+          \$dataset = nil
+          Proc.new do |env|
+            unless \$dataset
+              \$dataset = JSON.parse(File.open("/data/dataset.json", "r").read)
+            end
+            items = \$dataset.map do |d|
+              item = {}
+              d.each { |k, v| item[k] = v }
+              item["total"] = (d["price"] * d["quantity"] * 100.0).round / 100.0
+              item
+            end
+            body = JSON.generate({"items" => items, "count" => items.length})
+            [200, {"content-type" => "application/json"}, [body]]
+          end
 
       "/compression":
         file.file: /tmp/response-large.json

@@ -34,7 +34,7 @@ static uint32_t crc32_compute(const void *data, size_t len) {
     return crc ^ 0xFFFFFFFF;
 }
 
-static std::string json_response;
+static Json::Value dataset_root;
 static std::string json_large_response;
 
 struct StaticFile {
@@ -55,34 +55,9 @@ static void loadDataset()
     f.close();
 
     Json::CharReaderBuilder rb;
-    Json::Value root;
     std::string errs;
     std::istringstream is(ss.str());
-    if (!Json::parseFromStream(rb, is, &root, &errs) || !root.isArray()) return;
-
-    Json::Value resp;
-    Json::Value items(Json::arrayValue);
-    for (const auto &d : root) {
-        Json::Value item;
-        item["id"] = d["id"];
-        item["name"] = d["name"];
-        item["category"] = d["category"];
-        item["price"] = d["price"];
-        item["quantity"] = d["quantity"];
-        item["active"] = d["active"];
-        item["tags"] = d["tags"];
-        item["rating"] = d["rating"];
-        double price = d["price"].asDouble();
-        int qty = d["quantity"].asInt();
-        item["total"] = std::round(price * qty * 100.0) / 100.0;
-        items.append(std::move(item));
-    }
-    resp["items"] = std::move(items);
-    resp["count"] = static_cast<int>(root.size());
-
-    Json::StreamWriterBuilder wb;
-    wb["indentation"] = "";
-    json_response = Json::writeString(wb, resp);
+    Json::parseFromStream(rb, is, &dataset_root, &errs);
 }
 
 static void loadDatasetLarge()
@@ -185,12 +160,33 @@ int main()
             }
 
             if (path == "/json") {
-                if (!json_response.empty()) {
-                    auto resp = HttpResponse::newHttpResponse();
-                    resp->setBody(json_response);
-                    resp->setContentTypeCode(CT_APPLICATION_JSON);
-                    resp->addHeader("Server", "drogon");
-                    return resp;
+                if (dataset_root.isArray() && dataset_root.size() > 0) {
+                    Json::Value resp;
+                    Json::Value items(Json::arrayValue);
+                    for (const auto &d : dataset_root) {
+                        Json::Value item;
+                        item["id"] = d["id"];
+                        item["name"] = d["name"];
+                        item["category"] = d["category"];
+                        item["price"] = d["price"];
+                        item["quantity"] = d["quantity"];
+                        item["active"] = d["active"];
+                        item["tags"] = d["tags"];
+                        item["rating"] = d["rating"];
+                        double price = d["price"].asDouble();
+                        int qty = d["quantity"].asInt();
+                        item["total"] = std::round(price * qty * 100.0) / 100.0;
+                        items.append(std::move(item));
+                    }
+                    resp["items"] = std::move(items);
+                    resp["count"] = static_cast<int>(dataset_root.size());
+                    Json::StreamWriterBuilder wb;
+                    wb["indentation"] = "";
+                    auto httpResp = HttpResponse::newHttpResponse();
+                    httpResp->setBody(Json::writeString(wb, resp));
+                    httpResp->setContentTypeCode(CT_APPLICATION_JSON);
+                    httpResp->addHeader("Server", "drogon");
+                    return httpResp;
                 }
                 auto resp = HttpResponse::newHttpResponse();
                 resp->setStatusCode(k500InternalServerError);

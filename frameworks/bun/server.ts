@@ -7,15 +7,8 @@ const MIME_TYPES: Record<string, string> = {
   ".woff2": "font/woff2", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json",
 };
 
-// Pre-load dataset
-const data = JSON.parse(fs.readFileSync("/data/dataset.json", "utf8"));
-const items = data.map((d: any) => ({
-  id: d.id, name: d.name, category: d.category,
-  price: d.price, quantity: d.quantity, active: d.active,
-  tags: d.tags, rating: d.rating,
-  total: Math.round(d.price * d.quantity * 100) / 100,
-}));
-const jsonResponseBuf = Buffer.from(JSON.stringify({ items, count: items.length }));
+// Load raw dataset for per-request JSON processing
+const datasetItems: any[] = JSON.parse(fs.readFileSync("/data/dataset.json", "utf8"));
 
 // Pre-load large dataset for /compression endpoint (compressed per-request)
 const largeData = JSON.parse(fs.readFileSync("/data/dataset-large.json", "utf8"));
@@ -110,8 +103,15 @@ function handleRequest(req: Request): Response | Promise<Response> {
   }
 
   if (path === "/json") {
-    return new Response(jsonResponseBuf, {
-      headers: { "content-type": "application/json", "content-length": String(jsonResponseBuf.length) },
+    const items = datasetItems.map((d: any) => ({
+      id: d.id, name: d.name, category: d.category,
+      price: d.price, quantity: d.quantity, active: d.active,
+      tags: d.tags, rating: d.rating,
+      total: Math.round(d.price * d.quantity * 100) / 100,
+    }));
+    const body = JSON.stringify({ items, count: items.length });
+    return new Response(body, {
+      headers: { "content-type": "application/json", "content-length": String(Buffer.byteLength(body)) },
     });
   }
 

@@ -53,8 +53,19 @@ type staticFile struct {
 	contentType string
 }
 
+type RawItem struct {
+	ID       int      `json:"id"`
+	Name     string   `json:"name"`
+	Category string   `json:"category"`
+	Price    float64  `json:"price"`
+	Quantity int      `json:"quantity"`
+	Active   bool     `json:"active"`
+	Tags     []string `json:"tags"`
+	Rating   Rating   `json:"rating"`
+}
+
 type Handler struct {
-	jsonResponse      []byte
+	dataset           []RawItem
 	jsonLargeResponse []byte
 	staticFiles       map[string]staticFile
 	db                *sql.DB
@@ -77,29 +88,9 @@ func (h *Handler) Provision(ctx caddy.Context) error {
 		return nil // dataset not available, /json will 500
 	}
 
-	var dataset []struct {
-		ID       int      `json:"id"`
-		Name     string   `json:"name"`
-		Category string   `json:"category"`
-		Price    float64  `json:"price"`
-		Quantity int      `json:"quantity"`
-		Active   bool     `json:"active"`
-		Tags     []string `json:"tags"`
-		Rating   Rating   `json:"rating"`
-	}
-	if err := json.Unmarshal(data, &dataset); err != nil {
+	if err := json.Unmarshal(data, &h.dataset); err != nil {
 		return nil
 	}
-	items := make([]ProcessedItem, len(dataset))
-	for i, d := range dataset {
-		items[i] = ProcessedItem{
-			ID: d.ID, Name: d.Name, Category: d.Category,
-			Price: d.Price, Quantity: d.Quantity, Active: d.Active,
-			Tags: d.Tags, Rating: d.Rating,
-			Total: math.Round(d.Price*float64(d.Quantity)*100) / 100,
-		}
-	}
-	h.jsonResponse, _ = json.Marshal(ProcessResponse{Items: items, Count: len(items)})
 
 	// Load large dataset for /compression
 	largeData, err := os.ReadFile("/data/dataset-large.json")
@@ -186,11 +177,21 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 		return nil
 
 	case "/json":
-		if h.jsonResponse != nil {
+		if h.dataset != nil {
+			items := make([]ProcessedItem, len(h.dataset))
+			for i, d := range h.dataset {
+				items[i] = ProcessedItem{
+					ID: d.ID, Name: d.Name, Category: d.Category,
+					Price: d.Price, Quantity: d.Quantity, Active: d.Active,
+					Tags: d.Tags, Rating: d.Rating,
+					Total: math.Round(d.Price*float64(d.Quantity)*100) / 100,
+				}
+			}
+			resp, _ := json.Marshal(ProcessResponse{Items: items, Count: len(items)})
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Server", "caddy")
-			w.Header().Set("Content-Length", strconv.Itoa(len(h.jsonResponse)))
-			w.Write(h.jsonResponse)
+			w.Header().Set("Content-Length", strconv.Itoa(len(resp)))
+			w.Write(resp)
 		} else {
 			http.Error(w, "No dataset", 500)
 		}

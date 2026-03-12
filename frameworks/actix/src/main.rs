@@ -58,7 +58,6 @@ struct StaticFile {
 
 struct AppState {
     dataset: Vec<DatasetItem>,
-    json_cache: Vec<u8>,
     json_large_cache: Vec<u8>,
     static_files: HashMap<String, StaticFile>,
 }
@@ -225,10 +224,26 @@ async fn baseline2(req: HttpRequest) -> HttpResponse {
 }
 
 async fn json_endpoint(state: web::Data<Arc<AppState>>) -> HttpResponse {
+    if state.dataset.is_empty() {
+        return HttpResponse::InternalServerError().body("No dataset");
+    }
+    let items: Vec<ProcessedItem> = state.dataset.iter().map(|d| ProcessedItem {
+        id: d.id,
+        name: d.name.clone(),
+        category: d.category.clone(),
+        price: d.price,
+        quantity: d.quantity,
+        active: d.active,
+        tags: d.tags.clone(),
+        rating: RatingOut { score: d.rating.score, count: d.rating.count },
+        total: (d.price * d.quantity as f64 * 100.0).round() / 100.0,
+    }).collect();
+    let resp = JsonResponse { count: items.len(), items };
+    let body = serde_json::to_vec(&resp).unwrap_or_default();
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
         .content_type(ContentType::json())
-        .body(state.json_cache.clone())
+        .body(body)
 }
 
 async fn compression(state: web::Data<Arc<AppState>>) -> HttpResponse {
@@ -273,7 +288,6 @@ fn load_tls_config() -> Option<ServerConfig> {
 #[actix_web::main]
 async fn main() -> io::Result<()> {
     let dataset = load_dataset();
-    let json_cache = build_json_cache(&dataset);
 
     let large_dataset: Vec<DatasetItem> = match std::fs::read_to_string("/data/dataset-large.json") {
         Ok(data) => serde_json::from_str(&data).unwrap_or_default(),
@@ -283,7 +297,6 @@ async fn main() -> io::Result<()> {
 
     let state = Arc::new(AppState {
         dataset,
-        json_cache,
         json_large_cache,
         static_files: load_static_files(),
     });

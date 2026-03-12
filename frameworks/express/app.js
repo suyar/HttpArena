@@ -11,18 +11,11 @@ if (cluster.isPrimary) {
     app.disable('x-powered-by');
     app.set('etag', false);
 
-    // Pre-serialized JSON response
-    let jsonResponseBuf;
+    // Raw dataset for per-request JSON processing
+    let datasetItems;
     const datasetPath = process.env.DATASET_PATH || '/data/dataset.json';
     try {
-        const data = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
-        const items = data.map(d => ({
-            id: d.id, name: d.name, category: d.category,
-            price: d.price, quantity: d.quantity, active: d.active,
-            tags: d.tags, rating: d.rating,
-            total: Math.round(d.price * d.quantity * 100) / 100
-        }));
-        jsonResponseBuf = Buffer.from(JSON.stringify({ items, count: items.length }));
+        datasetItems = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
     } catch (e) {}
 
     function sumQuery(query) {
@@ -39,12 +32,19 @@ if (cluster.isPrimary) {
     });
 
     app.get('/json', (req, res) => {
-        if (jsonResponseBuf) {
+        if (datasetItems) {
+            const items = datasetItems.map(d => ({
+                id: d.id, name: d.name, category: d.category,
+                price: d.price, quantity: d.quantity, active: d.active,
+                tags: d.tags, rating: d.rating,
+                total: Math.round(d.price * d.quantity * 100) / 100
+            }));
+            const buf = Buffer.from(JSON.stringify({ items, count: items.length }));
             res.writeHead(200, {
                 'content-type': 'application/json',
-                'content-length': jsonResponseBuf.length,
+                'content-length': buf.length,
                 'server': 'express'
-            }).end(jsonResponseBuf);
+            }).end(buf);
         } else {
             res.writeHead(500).end('No dataset');
         }

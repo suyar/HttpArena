@@ -6,7 +6,7 @@ local SQLITE_ROW = 100
 
 local _M = {}
 
-local json_resp = ""
+local json_resp = nil
 local large_resp = ""
 local static_files = {}
 local sqlite = nil
@@ -19,15 +19,11 @@ function _M.init()
         json = "application/json",
     }
 
-    -- Load small dataset
+    -- Load raw dataset for per-request processing
     local f = io.open(os.getenv("DATASET_PATH") or "/data/dataset.json", "r")
     if f then
-        local data = cjson.decode(f:read("*a"))
+        json_resp = cjson.decode(f:read("*a"))
         f:close()
-        for _, item in ipairs(data) do
-            item.total = math.floor(item.price * item.quantity * 100 + 0.5) / 100
-        end
-        json_resp = cjson.encode({items = data, count = #data})
     end
 
     -- Load large dataset
@@ -131,13 +127,20 @@ function _M.baseline2()
 end
 
 function _M.json()
-    if json_resp == "" then
+    if not json_resp then
         ngx.status = 500
         ngx.print("dataset not loaded")
         return
     end
+    local items = {}
+    for i, d in ipairs(json_resp) do
+        local item = {}
+        for k, v in pairs(d) do item[k] = v end
+        item.total = math.floor(d.price * d.quantity * 100 + 0.5) / 100
+        items[i] = item
+    end
     ngx.header["Content-Type"] = "application/json"
-    ngx.print(json_resp)
+    ngx.print(cjson.encode({items = items, count = #items}))
 end
 
 function _M.compression()

@@ -7,8 +7,26 @@
 
 /* ---------- Pre-loaded data ---------- */
 
-static u_char *g_json_resp = NULL;
-static size_t g_json_resp_len = 0;
+/* Raw dataset items for per-request JSON serialization */
+#define MAX_ITEMS 200
+#define MAX_TAGS 16
+#define MAX_STR 256
+
+typedef struct {
+    int id;
+    char name[MAX_STR];
+    char category[MAX_STR];
+    double price;
+    int quantity;
+    int active;
+    char tags_json[1024]; /* raw JSON array string */
+    double rating_score;
+    int rating_count;
+} dataset_item_t;
+
+static dataset_item_t g_dataset[MAX_ITEMS];
+static int g_dataset_n = 0;
+
 static u_char *g_json_large_resp = NULL;
 static size_t g_json_large_resp_len = 0;
 #define MAX_STATIC 32
@@ -398,17 +416,40 @@ ngx_http_httparena_handler(ngx_http_request_t *r)
                          (u_char *)"No dataset", 10, 0);
     }
 
-    /* /json */
+    /* /json — serialize per-request */
     if (uri_len == 5 && ngx_strncmp(uri, "/json", 5) == 0) {
         ngx_http_discard_request_body(r);
-        if (g_json_resp) {
-            return send_resp(r, 200,
-                             (u_char *)"application/json", 16,
-                             g_json_resp, g_json_resp_len, 0);
+        if (g_dataset_n <= 0) {
+            return send_resp(r, 500,
+                             (u_char *)"text/plain", 10,
+                             (u_char *)"No dataset", 10, 0);
         }
-        return send_resp(r, 500,
-                         (u_char *)"text/plain", 10,
-                         (u_char *)"No dataset", 10, 0);
+        #define JSON_BUF_SIZE (64 * 1024)
+        u_char *buf = ngx_palloc(r->pool, JSON_BUF_SIZE);
+        if (!buf) return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        u_char *p = buf;
+        u_char *end = buf + JSON_BUF_SIZE - 1;
+        p = ngx_cpymem(p, "{\"items\":[", 10);
+        for (int i = 0; i < g_dataset_n && p < end; i++) {
+            dataset_item_t *d = &g_dataset[i];
+            double total = round(d->price * d->quantity * 100.0) / 100.0;
+            if (i > 0 && p < end) *p++ = ',';
+            p = ngx_slprintf(p, end, "{\"id\":%d,\"name\":", d->id);
+            p = json_escape_append(p, end, d->name);
+            p = ngx_cpymem(p, ",\"category\":", 12);
+            p = json_escape_append(p, end, d->category);
+            p = ngx_slprintf(p, end, ",\"price\":%.2f,\"quantity\":%d,\"active\":%s,",
+                             d->price, d->quantity, d->active ? "true" : "false");
+            p = ngx_cpymem(p, "\"tags\":", 7);
+            size_t tlen = strlen(d->tags_json);
+            if (p + tlen < end) p = ngx_cpymem(p, d->tags_json, tlen);
+            p = ngx_slprintf(p, end, ",\"rating\":{\"score\":%.1f,\"count\":%d},\"total\":%.2f}",
+                             d->rating_score, d->rating_count, total);
+        }
+        p = ngx_slprintf(p, end, "],\"count\":%d}", g_dataset_n);
+        return send_resp(r, 200,
+                         (u_char *)"application/json", 16,
+                         buf, p - buf, 0);
     }
 
     /* /static/<filename> */
@@ -436,7 +477,63 @@ ngx_http_httparena_handler(ngx_http_request_t *r)
 /* ---------- Data loading ---------- */
 
 static void
-load_json_file(const char *path, u_char **out_data, size_t *out_len)
+load_dataset_items(const char *path)
+{
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *raw = malloc(sz + 1);
+    if (!raw) { fclose(f); return; }
+    fread(raw, 1, sz, f);
+    raw[sz] = '\0';
+    fclose(f);
+
+    cJSON *arr = cJSON_Parse(raw);
+    free(raw);
+    if (!arr || !cJSON_IsArray(arr)) {
+        if (arr) cJSON_Delete(arr);
+        return;
+    }
+
+    cJSON *item;
+    g_dataset_n = 0;
+    cJSON_ArrayForEach(item, arr) {
+        if (g_dataset_n >= MAX_ITEMS) break;
+        dataset_item_t *d = &g_dataset[g_dataset_n];
+        cJSON *jid = cJSON_GetObjectItem(item, "id");
+        cJSON *jname = cJSON_GetObjectItem(item, "name");
+        cJSON *jcat = cJSON_GetObjectItem(item, "category");
+        cJSON *jprice = cJSON_GetObjectItem(item, "price");
+        cJSON *jqty = cJSON_GetObjectItem(item, "quantity");
+        cJSON *jactive = cJSON_GetObjectItem(item, "active");
+        cJSON *jtags = cJSON_GetObjectItem(item, "tags");
+        cJSON *jrating = cJSON_GetObjectItem(item, "rating");
+        d->id = jid ? jid->valueint : 0;
+        strncpy(d->name, (jname && jname->valuestring) ? jname->valuestring : "", MAX_STR - 1);
+        strncpy(d->category, (jcat && jcat->valuestring) ? jcat->valuestring : "", MAX_STR - 1);
+        d->price = jprice ? jprice->valuedouble : 0;
+        d->quantity = jqty ? jqty->valueint : 0;
+        d->active = jactive ? (cJSON_IsTrue(jactive) ? 1 : 0) : 0;
+        if (jtags) {
+            char *ts = cJSON_PrintUnformatted(jtags);
+            if (ts) { strncpy(d->tags_json, ts, sizeof(d->tags_json) - 1); free(ts); }
+            else { strcpy(d->tags_json, "[]"); }
+        } else { strcpy(d->tags_json, "[]"); }
+        if (jrating) {
+            cJSON *js = cJSON_GetObjectItem(jrating, "score");
+            cJSON *jc = cJSON_GetObjectItem(jrating, "count");
+            d->rating_score = js ? js->valuedouble : 0;
+            d->rating_count = jc ? jc->valueint : 0;
+        }
+        g_dataset_n++;
+    }
+    cJSON_Delete(arr);
+}
+
+static void
+load_large_json(const char *path)
 {
     FILE *f = fopen(path, "r");
     if (!f) return;
@@ -474,8 +571,8 @@ load_json_file(const char *path, u_char **out_data, size_t *out_len)
 
     char *json_str = cJSON_PrintUnformatted(result);
     if (json_str) {
-        *out_len = strlen(json_str);
-        *out_data = (u_char *)json_str;
+        g_json_large_resp_len = strlen(json_str);
+        g_json_large_resp = (u_char *)json_str;
     }
 
     cJSON_Delete(result);
@@ -487,8 +584,8 @@ load_dataset(void)
 {
     const char *path = getenv("DATASET_PATH");
     if (!path) path = "/data/dataset.json";
-    load_json_file(path, &g_json_resp, &g_json_resp_len);
-    load_json_file("/data/dataset-large.json", &g_json_large_resp, &g_json_large_resp_len);
+    load_dataset_items(path);
+    load_large_json("/data/dataset-large.json");
 }
 
 static void

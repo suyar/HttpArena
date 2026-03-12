@@ -1,17 +1,16 @@
-{"level":"info","ts":1773106744.0405314,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
-{"level":"info","ts":1773106744.0414312,"msg":"adapted config to JSON","adapter":"caddyfile"}
-{"level":"warn","ts":1773106744.041679,"logger":"admin","msg":"admin endpoint disabled"}
-{"level":"info","ts":1773106744.0419676,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc000b5f200"}
-{"level":"warn","ts":1773106744.0420477,"logger":"tls","msg":"stapling OCSP","error":"no OCSP stapling for [localhost]: no OCSP server specified in certificate"}
-{"level":"info","ts":1773106744.0420923,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
-{"level":"info","ts":1773106744.0421028,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
-{"level":"info","ts":1773106744.1142704,"logger":"http","msg":"enabling HTTP/3 listener","addr":":8443"}
-{"level":"info","ts":1773106744.114403,"msg":"failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB). See https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes for details."}
-{"level":"info","ts":1773106744.1145453,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
-{"level":"warn","ts":1773106744.1145897,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":8080"}
-{"level":"warn","ts":1773106744.1145945,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":8080"}
-{"level":"info","ts":1773106744.114597,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
-{"level":"info","ts":1773106744.1174505,"msg":"autosaved config (load with --resume flag)","file":"/root/.config/caddy/autosave.json"}
-{"level":"info","ts":1773106744.1174576,"msg":"serving initial configuration"}
-{"level":"info","ts":1773106744.121348,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/root/.local/share/caddy"}
-{"level":"info","ts":1773106744.1242461,"logger":"tls","msg":"finished cleaning storage units"}
+{"level":"info","ts":1773260731.7011166,"msg":"using config from file","file":"/etc/caddy/Caddyfile"}
+{"level":"info","ts":1773260731.7018676,"msg":"adapted config to JSON","adapter":"caddyfile"}
+{"level":"warn","ts":1773260731.7021518,"logger":"admin","msg":"admin endpoint disabled"}
+{"level":"info","ts":1773260731.7023938,"logger":"tls.cache.maintenance","msg":"started background certificate maintenance","cache":"0xc000b33d00"}
+{"level":"warn","ts":1773260731.7029023,"logger":"tls","msg":"stapling OCSP","error":"no OCSP stapling for [localhost]: no OCSP server specified in certificate"}
+{"level":"info","ts":1773260731.7029757,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv0"}
+{"level":"info","ts":1773260731.7029808,"logger":"http.auto_https","msg":"automatic HTTPS is completely disabled for server","server_name":"srv1"}
+{"level":"warn","ts":1773260731.7672257,"logger":"http","msg":"HTTP/2 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"warn","ts":1773260731.767266,"logger":"http","msg":"HTTP/3 skipped because it requires TLS","network":"tcp","addr":":8080"}
+{"level":"info","ts":1773260731.7672684,"logger":"http.log","msg":"server running","name":"srv0","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1773260731.7673006,"logger":"http","msg":"enabling HTTP/3 listener","addr":":8443"}
+{"level":"info","ts":1773260731.7674243,"logger":"http.log","msg":"server running","name":"srv1","protocols":["h1","h2","h3"]}
+{"level":"info","ts":1773260731.7705739,"msg":"autosaved config (load with --resume flag)","file":"/root/.config/caddy/autosave.json"}
+{"level":"info","ts":1773260731.77058,"msg":"serving initial configuration"}
+{"level":"info","ts":1773260731.7745574,"logger":"tls","msg":"cleaning storage unit","storage":"FileStorage:/root/.local/share/caddy"}
+{"level":"info","ts":1773260731.7773936,"logger":"tls","msg":"finished cleaning storage units"}

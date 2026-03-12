@@ -8,8 +8,8 @@ const zlib = require('zlib');
 
 const SERVER_HEADERS = { 'server': 'node' };
 
-// Pre-serialized JSON response buffer
-let jsonResponseBuf;
+// Raw dataset for per-request JSON processing
+let datasetItems;
 
 // Pre-loaded static files
 const staticFiles = {};
@@ -32,14 +32,7 @@ function loadStaticFiles() {
 function loadDataset() {
     const path = process.env.DATASET_PATH || '/data/dataset.json';
     try {
-        const data = JSON.parse(fs.readFileSync(path, 'utf8'));
-        const items = data.map(d => ({
-            id: d.id, name: d.name, category: d.category,
-            price: d.price, quantity: d.quantity, active: d.active,
-            tags: d.tags, rating: d.rating,
-            total: Math.round(d.price * d.quantity * 100) / 100
-        }));
-        jsonResponseBuf = Buffer.from(JSON.stringify({ items, count: items.length }));
+        datasetItems = JSON.parse(fs.readFileSync(path, 'utf8'));
     } catch (e) {}
 }
 
@@ -70,13 +63,20 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'content-type': 'text/plain', ...SERVER_HEADERS });
         res.end('ok');
     } else if (path === '/json') {
-        if (jsonResponseBuf) {
+        if (datasetItems) {
+            const items = datasetItems.map(d => ({
+                id: d.id, name: d.name, category: d.category,
+                price: d.price, quantity: d.quantity, active: d.active,
+                tags: d.tags, rating: d.rating,
+                total: Math.round(d.price * d.quantity * 100) / 100
+            }));
+            const buf = Buffer.from(JSON.stringify({ items, count: items.length }));
             res.writeHead(200, {
                 'content-type': 'application/json',
-                'content-length': jsonResponseBuf.length,
+                'content-length': buf.length,
                 ...SERVER_HEADERS
             });
-            res.end(jsonResponseBuf);
+            res.end(buf);
         } else {
             res.writeHead(500);
             res.end('No dataset');
