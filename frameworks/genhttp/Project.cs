@@ -22,6 +22,7 @@ public static class Project
             .AddPipeline()
             .AddBaseline()
             .AddUpload()
+            .AddJson()
             .AddDatabase()
             .AddCompression()
             .AddStaticFiles()
@@ -58,6 +59,11 @@ public static class Project
     private static LayoutBuilder AddUpload(this LayoutBuilder app)
     {
         return app.AddService<Upload>("upload", mode: ExecutionMode.Auto);
+    }
+    
+    private static LayoutBuilder AddJson(this LayoutBuilder app)
+    {
+        return app.AddService<Json>("json", mode: ExecutionMode.Auto);
     }
     
     private static LayoutBuilder AddDatabase(this LayoutBuilder app)
