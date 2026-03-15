@@ -164,24 +164,26 @@ let baseline2Handler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe
   resp $sum
 
 let jsonHandler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe.} =
-  let jsonStr = buildProcessedJson(dataset)
-  ctx.response.setHeader("Content-Type", "application/json")
-  resp jsonStr
+  {.cast(gcsafe).}:
+    let jsonStr = buildProcessedJson(dataset)
+    ctx.response.setHeader("Content-Type", "application/json")
+    resp jsonStr
 
 let compressionHandler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe.} =
-  let headers = ctx.request.headers
-  let acceptEncoding = if headers.hasKey("Accept-Encoding"): $headers["Accept-Encoding"] else: ""
-  ctx.response.setHeader("Content-Type", "application/json")
-  if "gzip" in acceptEncoding:
-    let compressed = compress(jsonLargeResponse, BestSpeed, dfGzip)
-    ctx.response.setHeader("Content-Encoding", "gzip")
-    resp compressed
-  elif "deflate" in acceptEncoding:
-    let compressed = compress(jsonLargeResponse, BestSpeed, dfDeflate)
-    ctx.response.setHeader("Content-Encoding", "deflate")
-    resp compressed
-  else:
-    resp jsonLargeResponse
+  {.cast(gcsafe).}:
+    let headers = ctx.request.headers
+    let acceptEncoding = if headers.hasKey("Accept-Encoding"): $headers["Accept-Encoding"] else: ""
+    ctx.response.setHeader("Content-Type", "application/json")
+    if "gzip" in acceptEncoding:
+      let compressed = compress(jsonLargeResponse, BestSpeed, dfGzip)
+      ctx.response.setHeader("Content-Encoding", "gzip")
+      resp compressed
+    elif "deflate" in acceptEncoding:
+      let compressed = compress(jsonLargeResponse, BestSpeed, dfDeflate)
+      ctx.response.setHeader("Content-Encoding", "deflate")
+      resp compressed
+    else:
+      resp jsonLargeResponse
 
 let uploadHandler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe.} =
   let body = ctx.request.body
@@ -189,44 +191,46 @@ let uploadHandler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe.} 
   resp $body.len
 
 let dbHandler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe.} =
-  if not dbAvailable:
+  {.cast(gcsafe).}:
+    if not dbAvailable:
+      ctx.response.setHeader("Content-Type", "application/json")
+      resp "{\"items\":[],\"count\":0}"
+      return
+
+    let minPrice = try: parseFloat(ctx.getQueryParams("min", "10")) except ValueError: 10.0
+    let maxPrice = try: parseFloat(ctx.getQueryParams("max", "50")) except ValueError: 50.0
+
+    var items = newJArray()
+    try:
+      let rows = db.getAllRows(sql"SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50",
+        $minPrice, $maxPrice)
+      for row in rows:
+        let tagsJson = try: parseJson(row[6]) except JsonParsingError: newJArray()
+        items.add(%*{
+          "id": parseInt(row[0]),
+          "name": row[1],
+          "category": row[2],
+          "price": parseFloat(row[3]),
+          "quantity": parseInt(row[4]),
+          "active": parseInt(row[5]) == 1,
+          "tags": tagsJson,
+          "rating": {"score": parseFloat(row[7]), "count": parseInt(row[8])}
+        })
+    except:
+      discard
+
     ctx.response.setHeader("Content-Type", "application/json")
-    resp "{\"items\":[],\"count\":0}"
-    return
-
-  let minPrice = try: parseFloat(ctx.getQueryParams("min", "10")) except ValueError: 10.0
-  let maxPrice = try: parseFloat(ctx.getQueryParams("max", "50")) except ValueError: 50.0
-
-  var items = newJArray()
-  try:
-    let rows = db.getAllRows(sql"SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50",
-      $minPrice, $maxPrice)
-    for row in rows:
-      let tagsJson = try: parseJson(row[6]) except JsonParsingError: newJArray()
-      items.add(%*{
-        "id": parseInt(row[0]),
-        "name": row[1],
-        "category": row[2],
-        "price": parseFloat(row[3]),
-        "quantity": parseInt(row[4]),
-        "active": parseInt(row[5]) == 1,
-        "tags": tagsJson,
-        "rating": {"score": parseFloat(row[7]), "count": parseInt(row[8])}
-      })
-  except:
-    discard
-
-  ctx.response.setHeader("Content-Type", "application/json")
-  resp $(%*{"items": items, "count": items.len})
+    resp $(%*{"items": items, "count": items.len})
 
 let staticHandler: HandlerAsync = proc(ctx: Context) {.async, closure, gcsafe.} =
-  let filename = ctx.getPathParams("filename")
-  if filename in staticFiles:
-    let (data, ct) = staticFiles[filename]
-    ctx.response.setHeader("Content-Type", ct)
-    resp data
-  else:
-    resp "Not Found", Http404
+  {.cast(gcsafe).}:
+    let filename = ctx.getPathParams("filename")
+    if filename in staticFiles:
+      let (data, ct) = staticFiles[filename]
+      ctx.response.setHeader("Content-Type", ct)
+      resp data
+    else:
+      resp "Not Found", Http404
 
 # Set up and run
 loadDataset()
