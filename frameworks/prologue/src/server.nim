@@ -249,12 +249,14 @@ proc getCpuCount(): int =
       return result
   except:
     discard
-  # Read from /proc/cpuinfo or sysconf
+  # Read from /proc/cpuinfo
   try:
-    result = sysconf(SC_NPROCESSORS_ONLN).int
+    var count = 0
+    for line in lines("/proc/cpuinfo"):
+      if line.len >= 9 and line[0..8] == "processor":
+        inc count
+    result = max(1, count)
   except:
-    result = 1
-  if result < 1:
     result = 1
 
 proc startWorker() =
@@ -326,8 +328,8 @@ if workerCount > 1:
       quit(1)
 
   # Parent process — handle signals and wait for children
-  c_signal(SIGINT, handleSignal)
-  c_signal(SIGTERM, handleSignal)
+  discard signal(SIGINT, handleSignal)
+  discard signal(SIGTERM, handleSignal)
 
   while true:
     var status: cint
