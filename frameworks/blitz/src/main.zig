@@ -419,18 +419,29 @@ fn workerLoop(_: usize) void {
             if (ev.events & linux.EPOLL.IN != 0) {
                 var should_close = false;
                 // Read as much as possible (edge-triggered)
+                // IMPORTANT: WouldBlock (EAGAIN) is the normal exit for edge-triggered epoll —
+                // it means "no more data right now, wait for next event". Only real errors
+                // and EOF (n_read==0) should close the connection.
                 if (st.overflow_buf != null) {
                     // Reading into overflow buffer
                     while (true) {
                         st.ensureOverflow(BUF_SIZE) catch { should_close = true; break; };
                         const buf = st.overflow_buf.?;
-                        const n_read = posix.read(fd, buf[st.overflow_len..]) catch { should_close = true; break; };
+                        const n_read = posix.read(fd, buf[st.overflow_len..]) catch |err| {
+                            if (err == error.WouldBlock) break; // Normal for edge-triggered
+                            should_close = true;
+                            break;
+                        };
                         if (n_read == 0) { should_close = true; break; }
                         st.overflow_len += n_read;
                     }
                 } else {
                     while (st.read_len < BUF_SIZE) {
-                        const n_read = posix.read(fd, st.read_buf[st.read_len..]) catch { should_close = true; break; };
+                        const n_read = posix.read(fd, st.read_buf[st.read_len..]) catch |err| {
+                            if (err == error.WouldBlock) break;
+                            should_close = true;
+                            break;
+                        };
                         if (n_read == 0) { should_close = true; break; }
                         st.read_len += n_read;
                     }
@@ -443,7 +454,11 @@ fn workerLoop(_: usize) void {
                                 while (true) {
                                     st.ensureOverflow(BUF_SIZE) catch { should_close = true; break; };
                                     const buf = st.overflow_buf.?;
-                                    const n_read = posix.read(fd, buf[st.overflow_len..]) catch { should_close = true; break; };
+                                    const n_read = posix.read(fd, buf[st.overflow_len..]) catch |err| {
+                                        if (err == error.WouldBlock) break;
+                                        should_close = true;
+                                        break;
+                                    };
                                     if (n_read == 0) { should_close = true; break; }
                                     st.overflow_len += n_read;
                                 }
