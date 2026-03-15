@@ -242,11 +242,11 @@ let settings = newSettings(
 
 var app = newApp(settings = settings)
 
-proc addServerHeader(ctx: Context) {.async.} =
+let serverHeaderMiddleware: HandlerAsync = proc(ctx: Context) {.async.} =
   ctx.response.setHeader("Server", "prologue")
   await switch(ctx)
 
-app.use(addServerHeader)
+app.use(serverHeaderMiddleware)
 
 app.addRoute("/pipeline", pipelineHandler, HttpGet)
 app.addRoute("/baseline11", baseline11Handler, HttpGet)
