@@ -360,7 +360,6 @@ pub fn main() !void {
             _ = std.posix.write(2, "uring: init failed, falling back to epoll\n") catch {};
             var server = blitz.Server.init(&router, .{
                 .port = 8080,
-                .keep_alive_timeout = 0,
                 .compression = false,
             });
             try server.listen();
@@ -369,7 +368,6 @@ pub fn main() !void {
     } else {
         var server = blitz.Server.init(&router, .{
             .port = 8080,
-            .keep_alive_timeout = 0,
             .compression = false,
         });
         try server.listen();
