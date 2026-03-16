@@ -1,6 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
-const blitz = @import("blitz.zig");
+const blitz = @import("blitz");
 
 // ── Global pre-computed responses ───────────────────────────────────
 var dataset_json_resp: []const u8 = "";
