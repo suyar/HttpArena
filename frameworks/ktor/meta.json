@@ -1,0 +1,19 @@
+{
+  "display_name": "ktor",
+  "language": "Kotlin",
+  "type": "framework",
+  "engine": "Netty",
+  "description": "JetBrains Ktor 3.x on Netty with Kotlin coroutines, kotlinx.serialization, JDK 21.",
+  "repo": "https://github.com/ktorio/ktor",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "noisy",
+    "mixed"
+  ]
+}
