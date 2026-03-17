@@ -243,7 +243,7 @@ fun main() {
             }
 
             post("/upload") {
-                val body = call.receiveChannel().toByteArray()
+                val body = call.receive<ByteArray>()
                 call.respondText(body.size.toString(), ContentType.Text.Plain)
             }
 
@@ -273,13 +273,4 @@ private fun sumQueryParams(call: ApplicationCall): Long {
     return sum
 }
 
-private suspend fun io.ktor.utils.io.ByteReadChannel.toByteArray(): ByteArray {
-    val buffer = java.io.ByteArrayOutputStream()
-    val tmp = ByteArray(8192)
-    while (!isClosedForRead) {
-        val read = readAvailable(tmp)
-        if (read <= 0) break
-        buffer.write(tmp, 0, read)
-    }
-    return buffer.toByteArray()
-}
+
