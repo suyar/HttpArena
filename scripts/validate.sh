@@ -70,6 +70,9 @@ if [ "$ENGINE" = "io_uring" ]; then
     docker_args+=(--ulimit memlock=-1:-1)
 fi
 
+# Remove any stale container from a previous run
+cleanup
+
 docker run "${docker_args[@]}" "$IMAGE_NAME"
 
 # Wait for server to start
