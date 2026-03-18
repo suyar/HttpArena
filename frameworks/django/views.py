@@ -71,7 +71,13 @@ def baseline11(request):
         except ValueError:
             pass
     if request.method == 'POST':
-        body = request.read()
+        # Read from wsgi.input directly to handle chunked Transfer-Encoding
+        # (Django's request.body checks CONTENT_LENGTH which is absent for chunked)
+        content_length = request.META.get('CONTENT_LENGTH')
+        if content_length:
+            body = request.body
+        else:
+            body = request.META['wsgi.input'].read()
         if body:
             try:
                 total += int(body.strip())
