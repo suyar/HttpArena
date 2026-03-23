@@ -1,0 +1,46 @@
+require 'rails'
+require 'action_controller/railtie'
+
+class BenchmarkApp < Rails::Application
+  config.load_defaults 8.0
+  config.eager_load = true
+  config.api_only = true
+  config.secret_key_base = 'benchmark-not-secret'
+  config.hosts.clear
+  config.consider_all_requests_local = false
+
+  # Disable all middleware we don't need
+  config.middleware.delete ActionDispatch::HostAuthorization
+  config.middleware.delete ActionDispatch::Callbacks
+  config.middleware.delete ActionDispatch::ActionableExceptions
+  config.middleware.delete ActionDispatch::RemoteIp
+  config.middleware.delete ActionDispatch::RequestId
+  config.middleware.delete Rails::Rack::Logger
+  config.middleware.delete ActionDispatch::ShowExceptions
+
+  # Catch unknown HTTP methods and routing errors
+  config.middleware.insert_before 0, Class.new {
+    VALID_METHODS = %w[GET HEAD POST PUT DELETE PATCH OPTIONS TRACE].to_set.freeze
+
+    def initialize(app)
+      @app = app
+    end
+
+    def call(env)
+      unless VALID_METHODS.include?(env['REQUEST_METHOD'])
+        return [405, { 'Content-Type' => 'text/plain' }, ['Method Not Allowed']]
+      end
+      @app.call(env)
+    rescue => e
+      if e.class.name.include?('UnknownHttpMethod') || e.class.name.include?('RoutingError')
+        [400, { 'Content-Type' => 'text/plain' }, ['Bad Request']]
+      else
+        raise
+      end
+    end
+  }
+
+  # Silence logging
+  config.logger = Logger.new('/dev/null')
+  config.log_level = :fatal
+end
