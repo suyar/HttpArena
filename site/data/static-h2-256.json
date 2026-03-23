@@ -343,5 +343,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "vertx",
+    "language": "Java",
+    "rps": 503298,
+    "avg_latency": "49.82ms",
+    "p99_latency": "49.82ms",
+    "cpu": "8826.5%",
+    "memory": "11.2GiB",
+    "connections": 256,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "7.69GB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 2523572,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]

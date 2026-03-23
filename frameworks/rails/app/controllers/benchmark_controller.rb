@@ -9,7 +9,6 @@ class BenchmarkController < ActionController::API
   LARGE_DATASET_PATH = '/data/dataset-large.json'
 
   @@json_payload = nil
-  @@compressed_payload = nil
   @@db_available = File.exist?('/data/benchmark.db')
 
   if File.exist?(DATASET_PATH)
@@ -18,15 +17,11 @@ class BenchmarkController < ActionController::API
     @@json_payload = JSON.generate({ 'items' => items, 'count' => items.length })
   end
 
+  @@large_json_payload = nil
   if File.exist?(LARGE_DATASET_PATH)
     raw = JSON.parse(File.read(LARGE_DATASET_PATH))
     items = raw.map { |d| d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0) }
-    payload = JSON.generate({ 'items' => items, 'count' => items.length })
-    sio = StringIO.new
-    gz = Zlib::GzipWriter.new(sio, 1)
-    gz.write(payload)
-    gz.close
-    @@compressed_payload = sio.string
+    @@large_json_payload = JSON.generate({ 'items' => items, 'count' => items.length })
   end
 
   DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'
@@ -69,11 +64,15 @@ class BenchmarkController < ActionController::API
   end
 
   def compression
-    if @@compressed_payload
+    if @@large_json_payload
+      sio = StringIO.new
+      gz = Zlib::GzipWriter.new(sio, 1)
+      gz.write(@@large_json_payload)
+      gz.close
       response.headers['Server'] = 'rails'
       response.headers['Content-Type'] = 'application/json'
       response.headers['Content-Encoding'] = 'gzip'
-      send_data @@compressed_payload, disposition: :inline
+      send_data sio.string, disposition: :inline
     else
       head 500
     end

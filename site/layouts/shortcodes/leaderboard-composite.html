@@ -512,7 +512,7 @@ function renderComposite() {
       if (s === 0) {
         profileCells += '<div class="lb-stat" style="text-align:right; color:#cbd5e1;' + bgStyle + '">—</div>';
       } else {
-        var color = scored ? (s >= 80 ? '#16a34a' : s >= 50 ? '#ca8a04' : '#dc2626') : '#94a3b8';
+        var color = scored ? (s >= 90 ? '#166534' : s >= 80 ? '#16a34a' : s >= 70 ? '#4ade80' : s >= 50 ? '#ca8a04' : s >= 30 ? '#ea580c' : '#dc2626') : '#94a3b8';
         var suffix = '';
         if (pid !== 'mixed') {
           var rps = avgByProfile[pid][r.framework];
@@ -527,7 +527,7 @@ function renderComposite() {
       '<div class="lb-rank">' + rank + '</div>' +
       '<div class="lb-name" style="font-weight:400; font-size:0.8rem;">' + r.framework + '</div>' +
       '<div class="lb-lang">' + r.language + '</div>' +
-      '<div class="lb-rps" style="font-weight:400; text-align:left; padding-left:0.5rem; color:' + (pct >= 80 ? '#16a34a' : pct >= 50 ? '#ca8a04' : '#dc2626') + ';">' + r.composite.toFixed(1) + '</div>' +
+      '<div class="lb-rps" style="font-weight:400; text-align:left; padding-left:0.5rem; color:' + (pct >= 90 ? '#166534' : pct >= 80 ? '#16a34a' : pct >= 70 ? '#4ade80' : pct >= 50 ? '#ca8a04' : pct >= 30 ? '#ea580c' : '#dc2626') + ';">' + r.composite.toFixed(1) + '</div>' +
       profileCells;
 
     row.addEventListener('click', function() {

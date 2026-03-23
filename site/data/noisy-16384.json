@@ -449,6 +449,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ktor",
+    "language": "Kotlin",
+    "rps": 221760,
+    "avg_latency": "38.58ms",
+    "p99_latency": "132.10ms",
+    "cpu": "11360.0%",
+    "memory": "5.4GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "35.00MB/s",
+    "input_bw": "22.42MB/s",
+    "reconnects": 3506,
+    "status_2xx": 1108803,
+    "status_3xx": 0,
+    "status_4xx": 383584,
+    "status_5xx": 0
+  },
+  {
     "framework": "nginx-openresty",
     "language": "Lua",
     "rps": 1785499,
@@ -506,6 +526,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "phoenix",
+    "language": "Elixir",
+    "rps": 158492,
+    "avg_latency": "27.04ms",
+    "p99_latency": "39.40ms",
+    "cpu": "7562.2%",
+    "memory": "1.5GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "38.23MB/s",
+    "input_bw": "16.02MB/s",
+    "reconnects": 2052,
+    "status_2xx": 792462,
+    "status_3xx": 0,
+    "status_4xx": 279601,
+    "status_5xx": 0
+  },
+  {
     "framework": "prologue",
     "language": "Nim",
     "rps": 124494,
@@ -542,6 +582,26 @@
     "status_2xx": 7951106,
     "status_3xx": 0,
     "status_4xx": 2566464,
+    "status_5xx": 0
+  },
+  {
+    "framework": "Rails",
+    "language": "Ruby",
+    "rps": 22835,
+    "avg_latency": "50.47ms",
+    "p99_latency": "949.50ms",
+    "cpu": "3460.2%",
+    "memory": "4.5GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "13.86MB/s",
+    "input_bw": "2.31MB/s",
+    "reconnects": 22255,
+    "status_2xx": 114177,
+    "status_3xx": 0,
+    "status_4xx": 91007,
     "status_5xx": 0
   },
   {
@@ -621,6 +681,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "Starlette",
+    "language": "Python",
+    "rps": 422983,
+    "avg_latency": "22.55ms",
+    "p99_latency": "121.10ms",
+    "cpu": "5730.6%",
+    "memory": "974.4MiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "66.27MB/s",
+    "input_bw": "42.76MB/s",
+    "reconnects": 3124,
+    "status_2xx": 2114916,
+    "status_3xx": 0,
+    "status_4xx": 145689,
+    "status_5xx": 0
+  },
+  {
     "framework": "ulfius",
     "language": "C",
     "rps": 679171,
@@ -658,5 +738,25 @@
     "status_3xx": 0,
     "status_4xx": 1951772,
     "status_5xx": 4165
+  },
+  {
+    "framework": "vertx",
+    "language": "Java",
+    "rps": 1862490,
+    "avg_latency": "4.17ms",
+    "p99_latency": "22.60ms",
+    "cpu": "7115.0%",
+    "memory": "9.1GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "139.34MB/s",
+    "input_bw": "188.28MB/s",
+    "reconnects": 3809,
+    "status_2xx": 9312450,
+    "status_3xx": 0,
+    "status_4xx": 2581230,
+    "status_5xx": 0
   }
 ]

@@ -53,13 +53,14 @@ defmodule HttparenaPhoenix.BenchController do
   end
 
   def compression(conn, _params) do
-    gzip_cache = :persistent_term.get(:gzip_large_cache)
+    json_large_cache = :persistent_term.get(:json_large_cache)
+    compressed = :zlib.gzip(json_large_cache)
 
     conn
     |> put_resp_header("server", "phoenix")
     |> put_resp_header("content-encoding", "gzip")
     |> put_resp_header("content-type", "application/json")
-    |> send_resp(200, gzip_cache)
+    |> send_resp(200, compressed)
   end
 
   def upload(conn, _params) do

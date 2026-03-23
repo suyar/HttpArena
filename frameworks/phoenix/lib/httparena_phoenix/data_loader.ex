@@ -11,7 +11,6 @@ defmodule HttparenaPhoenix.DataLoader do
 
     json_cache = build_json_response(dataset)
     json_large_cache = build_json_response(large_dataset)
-    gzip_large_cache = :zlib.gzip(json_large_cache)
 
     static_files = load_static_files()
 
@@ -20,7 +19,6 @@ defmodule HttparenaPhoenix.DataLoader do
     :persistent_term.put(:dataset, dataset)
     :persistent_term.put(:json_cache, json_cache)
     :persistent_term.put(:json_large_cache, json_large_cache)
-    :persistent_term.put(:gzip_large_cache, gzip_large_cache)
     :persistent_term.put(:static_files, static_files)
     :persistent_term.put(:db_available, db_available)
   end

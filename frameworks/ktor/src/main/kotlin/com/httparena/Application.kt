@@ -78,7 +78,6 @@ object AppData {
     var dataset: List<DatasetItem> = emptyList()
     var jsonCache: ByteArray = ByteArray(0)
     var largeJsonCache: ByteArray = ByteArray(0)
-    var largeGzipCache: ByteArray = ByteArray(0)
     val staticFiles: MutableMap<String, Pair<ByteArray, String>> = mutableMapOf()
     var db: Connection? = null
 
@@ -106,8 +105,6 @@ object AppData {
         if (largeFile.exists()) {
             val largeItems = json.decodeFromString<List<DatasetItem>>(largeFile.readText())
             largeJsonCache = buildJsonCache(largeItems)
-            // Pre-compress for gzip
-            largeGzipCache = gzipCompress(largeJsonCache)
         }
 
         // Static files
@@ -143,7 +140,7 @@ object AppData {
         return json.encodeToString(JsonResponse.serializer(), resp).toByteArray()
     }
 
-    private fun gzipCompress(data: ByteArray): ByteArray {
+    fun gzipCompress(data: ByteArray): ByteArray {
         val bos = ByteArrayOutputStream(data.size / 4)
         GZIPOutputStream(bos).use { it.write(data) }
         return bos.toByteArray()
@@ -195,9 +192,9 @@ fun main() {
                     return@get
                 }
                 val acceptEncoding = call.request.header(HttpHeaders.AcceptEncoding) ?: ""
-                if (acceptEncoding.contains("gzip") && AppData.largeGzipCache.isNotEmpty()) {
+                if (acceptEncoding.contains("gzip")) {
                     call.response.header(HttpHeaders.ContentEncoding, "gzip")
-                    call.respondBytes(AppData.largeGzipCache, ContentType.Application.Json)
+                    call.respondBytes(AppData.gzipCompress(AppData.largeJsonCache), ContentType.Application.Json)
                 } else {
                     call.respondBytes(AppData.largeJsonCache, ContentType.Application.Json)
                 }

@@ -26,7 +26,6 @@ public class MainVerticle extends AbstractVerticle {
     private static volatile List<Map<String, Object>> dataset;
     private static volatile byte[] jsonResponse;
     private static volatile byte[] largeJsonResponse;
-    private static volatile byte[] gzipLargeJsonResponse;
     private static final Map<String, byte[]> staticFiles = new ConcurrentHashMap<>();
     private static final Map<String, String> MIME_TYPES = Map.ofEntries(
         Map.entry(".css", "text/css"),
@@ -101,13 +100,6 @@ public class MainVerticle extends AbstractVerticle {
                         largeItems.add(processed);
                     }
                     largeJsonResponse = MAPPER.writeValueAsBytes(Map.of("items", largeItems, "count", largeItems.size()));
-
-                    // Pre-gzip
-                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-                    java.util.zip.GZIPOutputStream gz = new java.util.zip.GZIPOutputStream(baos);
-                    gz.write(largeJsonResponse);
-                    gz.close();
-                    gzipLargeJsonResponse = baos.toByteArray();
                 }
 
                 // Static files
@@ -249,15 +241,22 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     private void handleCompression(RoutingContext ctx) {
-        if (gzipLargeJsonResponse == null) {
+        if (largeJsonResponse == null) {
             ctx.response().setStatusCode(500).end("Large dataset not loaded");
             return;
         }
-        // Always serve pre-compressed gzip — benchmark expects compressed response
-        ctx.response()
-            .putHeader("content-type", "application/json")
-            .putHeader("content-encoding", "gzip")
-            .end(Buffer.buffer(gzipLargeJsonResponse));
+        try {
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            java.util.zip.GZIPOutputStream gz = new java.util.zip.GZIPOutputStream(baos);
+            gz.write(largeJsonResponse);
+            gz.close();
+            ctx.response()
+                .putHeader("content-type", "application/json")
+                .putHeader("content-encoding", "gzip")
+                .end(Buffer.buffer(baos.toByteArray()));
+        } catch (Exception e) {
+            ctx.response().setStatusCode(500).end("Compression failed");
+        }
     }
 
     private void handleUpload(RoutingContext ctx) {

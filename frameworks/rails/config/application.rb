@@ -7,6 +7,7 @@ class BenchmarkApp < Rails::Application
   config.api_only = true
   config.secret_key_base = 'benchmark-not-secret'
   config.hosts.clear
+
   config.consider_all_requests_local = false
 
   # Disable all middleware we don't need
@@ -18,7 +19,7 @@ class BenchmarkApp < Rails::Application
   config.middleware.delete Rails::Rack::Logger
   config.middleware.delete ActionDispatch::ShowExceptions
 
-  # Catch unknown HTTP methods and routing errors
+  # Catch unknown HTTP methods, routing errors, and mark /upload as binary
   config.middleware.insert_before 0, Class.new {
     VALID_METHODS = %w[GET HEAD POST PUT DELETE PATCH OPTIONS TRACE].to_set.freeze
 
@@ -29,6 +30,10 @@ class BenchmarkApp < Rails::Application
     def call(env)
       unless VALID_METHODS.include?(env['REQUEST_METHOD'])
         return [405, { 'Content-Type' => 'text/plain' }, ['Method Not Allowed']]
+      end
+      # Mark /upload as binary so Rack skips form parameter parsing
+      if env['PATH_INFO'] == '/upload'
+        env['CONTENT_TYPE'] = 'application/octet-stream'
       end
       @app.call(env)
     rescue => e

@@ -15,5 +15,7 @@
   "Nim":        { "accent": "#ffc200", "text": "#d4a200", "textDark": "#ffe066", "rgb": "255,194,0" },
   "Gleam":      { "accent": "#ffaff3", "text": "#d946b8", "textDark": "#ffaff3", "rgb": "255,175,243" },
   "Zig":        { "accent": "#f7a41d", "text": "#c47f0a", "textDark": "#f7a41d", "rgb": "247,164,29" },
-  "Swift":      { "accent": "#f05138", "text": "#d63d25", "textDark": "#f47b6b", "rgb": "240,81,56" }
+  "Swift":      { "accent": "#f05138", "text": "#d63d25", "textDark": "#f47b6b", "rgb": "240,81,56" },
+  "Elixir":     { "accent": "#6e4a7e", "text": "#5b3a6b", "textDark": "#b07cc6", "rgb": "110,74,126" },
+  "Kotlin":     { "accent": "#7f52ff", "text": "#6538d4", "textDark": "#a48bff", "rgb": "127,82,255" }
 }

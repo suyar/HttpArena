@@ -29,9 +29,8 @@ if dataset_items is not None:
         items.append(item)
     json_buf = orjson.dumps({"items": items, "count": len(items)})
 
-# Large dataset for compression (pre-serialised + pre-compressed)
+# Large dataset for compression (pre-serialised, compressed per-request)
 large_json_buf: bytes | None = None
-compressed_buf: bytes | None = None
 try:
     with open("/data/dataset-large.json") as f:
         raw = json.load(f)
@@ -41,7 +40,6 @@ try:
         item["total"] = round(d["price"] * d["quantity"] * 100) / 100
         items.append(item)
     large_json_buf = orjson.dumps({"items": items, "count": len(items)})
-    compressed_buf = gzip.compress(large_json_buf, compresslevel=1)
 except Exception:
     pass
 
@@ -123,9 +121,10 @@ async def json_endpoint(request: Request) -> Response:
 
 
 async def compression_endpoint(request: Request) -> Response:
-    if compressed_buf is None:
+    if large_json_buf is None:
         return _text("No dataset", 500)
-    return _json_resp(compressed_buf, extra_headers={"Content-Encoding": "gzip"})
+    compressed = gzip.compress(large_json_buf, compresslevel=1)
+    return _json_resp(compressed, extra_headers={"Content-Encoding": "gzip"})
 
 
 async def db_endpoint(request: Request) -> Response:
