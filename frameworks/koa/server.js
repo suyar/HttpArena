@@ -141,8 +141,8 @@ function startWorker() {
             return;
         }
         ctx.set('server', SERVER_NAME);
+        ctx.set('content-type', 'application/json');
         ctx.set('content-length', String(jsonBuf.length));
-        ctx.type = 'application/json';
         ctx.body = jsonBuf;
     });
 
@@ -154,9 +154,9 @@ function startWorker() {
             return;
         }
         ctx.set('server', SERVER_NAME);
+        ctx.set('content-type', 'application/json');
         ctx.set('content-encoding', 'gzip');
         ctx.set('content-length', String(largeJsonGzip.length));
-        ctx.type = 'application/json';
         ctx.body = largeJsonGzip;
     });
 
@@ -180,8 +180,8 @@ function startWorker() {
         }));
         const body = JSON.stringify({ items, count: items.length });
         ctx.set('server', SERVER_NAME);
+        ctx.set('content-type', 'application/json');
         ctx.set('content-length', String(Buffer.byteLength(body)));
-        ctx.type = 'application/json';
         ctx.body = body;
     });
 
