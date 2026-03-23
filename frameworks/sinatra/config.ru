@@ -29,8 +29,11 @@ class UploadHandler
     if env['REQUEST_METHOD'] == 'POST' && env['PATH_INFO'] == '/upload'
       input = env['rack.input']
       input.rewind
-      data = input.read
-      [200, { 'content-type' => 'text/plain', 'server' => 'sinatra' }, [data.bytesize.to_s]]
+      bytes = 0
+      while (chunk = input.read(65536))
+        bytes += chunk.bytesize
+      end
+      [200, { 'content-type' => 'text/plain', 'server' => 'sinatra' }, [bytes.to_s]]
     else
       @app.call(env)
     end
