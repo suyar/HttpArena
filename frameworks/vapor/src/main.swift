@@ -226,13 +226,14 @@ app.http.server.configuration.responseCompression = .enabled
 
 // Middleware to reject unknown HTTP methods with 405
 struct MethodFilterMiddleware: AsyncMiddleware {
-    static let allowedMethods: Set<HTTPMethod> = [.GET, .POST, .PUT, .DELETE, .PATCH, .HEAD, .OPTIONS]
+    private static let allowedMethods: [HTTPMethod] = [.GET, .POST, .PUT, .DELETE, .PATCH, .HEAD, .OPTIONS]
 
     func respond(to request: Request, chainingTo next: any AsyncResponder) async throws -> Response {
-        guard Self.allowedMethods.contains(request.method) else {
-            return Response(status: .methodNotAllowed)
+        let method = request.method
+        for m in Self.allowedMethods {
+            if m == method { return try await next.respond(to: request) }
         }
-        return try await next.respond(to: request)
+        return Response(status: .methodNotAllowed)
     }
 }
 app.middleware.use(MethodFilterMiddleware())
