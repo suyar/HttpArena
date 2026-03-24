@@ -1,3 +1,5 @@
+ARG NGINX_VERSION=1.28.3
+
 FROM debian:bookworm AS build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -12,7 +14,7 @@ RUN git clone --depth 1 -b openssl-3.1.5+quic https://github.com/quictls/openssl
     make install_sw
 
 # Download nginx source
-ARG NGINX_VERSION=1.26.2
+ARG NGINX_VERSION
 RUN wget -q http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && \
     tar xzf nginx-${NGINX_VERSION}.tar.gz
 
@@ -45,7 +47,8 @@ RUN ln -s libssl.so.81.3 /opt/quictls/lib/libssl.so.81 && \
     ln -s libcrypto.so.81.3 /opt/quictls/lib/libcrypto.so.81 && \
     ln -s libcrypto.so.81 /opt/quictls/lib/libcrypto.so && \
     ldconfig /opt/quictls/lib
-COPY --from=build /tmp/nginx-1.26.2/objs/nginx /usr/sbin/nginx
+ARG NGINX_VERSION
+COPY --from=build /tmp/nginx-${NGINX_VERSION}/objs/nginx /usr/sbin/nginx
 RUN mkdir -p /usr/local/nginx/logs
 COPY nginx.conf /usr/local/nginx/conf/nginx.conf
 EXPOSE 8080 8443/tcp 8443/udp
