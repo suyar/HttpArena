@@ -15,9 +15,8 @@ try:
 except Exception:
     pass
 
-# Large dataset for compression — pre-compute JSON and gzip
+# Large dataset for compression — pre-compute JSON, compress per-request
 large_json_buf = None
-large_gzip_buf = None
 try:
     with open('/data/dataset-large.json') as f:
         raw = json.load(f)
@@ -27,7 +26,6 @@ try:
         item['total'] = round(d['price'] * d['quantity'] * 100) / 100
         items.append(item)
     large_json_buf = json.dumps({'items': items, 'count': len(items)}).encode()
-    large_gzip_buf = gzip.compress(large_json_buf, compresslevel=1)
 except Exception:
     pass
 
@@ -112,8 +110,9 @@ def json_endpoint(request):
 
 @require_GET
 def compression_endpoint(request):
-    if large_gzip_buf:
-        resp = HttpResponse(large_gzip_buf, content_type='application/json')
+    if large_json_buf:
+        compressed = gzip.compress(large_json_buf, compresslevel=1)
+        resp = HttpResponse(compressed, content_type='application/json')
         resp['Content-Encoding'] = 'gzip'
         resp['Server'] = 'django'
         return resp
