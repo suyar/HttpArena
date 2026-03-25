@@ -165,8 +165,24 @@ func sumQuery(r *http.Request) int64 {
 	return sum
 }
 
+func rejectBadMethod(w http.ResponseWriter, r *http.Request) bool {
+	switch r.Method {
+	case http.MethodGet, http.MethodHead, http.MethodPost:
+		return false
+	default:
+		w.Header().Set("Allow", "GET, HEAD, POST")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return true
+	}
+}
+
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
 	path := r.URL.Path
+
+	// Reject unknown HTTP methods with 405
+	if rejectBadMethod(w, r) {
+		return nil
+	}
 
 	switch path {
 	case "/pipeline":
@@ -302,7 +318,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyht
 		return nil
 	}
 
-	return next.ServeHTTP(w, r)
+	http.NotFound(w, r)
+	return nil
 }
 
 func (h *Handler) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
