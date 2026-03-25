@@ -184,17 +184,11 @@ async fn baseline2(req: HttpRequest) -> HttpResponse {
         .body(sum.to_string())
 }
 
-async fn upload(
-    mut body: web::types::Payload,
-) -> Result<HttpResponse, web::error::PayloadError> {
-    let mut len: usize = 0;
-    while let Some(chunk) = ntex::util::stream_recv(&mut body).await {
-        len += chunk?.len();
-    }
-    Ok(HttpResponse::Ok()
+async fn upload(body: web::types::Bytes) -> HttpResponse {
+    HttpResponse::Ok()
         .header(SERVER, SERVER_NAME)
         .header(CONTENT_TYPE, "text/plain")
-        .body(len.to_string()))
+        .body(body.len().to_string())
 }
 
 async fn json_endpoint(state: web::types::State<Arc<AppState>>) -> HttpResponse {
