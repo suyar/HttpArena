@@ -311,10 +311,10 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to open database");
 
         App::new()
-            .wrap(web::middleware::Compress::default())
+            .middleware(web::middleware::Compress::default())
             .state(state.clone())
             .state(worker_db)
-            .app_data(web::types::PayloadConfig::new(25 * 1024 * 1024))
+            .state(web::types::PayloadConfig::new(25 * 1024 * 1024))
             .route("/pipeline", web::get().to(pipeline))
             .route("/baseline11", web::get().to(baseline11_get))
             .route("/baseline11", web::post().to(baseline11_post))
