@@ -63,7 +63,6 @@ def json_resp(body, status: int = 200, gzip: bool = False):
     headers = [ ( 'Content-Type', 'application/json' ) ]
     if gzip:
         headers.append( ( 'Content-Encoding', 'gzip' ) )
-        body = gzip.compress(body, compresslevel = 1)
     if isinstance(body, dict):
         body = orjson.dumps(body)
     if isinstance(body, str):
@@ -77,7 +76,7 @@ def pipeline(env):
 
 def baseline11(env):
     req_method = env.get('REQUEST_METHOD', '')
-    query_params = parse_qs(env.get('QUERY_STRING', '').decode())
+    query_params = parse_qs(env.get('QUERY_STRING', ''))
     total = 0
     for v in query_params.values():
         try:
@@ -97,7 +96,7 @@ def baseline11(env):
     return text_resp(str(total))
 
 def baseline2(env):
-    query_params = parse_qs(env.get('QUERY_STRING', '').decode())
+    query_params = parse_qs(env.get('QUERY_STRING', ''))
     total = 0
     for v in query_params.values():
         try:
@@ -123,7 +122,7 @@ def compression_endpoint(env):
     return json_resp(compressed, gzip = True)
 
 def db_endpoint(env):
-    query_params = parse_qs(env.get('QUERY_STRING', '').decode())
+    query_params = parse_qs(env.get('QUERY_STRING', ''))
     if not db_available:
         return json_resp( { "items": [ ], "count": 0 } )
     min_val = float(query_params.get("min", [10])[0])
@@ -178,14 +177,27 @@ routes = {
 def handle_404(env):
     return text_resp(b'Not found', status = 404)
 
+def handle_405(env):
+    return text_resp(b'Method Not Allowed', status = 405)
+
 # -- WSGI app -----------------------------------------------------------
+
+http_status = {
+    200: '200 OK',
+    404: '404 Not Found',
+    405: '405 Method Not Allowed',
+}
 
 def app(env, start_response):
     global routes
-    path = env["PATH_INFO"]
-    app_handler = routes.get(path, handle_404)
-    status, headers, body = app_handler(env)
-    start_response('200 OK' if status == 200 else str(status), headers)
+    req_method = env.get('REQUEST_METHOD', '')
+    if req_method not in [ 'GET', 'POST' ]:
+        status, headers, body = handle_405(env)
+    else:
+        path = env["PATH_INFO"]    
+        app_handler = routes.get(path, handle_404)
+        status, headers, body = app_handler(env)
+    start_response(http_status.get(status, str(status)), headers)
     return [ body ]
 
 # -----------------------------------------------------------------------
