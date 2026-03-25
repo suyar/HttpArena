@@ -605,7 +605,7 @@ fn buildCompressionJsonBody(items: []const DatasetItem) []const u8 {
         json_buf.appendSlice(",\"price\":") catch {};
         writeFloatToList(&json_buf, item.price);
 
-        var qty_buf: [32]u8 = undefined;
+        var qty_buf: [128]u8 = undefined;
         const qty_s = std.fmt.bufPrint(&qty_buf, ",\"quantity\":{d},\"active\":{s},\"tags\":", .{
             item.quantity,
             if (item.active) "true" else "false",
@@ -616,7 +616,7 @@ fn buildCompressionJsonBody(items: []const DatasetItem) []const u8 {
 
         json_buf.appendSlice(",\"rating\":{\"score\":") catch {};
         writeFloatToList(&json_buf, item.rating_score);
-        var rc_buf: [32]u8 = undefined;
+        var rc_buf: [64]u8 = undefined;
         const rc_s = std.fmt.bufPrint(&rc_buf, ",\"count\":{d}}},\"total\":", .{item.rating_count}) catch continue;
         json_buf.appendSlice(rc_s) catch {};
         writeFloatToList(&json_buf, total);
