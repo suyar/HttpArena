@@ -65,15 +65,14 @@ $http_worker->onMessage = static function ($connection, $request) {
             return $connection->send(strlen($request->rawBody()));
 
         case '/compression':
-             global $largeJson;
+            global $largeJson;
 
-            if ($request->header('Accept-Encoding', '') === 'gzip') {
-                return $connection->send(new Response(
-                                    200, [
-                                    'Content-Type' => 'application/json',
-                                    'Content-Encoding' => 'gzip'
-                                    ], gzencode($largeJson, 1))
-                );
+            if (str_contains($request->header('Accept-Encoding', ''), 'gzip')) {
+                 $connection->headers = [
+                    'Content-Type' => 'application/json',
+                    'Content-Encoding' => 'gzip'
+                ];
+                return $connection->send(gzencode($largeJson, 1));
             }
 
             $resp = new Response(200, ['Content-Type' => 'application/json'], $largeJson);
