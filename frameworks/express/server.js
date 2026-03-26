@@ -63,7 +63,7 @@ function loadPgPool() {
     if (!dbUrl) return;
     try {
         const { Pool } = require('pg');
-        pgPool = new Pool({ connectionString: dbUrl, max: 16 });
+        pgPool = new Pool({ connectionString: dbUrl, max: 4 });
     } catch (e) {}
 }
 
@@ -174,8 +174,8 @@ function startWorker() {
             .send(body);
     });
 
-    // --- /pgdb ---
-    app.get('/pgdb', async (req, res) => {
+    // --- /async-db ---
+    app.get('/async-db', async (req, res) => {
         if (!pgPool) {
             return res.set('server', SERVER_NAME).type('application/json').send('{"items":[],"count":0}');
         }

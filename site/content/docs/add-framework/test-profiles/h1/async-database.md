@@ -6,13 +6,13 @@ The Async Database profile measures how efficiently a framework handles concurre
 
 **This test is for framework-type entries only** — engines (nginx, h2o, etc.) are excluded.
 
-**Connections:** 256, 1,024, 4,096
+**Connections:** 512, 1,024
 
 ## How it works
 
 1. A Postgres container runs alongside the framework container on the same host, listening on `localhost:5432`
 2. The framework reads the `DATABASE_URL` environment variable at startup and initializes a connection pool
-3. On each `GET /pgdb?min=10&max=50` request, the framework:
+3. On each `GET /async-db?min=10&max=50` request, the framework:
    - Parses `min` and `max` query parameters (both floats, default `10` and `50`)
    - Executes an async range query with `LIMIT 50` against the Postgres `items` table
    - Restructures `rating_score` and `rating_count` into a nested `rating` object
@@ -61,7 +61,7 @@ LIMIT 50
 ## Expected response
 
 ```
-GET /pgdb?min=10&max=50 HTTP/1.1
+GET /async-db?min=10&max=50 HTTP/1.1
 ```
 
 ```json
@@ -110,8 +110,8 @@ DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark
 
 | Parameter | Value |
 |-----------|-------|
-| Endpoint | `GET /pgdb` |
-| Connections | 256, 1,024, 4,096 |
+| Endpoint | `GET /async-db` |
+| Connections | 512, 1,024 |
 | Pipeline | 1 |
 | Duration | 5s |
 | Runs | 3 (best taken) |

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using Npgsql;
 
 static class AppData
 {
@@ -13,6 +14,7 @@ static class AppData
     public static byte[]? LargeJsonResponse;
     public static Dictionary<string, (byte[] Data, string ContentType)> StaticFiles = new();
     public static SqliteConnection? DbConnection;
+    public static NpgsqlDataSource? PgDataSource;
 
     public static void Load()
     {
@@ -20,6 +22,7 @@ static class AppData
         LoadLargeDataset();
         LoadStaticFiles();
         OpenDatabase();
+        OpenPgPool();
     }
 
     static void LoadDataset()
@@ -68,6 +71,22 @@ static class AppData
             var ct = mimeTypes.GetValueOrDefault(ext, "application/octet-stream");
             StaticFiles[name] = (File.ReadAllBytes(file), ct);
         }
+    }
+
+    static void OpenPgPool()
+    {
+        var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        if (string.IsNullOrEmpty(dbUrl)) return;
+        try
+        {
+            // Parse postgres:// URI into Npgsql connection string
+            var uri = new Uri(dbUrl);
+            var userInfo = uri.UserInfo.Split(':');
+            var connStr = $"Host={uri.Host};Port={uri.Port};Username={userInfo[0]};Password={userInfo[1]};Database={uri.AbsolutePath.TrimStart('/')};Maximum Pool Size=256;Minimum Pool Size=64;Multiplexing=true;No Reset On Close=true;Max Auto Prepare=4;Auto Prepare Min Usages=1";
+            var builder = new NpgsqlDataSourceBuilder(connStr);
+            PgDataSource = builder.Build();
+        }
+        catch { }
     }
 
     static void OpenDatabase()

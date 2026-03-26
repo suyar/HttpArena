@@ -48,7 +48,11 @@ else
 fi
 
 # Mount volumes based on subscribed tests
-docker_args=(-d --name "$CONTAINER_NAME" -p "$PORT:8080")
+if has_test "async-db"; then
+    docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined)
+else
+    docker_args=(-d --name "$CONTAINER_NAME" -p "$PORT:8080")
+fi
 docker_args+=(-v "$DATA_DIR/dataset.json:/data/dataset.json:ro")
 
 needs_h2=false
@@ -78,9 +82,8 @@ fi
 # Start Postgres sidecar if async-db is needed
 if has_test "async-db"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
-    docker network create "$PG_NETWORK" 2>/dev/null || true
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
-    docker run -d --name "$PG_CONTAINER" --network "$PG_NETWORK" \
+    docker run -d --name "$PG_CONTAINER" --network host \
         -e POSTGRES_USER=bench \
         -e POSTGRES_PASSWORD=bench \
         -e POSTGRES_DB=benchmark \
@@ -94,8 +97,7 @@ if has_test "async-db"; then
         [ "$i" -eq 30 ] && { echo "FAIL: Postgres sidecar not ready"; exit 1; }
         sleep 1
     done
-    docker_args+=(--network "$PG_NETWORK")
-    docker_args+=(-e "DATABASE_URL=postgres://bench:bench@$PG_CONTAINER:5432/benchmark")
+    docker_args+=(-e "DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark")
 fi
 
 # Remove any stale container from a previous run
@@ -424,11 +426,11 @@ if has_test "static-h2"; then
     fi
 fi
 
-# ───── Async Database (GET /pgdb) ─────
+# ───── Async Database (GET /async-db) ─────
 
 if has_test "async-db"; then
     echo "[test] async-db endpoint"
-    response=$(curl -s "http://localhost:$PORT/pgdb?min=10&max=50")
+    response=$(curl -s "http://localhost:$PORT/async-db?min=10&max=50")
     pgdb_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -445,24 +447,24 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
     pgdb_active=$(echo "$pgdb_result" | cut -d' ' -f4)
 
     if [ "$pgdb_count" -gt 0 ] && [ "$pgdb_count" -le 50 ] && [ "$pgdb_rating" = "True" ] && [ "$pgdb_tags" = "True" ] && [ "$pgdb_active" = "True" ]; then
-        echo "  PASS [GET /pgdb?min=10&max=50] ($pgdb_count items, correct structure)"
+        echo "  PASS [GET /async-db?min=10&max=50] ($pgdb_count items, correct structure)"
         PASS=$((PASS + 1))
     else
-        echo "  FAIL [GET /pgdb?min=10&max=50]: count=$pgdb_count, rating=$pgdb_rating, tags=$pgdb_tags, active=$pgdb_active"
+        echo "  FAIL [GET /async-db?min=10&max=50]: count=$pgdb_count, rating=$pgdb_rating, tags=$pgdb_tags, active=$pgdb_active"
         FAIL=$((FAIL + 1))
     fi
 
-    check_header "GET /pgdb Content-Type" "Content-Type" "application/json" \
-        "http://localhost:$PORT/pgdb?min=10&max=50"
+    check_header "GET /async-db Content-Type" "Content-Type" "application/json" \
+        "http://localhost:$PORT/async-db?min=10&max=50"
 
     # Anti-cheat: empty range should return 0 items
-    response_empty=$(curl -s "http://localhost:$PORT/pgdb?min=9999&max=9999")
+    response_empty=$(curl -s "http://localhost:$PORT/async-db?min=9999&max=9999")
     pgdb_empty=$(echo "$response_empty" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count','-1'))" 2>/dev/null || echo "-1")
     if [ "$pgdb_empty" = "0" ]; then
-        echo "  PASS [GET /pgdb empty range] (count=0)"
+        echo "  PASS [GET /async-db empty range] (count=0)"
         PASS=$((PASS + 1))
     else
-        echo "  FAIL [GET /pgdb empty range]: expected count=0, got $pgdb_empty"
+        echo "  FAIL [GET /async-db empty range]: expected count=0, got $pgdb_empty"
         FAIL=$((FAIL + 1))
     fi
 fi

@@ -25,7 +25,7 @@ Tag **@BennyFranciscus** on your PR for help with implementation or benchmark qu
 | Category | Profiles | Description |
 |----------|----------|-------------|
 | Connection | Baseline (512-32K), Pipelined, Limited | Performance scaling with connection count |
-| Workload | JSON, Compression, Upload, Database | Serialization, gzip, I/O, queries |
+| Workload | JSON, Compression, Upload, Database, Async DB | Serialization, gzip, I/O, SQLite queries, async Postgres |
 | Resilience | Noisy, Mixed | Malformed requests, concurrent endpoints |
 | Protocol | HTTP/2, HTTP/3, gRPC, WebSocket | Multi-protocol support |
 

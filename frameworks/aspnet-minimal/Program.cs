@@ -62,6 +62,7 @@ app.MapPost("/upload", Handlers.Upload);
 app.MapGet("/json", Handlers.Json);
 app.MapGet("/compression", Handlers.Compression);
 app.MapGet("/db", Handlers.Database);
+app.MapGet("/async-db", Handlers.AsyncDatabase);
 app.MapGet("/static/{filename}", Handlers.StaticFile);
 
 app.Run();

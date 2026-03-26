@@ -42,7 +42,7 @@ declare -A PROFILES=(
     [unary-grpc]="1|0||256,1024|grpc"
     [unary-grpc-tls]="1|0||256,1024|grpc-tls"
     [echo-ws]="16|0||512,4096,16384|ws-echo"
-    [async-db]="1|0||256,1024,4096|pgdb"
+    [async-db]="1|0||512,1024|async-db"
 )
 PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
 
@@ -383,7 +383,7 @@ for profile in "${profiles_to_run[@]}"; do
         -v "$ROOT_DIR/data/benchmark.db:/data/benchmark.db:ro"
         -v "$ROOT_DIR/data/static:/data/static:ro"
         -v "$CERTS_DIR:/certs:ro")
-    if [ "$endpoint" = "pgdb" ]; then
+    if [ "$endpoint" = "async-db" ]; then
         docker_args+=(-e "DATABASE_URL=postgres://bench:bench@localhost:5432/benchmark")
     fi
     if [ -n "$cpu_limit" ]; then
@@ -516,8 +516,8 @@ for profile in "${profiles_to_run[@]}"; do
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/post_cl.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/db-get.raw,$REQUESTS_DIR/upload-small.raw,$REQUESTS_DIR/json-gzip.raw,$REQUESTS_DIR/json-gzip.raw"
             -c "$CONNS" -t "$THREADS" -d 15s -p "$pipeline")
-    elif [ "$endpoint" = "pgdb" ]; then
-        gc_args=("http://localhost:$PORT/pgdb?min=10&max=50"
+    elif [ "$endpoint" = "async-db" ]; then
+        gc_args=("http://localhost:$PORT/async-db?min=10&max=50"
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     elif [ "$endpoint" = "noisy" ]; then
         gc_args=("http://localhost:$PORT"

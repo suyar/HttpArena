@@ -1,5 +1,25 @@
 [
   {
+    "framework": "ntex-iouring",
+    "language": "Rust",
+    "rps": 1252360,
+    "avg_latency": "389us",
+    "p99_latency": "2.52ms",
+    "cpu": "6188.2%",
+    "memory": "159.1MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "139.70MB/s",
+    "input_bw": "96.74MB/s",
+    "reconnects": 626190,
+    "status_2xx": 6261804,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "actix",
     "language": "Rust",
     "rps": 1066449,
@@ -647,7 +667,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "ntex-iouring",
+    "framework": "ntex",
     "language": "Rust",
     "rps": 1252360,
     "avg_latency": "389us",
