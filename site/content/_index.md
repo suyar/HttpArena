@@ -62,7 +62,7 @@ html.dark .test-card-endpoint { color: #64748b; }
 </style>
 
 <div class="tests-section">
-<h2>15 Test Profiles Across HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket</h2>
+<h2>16 Test Profiles Across HTTP/1.1, HTTP/2, HTTP/3, gRPC and WebSocket</h2>
 <p class="tests-sub">Every framework is tested under diverse, realistic workloads — from raw throughput to compression, gRPC unary calls, and WebSocket echo.</p>
 
 <div class="tests-proto">
@@ -102,6 +102,11 @@ html.dark .test-card-endpoint { color: #64748b; }
     <div class="test-card-title">Mixed Workload</div>
     <div class="test-card-desc">Realistic mix of baseline, JSON, DB, upload, and compression requests with weighted scoring.</div>
     <div class="test-card-endpoint">GET/POST mixed endpoints (100 req/conn)</div>
+  </a>
+  <a class="test-card" href="docs/add-framework/test-profiles/h1/async-database">
+    <div class="test-card-title">Async Database (Postgres)</div>
+    <div class="test-card-desc">Async Postgres query over 100K rows — tests event loop scheduling, connection pooling, and async driver efficiency.</div>
+    <div class="test-card-endpoint">GET /async-db</div>
   </a>
   <a class="test-card" href="docs/add-framework/test-profiles/h1/pipelined">
     <div class="test-card-title">Pipelined (16x)</div>

@@ -1,5 +1,6 @@
 use actix_web::http::header::{ContentType, HeaderValue, SERVER};
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer};
+use deadpool_postgres::{Manager, ManagerConfig, Pool, RecyclingMethod};
 use rusqlite::Connection;
 use rustls::ServerConfig;
 use serde::{Deserialize, Serialize};
@@ -226,7 +227,16 @@ async fn compression(state: web::Data<Arc<AppState>>) -> HttpResponse {
         .body(state.json_large_cache.clone())
 }
 
-async fn db_endpoint(req: HttpRequest, db: web::Data<WorkerDb>) -> HttpResponse {
+async fn db_endpoint(req: HttpRequest, db: web::Data<Option<WorkerDb>>) -> HttpResponse {
+    let db = match db.as_ref() {
+        Some(d) => d,
+        None => {
+            return HttpResponse::Ok()
+                .insert_header((SERVER, SERVER_HDR.clone()))
+                .content_type(ContentType::json())
+                .body(r#"{"items":[],"count":0}"#);
+        }
+    };
     let min: f64 = req.uri().query().and_then(|q| {
         q.split('&').find_map(|p| p.strip_prefix("min=").and_then(|v| v.parse().ok()))
     }).unwrap_or(10.0);
@@ -256,6 +266,65 @@ async fn db_endpoint(req: HttpRequest, db: web::Data<WorkerDb>) -> HttpResponse 
         Ok(mapped) => mapped.filter_map(|r| r.ok()).collect(),
         Err(_) => Vec::new(),
     };
+    let result = serde_json::json!({"items": items, "count": items.len()});
+    HttpResponse::Ok()
+        .insert_header((SERVER, SERVER_HDR.clone()))
+        .content_type(ContentType::json())
+        .body(result.to_string())
+}
+
+async fn pgdb_endpoint(req: HttpRequest, pool: web::Data<Option<Pool>>) -> HttpResponse {
+    let pool = match pool.as_ref() {
+        Some(p) => p,
+        None => {
+            return HttpResponse::Ok()
+                .insert_header((SERVER, SERVER_HDR.clone()))
+                .content_type(ContentType::json())
+                .body(r#"{"items":[],"count":0}"#);
+        }
+    };
+    let min: f64 = req.uri().query().and_then(|q| {
+        q.split('&').find_map(|p| p.strip_prefix("min=").and_then(|v| v.parse().ok()))
+    }).unwrap_or(10.0);
+    let max: f64 = req.uri().query().and_then(|q| {
+        q.split('&').find_map(|p| p.strip_prefix("max=").and_then(|v| v.parse().ok()))
+    }).unwrap_or(50.0);
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => {
+            return HttpResponse::Ok()
+                .insert_header((SERVER, SERVER_HDR.clone()))
+                .content_type(ContentType::json())
+                .body(r#"{"items":[],"count":0}"#);
+        }
+    };
+    let stmt = client.prepare_cached(
+        "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50"
+    ).await.unwrap();
+    let rows = match client.query(&stmt, &[&min, &max]).await {
+        Ok(r) => r,
+        Err(_) => {
+            return HttpResponse::Ok()
+                .insert_header((SERVER, SERVER_HDR.clone()))
+                .content_type(ContentType::json())
+                .body(r#"{"items":[],"count":0}"#);
+        }
+    };
+    let items: Vec<serde_json::Value> = rows.iter().map(|row| {
+        serde_json::json!({
+            "id": row.get::<_, i32>(0) as i64,
+            "name": row.get::<_, &str>(1),
+            "category": row.get::<_, &str>(2),
+            "price": row.get::<_, f64>(3),
+            "quantity": row.get::<_, i32>(4) as i64,
+            "active": row.get::<_, bool>(5),
+            "tags": row.get::<_, serde_json::Value>(6),
+            "rating": {
+                "score": row.get::<_, f64>(7),
+                "count": row.get::<_, i32>(8) as i64,
+            }
+        })
+    }).collect();
     let result = serde_json::json!({"items": items, "count": items.len()});
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
@@ -311,26 +380,36 @@ async fn main() -> io::Result<()> {
         static_files: load_static_files(),
     });
 
+    let pg_pool: Option<Pool> = std::env::var("DATABASE_URL").ok().and_then(|url| {
+        let pg_config: tokio_postgres::Config = url.parse().ok()?;
+        let mgr = Manager::from_config(pg_config, deadpool_postgres::tokio_postgres::NoTls,
+            ManagerConfig { recycling_method: RecyclingMethod::Fast });
+        let pool_size = (num_cpus::get() * 4).max(64);
+        Pool::builder(mgr).max_size(pool_size).build().ok()
+    });
+
     let tls_config = load_tls_config();
     let workers = num_cpus::get();
 
     let mut server = HttpServer::new({
         let state = state.clone();
+        let pg_pool = pg_pool.clone();
         move || {
             let worker_db = Connection::open_with_flags(
                 "/data/benchmark.db",
                 rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
             )
+            .ok()
             .map(|conn| {
                 conn.execute_batch("PRAGMA mmap_size=268435456").ok();
                 WorkerDb(Mutex::new(conn))
-            })
-            .expect("Failed to open database");
+            });
             App::new()
                 .wrap(actix_web::middleware::Compress::default())
                 .app_data(web::Data::new(state.clone()))
                 .app_data(web::Data::new(worker_db))
                 .app_data(web::PayloadConfig::new(25 * 1024 * 1024))
+                .app_data(web::Data::new(pg_pool.clone()))
                 .route("/pipeline", web::get().to(pipeline))
                 .route("/baseline11", web::get().to(baseline11_get))
                 .route("/baseline11", web::post().to(baseline11_post))
@@ -339,6 +418,7 @@ async fn main() -> io::Result<()> {
                 .route("/compression", web::get().to(compression))
                 .route("/db", web::get().to(db_endpoint))
                 .route("/upload", web::post().to(upload))
+                .route("/async-db", web::get().to(pgdb_endpoint))
                 .route("/static/{filename}", web::get().to(static_file))
         }
     })

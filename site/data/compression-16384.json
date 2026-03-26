@@ -824,6 +824,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ntex-iouring",
+    "language": "Rust",
+    "rps": 10310,
+    "avg_latency": "1.14s",
+    "p99_latency": "2.69s",
+    "cpu": "10535.9%",
+    "memory": "24.2GiB",
+    "connections": 16384,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "2.47GB/s",
+    "input_bw": "745.06KB/s",
+    "reconnects": 4187,
+    "status_2xx": 51551,
+    "status_3xx": 0,
+    "status_4xx": 670,
+    "status_5xx": 0
+  },
+  {
     "framework": "FastPySGI",
     "language": "Python",
     "rps": 10537,
@@ -844,7 +864,7 @@
     "status_5xx": 0
   },
   {
-    "framework": "ntex-iouring",
+    "framework": "ntex",
     "language": "Rust",
     "rps": 10310,
     "avg_latency": "1.14s",

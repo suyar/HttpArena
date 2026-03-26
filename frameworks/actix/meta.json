@@ -15,6 +15,7 @@
     "upload",
     "compression",
     "mixed",
+    "async-db",
     "baseline-h2",
     "static-h2"
   ]

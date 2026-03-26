@@ -106,6 +106,41 @@ static class Handlers
         return Results.Json(new { items, count = items.Count });
     }
 
+    public static async Task<IResult> AsyncDatabase(HttpRequest req)
+    {
+        if (AppData.PgDataSource == null)
+            return Results.Json(new { items = Array.Empty<object>(), count = 0 });
+
+        double min = 10, max = 50;
+        if (req.Query.ContainsKey("min") && double.TryParse(req.Query["min"], out double pmin))
+            min = pmin;
+        if (req.Query.ContainsKey("max") && double.TryParse(req.Query["max"], out double pmax))
+            max = pmax;
+
+        await using var cmd = AppData.PgDataSource.CreateCommand(
+            "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50");
+        cmd.Parameters.AddWithValue(min);
+        cmd.Parameters.AddWithValue(max);
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        var items = new List<object>();
+        while (await reader.ReadAsync())
+        {
+            items.Add(new
+            {
+                id = reader.GetInt32(0),
+                name = reader.GetString(1),
+                category = reader.GetString(2),
+                price = reader.GetDouble(3),
+                quantity = reader.GetInt32(4),
+                active = reader.GetBoolean(5),
+                tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
+                rating = new { score = reader.GetDouble(7), count = reader.GetInt32(8) },
+            });
+        }
+        return Results.Json(new { items, count = items.Count });
+    }
+
     static int SumQuery(HttpRequest req)
     {
         int sum = 0;
