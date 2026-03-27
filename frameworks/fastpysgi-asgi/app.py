@@ -244,7 +244,7 @@ async def async_db_endpoint(scope, receive, send):
             'price'   : row['price'],
             'quantity': row['quantity'],
             'active'  : row['active'],
-            'tags'    : row['tags'],
+            'tags'    : json.loads(row['tags']) if isinstance(row['tags'], str) else row['tags'],
             'rating': {
                 'score': row['rating_score'],
                 'count': row['rating_count'],
@@ -287,7 +287,7 @@ async def asgi_lifespan(receive, send):
     while True:
         message = await receive()
         if message['type'] == 'lifespan.startup':
-            await db_setup()
+            #await db_setup()
             await send({'type': 'lifespan.startup.complete'})
         elif message['type'] == 'lifespan.shutdown':
             await db_close()
@@ -297,8 +297,8 @@ async def asgi_lifespan(receive, send):
 async def app(scope, receive, send):
     global ROUTES
     req_type = scope['type']
-    #if req_type == 'lifespan':
-    #    return await asgi_lifespan(receive, send)
+    if req_type == 'lifespan':
+        return await asgi_lifespan(receive, send)
     assert req_type == 'http'
     req_method = scope.get('method', '')
     if req_method not in [ 'GET', 'POST' ]:

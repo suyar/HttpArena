@@ -23,16 +23,15 @@ DB_QUERY = (
     " WHERE price BETWEEN ? AND ? LIMIT 50"
 )
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgres://bench:bench@localhost:5432/benchmark")
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://bench:bench@localhost:5432/benchmark")
 DATABASE_POOL = None
-DATABASE_QUERY = """
-    SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count
-    FROM   items
-    WHERE  price BETWEEN %s AND %s
-    LIMIT  50
-"""
-if DATABASE_URL.startswith("postgresql://"):
-    DATABASE_URL = "postgres://" + DATABASE_URL[len("postgresql://"):]
+DATABASE_QUERY = (
+    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count"
+    "  FROM items"
+    " WHERE price BETWEEN %s AND %s LIMIT 50"
+)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
 
 DATASET_LARGE_PATH = "/data/dataset-large.json"
 DATASET_PATH = os.environ.get("DATASET_PATH", "/data/dataset.json")
@@ -90,12 +89,13 @@ def db_setup():
     db_close()
     max_pool_size = 0
     try:
-        DATABASE_POOL = pg_pool = psycopg_pool.ConnectionPool(
+        DATABASE_POOL = psycopg_pool.ConnectionPool(
             conninfo = DATABASE_URL,
             min_size = PG_POOL_MIN_SIZE,
             max_size = max(max_pool_size, PG_POOL_MAX_SIZE),
             kwargs = { 'row_factory': psycopg.rows.dict_row },
         )
+        #DATABASE_POOL.wait()
     except Exception:
         DATABASE_POOL = None
 
@@ -160,7 +160,7 @@ def json_endpoint(env):
     if not DATASET_ITEMS:
         return text_resp("No dataset", 500)
     items = [ ]
-    for d in dataset_items:
+    for d in DATASET_ITEMS:
         item = dict(d)
         item["total"] = round(d["price"] * d["quantity"] * 100) / 100
         items.append(item)
@@ -201,6 +201,8 @@ def db_endpoint(env):
 def async_db_endpoint(env):
     global DATABASE_POOL, DATABASE_QUERY
     if not DATABASE_POOL:
+        db_setup()
+    if not DATABASE_POOL:
         return json_resp( { "items": [ ], "count": 0 } )
     query_params = parse_qs(env.get('QUERY_STRING', ''))
     min_val = float(query_params.get("min", [10])[0])
@@ -216,7 +218,7 @@ def async_db_endpoint(env):
                 'price'   : row['price'],
                 'quantity': row['quantity'],
                 'active'  : row['active'],
-                'tags'    : row['tags'],
+                'tags'    : json.loads(row['tags']) if isinstance(row['tags'], str) else row['tags'],
                 'rating': {
                     'score': row['rating_score'],
                     'count': row['rating_count'],
@@ -292,8 +294,6 @@ if __name__ == "__main__":
     host = '0.0.0.0'
     port = 8080
 
-    db_setup()
     fastpysgi.server.read_buffer_size = READ_BUF_SIZE
     fastpysgi.server.backlog = 4096
     fastpysgi.run(app, host, port, workers = CPU_COUNT, loglevel = 0)
-    db_close()
