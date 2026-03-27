@@ -288,6 +288,12 @@ html.dark .lb-popup-link { color: #60a5fa; }
   border-bottom: 2px solid #e5e7eb;
   padding-bottom: 0.4rem; border-radius: 0;
 }
+.lb-header-floating {
+  position: fixed; top: var(--navbar-height, 4rem); z-index: 9999;
+  background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: none;
+}
+html.dark .lb-header-floating { background: #0d1117; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
 .lb-rank { font-weight: 400; font-size: 0.85rem; color: #000; }
 .lb-name { font-weight: 400; font-size: 0.8rem; color: #000; text-transform: lowercase; }
 .lb-lang { font-size: 0.8rem; color: #000; }
@@ -566,6 +572,8 @@ var lbProfiles = {{ $profiles | jsonify | safeJS }};
 
 </div>
 {{ end }}
+
+<div class="lb-header-floating" id="lb-floating-header"></div>
 
 <script>
 var barClasses = ['lb-bar-1', 'lb-bar-2', 'lb-bar-3', 'lb-bar-4', 'lb-bar-5'];
@@ -1366,4 +1374,50 @@ function applyMixedScores() {
   });
 }
 applyFilters();
+
+/* Floating header on scroll */
+(function() {
+  var floater = document.getElementById('lb-floating-header');
+  var lastHeader = null;
+
+  function updateFloatingHeader() {
+    var activePanel = document.querySelector('.lb-panel.active');
+    if (!activePanel) { floater.style.display = 'none'; return; }
+    var activeConn = activePanel.querySelector('.lb-conn-panel.active');
+    if (!activeConn) { floater.style.display = 'none'; return; }
+    var header = activeConn.querySelector('.lb-row.lb-header');
+    if (!header) { floater.style.display = 'none'; return; }
+
+    var lb = activeConn.querySelector('.lb');
+    var lbRect = lb.getBoundingClientRect();
+    var headerRect = header.getBoundingClientRect();
+
+    /* Show floating header when the real header scrolls above the navbar
+       and the table bottom is still visible */
+    var nav = document.querySelector('nav');
+    var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+    if (headerRect.bottom < navHeight && lbRect.bottom > navHeight + 60) {
+      if (lastHeader !== header) {
+        floater.innerHTML = '';
+        var clone = header.cloneNode(true);
+        floater.appendChild(clone);
+        lastHeader = header;
+      }
+      floater.style.left = lbRect.left + 'px';
+      floater.style.width = lbRect.width + 'px';
+      floater.style.display = 'block';
+    } else {
+      floater.style.display = 'none';
+      lastHeader = null;
+    }
+  }
+
+  window.addEventListener('scroll', updateFloatingHeader, { passive: true });
+
+  /* Reset when switching tabs/connections */
+  var observer = new MutationObserver(function() { lastHeader = null; updateFloatingHeader(); });
+  document.querySelectorAll('.lb-panel, .lb-conn-panel').forEach(function(el) {
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+})();
 </script>

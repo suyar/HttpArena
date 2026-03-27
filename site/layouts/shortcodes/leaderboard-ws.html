@@ -160,6 +160,8 @@ var lbWsProfiles = {{ $profiles | jsonify | safeJS }};
 </div>
 {{ end }}
 
+<div class="lb-header-floating" id="lb-floating-header-ws"></div>
+
 <style>
 .lb-panel-ws { display: none; }
 .lb-panel-ws.active { display: block; margin-top: 1rem; }
@@ -555,5 +557,40 @@ window.addEventListener('roundChanged', function(ev) {
   });
 });
 applyFilters();
+
+/* Floating header on scroll */
+var floaterWs = document.getElementById('lb-floating-header-ws');
+var lastHeaderWs = null;
+function updateFloatingHeaderWs() {
+  var activePanel = w.querySelector('.lb-panel-ws.active');
+  if (!activePanel) { floaterWs.style.display = 'none'; return; }
+  var activeConn = activePanel.querySelector('.lb-conn-panel-ws.active');
+  if (!activeConn) { floaterWs.style.display = 'none'; return; }
+  var header = activeConn.querySelector('.lb-row.lb-header');
+  if (!header) { floaterWs.style.display = 'none'; return; }
+  var lb = activeConn.querySelector('.lb');
+  var lbRect = lb.getBoundingClientRect();
+  var headerRect = header.getBoundingClientRect();
+  var nav = document.querySelector('nav');
+  var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+  if (headerRect.bottom < navHeight && lbRect.bottom > navHeight + 60) {
+    if (lastHeaderWs !== header) {
+      floaterWs.innerHTML = '';
+      floaterWs.appendChild(header.cloneNode(true));
+      lastHeaderWs = header;
+    }
+    floaterWs.style.left = lbRect.left + 'px';
+    floaterWs.style.width = lbRect.width + 'px';
+    floaterWs.style.display = 'block';
+  } else {
+    floaterWs.style.display = 'none';
+    lastHeaderWs = null;
+  }
+}
+window.addEventListener('scroll', updateFloatingHeaderWs, { passive: true });
+var obsWs = new MutationObserver(function() { lastHeaderWs = null; updateFloatingHeaderWs(); });
+w.querySelectorAll('.lb-panel-ws, .lb-conn-panel-ws').forEach(function(el) {
+  obsWs.observe(el, { attributes: true, attributeFilter: ['class'] });
+});
 })();
 </script>

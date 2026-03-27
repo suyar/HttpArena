@@ -148,6 +148,8 @@ html.dark .composite-disclaimer { color: #fff !important; background: rgba(234,1
   </div>
 </div>
 
+<div class="lb-header-floating" id="lb-floating-header-composite"></div>
+
 <script>
 (function() {
 var currentEntries = compositeEntries;
@@ -655,6 +657,35 @@ document.querySelectorAll('.composite-type-filter').forEach(function(btn) {
     renderComposite();
   });
 });
+
+/* Floating header on scroll */
+var floaterComp = document.getElementById('lb-floating-header-composite');
+var lastHeaderComp = null;
+function updateFloatingHeaderComp() {
+  var table = document.getElementById('composite-table');
+  var header = table ? table.querySelector('.lb-row.lb-header') : null;
+  if (!header) { floaterComp.style.display = 'none'; return; }
+  var tableRect = table.getBoundingClientRect();
+  var headerRect = header.getBoundingClientRect();
+  var nav = document.querySelector('nav');
+  var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+  if (headerRect.bottom < navHeight && tableRect.bottom > navHeight + 60) {
+    if (lastHeaderComp !== header || floaterComp.style.display === 'none') {
+      floaterComp.innerHTML = '';
+      floaterComp.appendChild(header.cloneNode(true));
+      lastHeaderComp = header;
+    }
+    floaterComp.style.left = tableRect.left + 'px';
+    floaterComp.style.width = tableRect.width + 'px';
+    floaterComp.style.display = 'block';
+  } else {
+    floaterComp.style.display = 'none';
+    lastHeaderComp = null;
+  }
+}
+window.addEventListener('scroll', updateFloatingHeaderComp, { passive: true });
+new MutationObserver(function() { lastHeaderComp = null; updateFloatingHeaderComp(); })
+  .observe(document.getElementById('composite-table'), { childList: true });
 
 })();
 </script>

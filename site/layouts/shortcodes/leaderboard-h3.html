@@ -168,6 +168,8 @@ html.dark .h3-disclaimer { color: #fff !important; background: rgba(234,179,8,0.
 </div>
 {{ end }}
 
+<div class="lb-header-floating" id="lb-floating-header-h3"></div>
+
 <style>
 .lb-panel-h3 { display: none; }
 .lb-panel-h3.active { display: block; margin-top: 1rem; }
@@ -563,5 +565,40 @@ window.addEventListener('roundChanged', function(ev) {
   });
 });
 applyFilters();
+
+/* Floating header on scroll */
+var floaterH3 = document.getElementById('lb-floating-header-h3');
+var lastHeaderH3 = null;
+function updateFloatingHeaderH3() {
+  var activePanel = w.querySelector('.lb-panel-h3.active');
+  if (!activePanel) { floaterH3.style.display = 'none'; return; }
+  var activeConn = activePanel.querySelector('.lb-conn-panel-h3.active');
+  if (!activeConn) { floaterH3.style.display = 'none'; return; }
+  var header = activeConn.querySelector('.lb-row.lb-header');
+  if (!header) { floaterH3.style.display = 'none'; return; }
+  var lb = activeConn.querySelector('.lb');
+  var lbRect = lb.getBoundingClientRect();
+  var headerRect = header.getBoundingClientRect();
+  var nav = document.querySelector('nav');
+  var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+  if (headerRect.bottom < navHeight && lbRect.bottom > navHeight + 60) {
+    if (lastHeaderH3 !== header) {
+      floaterH3.innerHTML = '';
+      floaterH3.appendChild(header.cloneNode(true));
+      lastHeaderH3 = header;
+    }
+    floaterH3.style.left = lbRect.left + 'px';
+    floaterH3.style.width = lbRect.width + 'px';
+    floaterH3.style.display = 'block';
+  } else {
+    floaterH3.style.display = 'none';
+    lastHeaderH3 = null;
+  }
+}
+window.addEventListener('scroll', updateFloatingHeaderH3, { passive: true });
+var obsH3 = new MutationObserver(function() { lastHeaderH3 = null; updateFloatingHeaderH3(); });
+w.querySelectorAll('.lb-panel-h3, .lb-conn-panel-h3').forEach(function(el) {
+  obsH3.observe(el, { attributes: true, attributeFilter: ['class'] });
+});
 })();
 </script>

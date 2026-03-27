@@ -161,6 +161,8 @@ var lbH2Profiles = {{ $profiles | jsonify | safeJS }};
 </div>
 {{ end }}
 
+<div class="lb-header-floating" id="lb-floating-header-h2"></div>
+
 <style>
 .lb-panel-h2 { display: none; }
 .lb-panel-h2.active { display: block; margin-top: 1rem; }
@@ -556,5 +558,40 @@ window.addEventListener('roundChanged', function(ev) {
   });
 });
 applyFilters();
+
+/* Floating header on scroll */
+var floaterH2 = document.getElementById('lb-floating-header-h2');
+var lastHeaderH2 = null;
+function updateFloatingHeaderH2() {
+  var activePanel = w.querySelector('.lb-panel-h2.active');
+  if (!activePanel) { floaterH2.style.display = 'none'; return; }
+  var activeConn = activePanel.querySelector('.lb-conn-panel-h2.active');
+  if (!activeConn) { floaterH2.style.display = 'none'; return; }
+  var header = activeConn.querySelector('.lb-row.lb-header');
+  if (!header) { floaterH2.style.display = 'none'; return; }
+  var lb = activeConn.querySelector('.lb');
+  var lbRect = lb.getBoundingClientRect();
+  var headerRect = header.getBoundingClientRect();
+  var nav = document.querySelector('nav');
+  var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+  if (headerRect.bottom < navHeight && lbRect.bottom > navHeight + 60) {
+    if (lastHeaderH2 !== header) {
+      floaterH2.innerHTML = '';
+      floaterH2.appendChild(header.cloneNode(true));
+      lastHeaderH2 = header;
+    }
+    floaterH2.style.left = lbRect.left + 'px';
+    floaterH2.style.width = lbRect.width + 'px';
+    floaterH2.style.display = 'block';
+  } else {
+    floaterH2.style.display = 'none';
+    lastHeaderH2 = null;
+  }
+}
+window.addEventListener('scroll', updateFloatingHeaderH2, { passive: true });
+var obsH2 = new MutationObserver(function() { lastHeaderH2 = null; updateFloatingHeaderH2(); });
+w.querySelectorAll('.lb-panel-h2, .lb-conn-panel-h2').forEach(function(el) {
+  obsH2.observe(el, { attributes: true, attributeFilter: ['class'] });
+});
 })();
 </script>

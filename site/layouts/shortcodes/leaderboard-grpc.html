@@ -161,6 +161,8 @@ var lbGrpcProfiles = {{ $profiles | jsonify | safeJS }};
 </div>
 {{ end }}
 
+<div class="lb-header-floating" id="lb-floating-header-grpc"></div>
+
 <style>
 .lb-panel-grpc { display: none; }
 .lb-panel-grpc.active { display: block; margin-top: 1rem; }
@@ -556,5 +558,40 @@ window.addEventListener('roundChanged', function(ev) {
   });
 });
 applyFilters();
+
+/* Floating header on scroll */
+var floaterGrpc = document.getElementById('lb-floating-header-grpc');
+var lastHeaderGrpc = null;
+function updateFloatingHeaderGrpc() {
+  var activePanel = w.querySelector('.lb-panel-grpc.active');
+  if (!activePanel) { floaterGrpc.style.display = 'none'; return; }
+  var activeConn = activePanel.querySelector('.lb-conn-panel-grpc.active');
+  if (!activeConn) { floaterGrpc.style.display = 'none'; return; }
+  var header = activeConn.querySelector('.lb-row.lb-header');
+  if (!header) { floaterGrpc.style.display = 'none'; return; }
+  var lb = activeConn.querySelector('.lb');
+  var lbRect = lb.getBoundingClientRect();
+  var headerRect = header.getBoundingClientRect();
+  var nav = document.querySelector('nav');
+  var navHeight = nav ? nav.getBoundingClientRect().bottom : 64;
+  if (headerRect.bottom < navHeight && lbRect.bottom > navHeight + 60) {
+    if (lastHeaderGrpc !== header) {
+      floaterGrpc.innerHTML = '';
+      floaterGrpc.appendChild(header.cloneNode(true));
+      lastHeaderGrpc = header;
+    }
+    floaterGrpc.style.left = lbRect.left + 'px';
+    floaterGrpc.style.width = lbRect.width + 'px';
+    floaterGrpc.style.display = 'block';
+  } else {
+    floaterGrpc.style.display = 'none';
+    lastHeaderGrpc = null;
+  }
+}
+window.addEventListener('scroll', updateFloatingHeaderGrpc, { passive: true });
+var obsGrpc = new MutationObserver(function() { lastHeaderGrpc = null; updateFloatingHeaderGrpc(); });
+w.querySelectorAll('.lb-panel-grpc, .lb-conn-panel-grpc').forEach(function(el) {
+  obsGrpc.observe(el, { attributes: true, attributeFilter: ['class'] });
+});
 })();
 </script>
