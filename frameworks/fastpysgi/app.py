@@ -2,67 +2,117 @@ import os
 import sys
 import json
 import threading
+import multiprocessing
 import zlib
 import sqlite3
 from urllib.parse import parse_qs
 
 import orjson
+import psycopg_pool
+import psycopg.rows
 
-# -- Dataset ----------------------------------------------------------
+# -- Dataset and constants --------------------------------------------------------
 
-dataset_items = None
-dataset_path = os.environ.get("DATASET_PATH", "/data/dataset.json")
+CPU_COUNT = int(multiprocessing.cpu_count())
+
+DB_PATH = "/data/benchmark.db"
+DB_AVAILABLE = os.path.exists(DB_PATH)
+DB_QUERY = (
+    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count"
+    "  FROM items"
+    " WHERE price BETWEEN ? AND ? LIMIT 50"
+)
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://bench:bench@localhost:5432/benchmark")
+DATABASE_POOL = None
+DATABASE_QUERY = (
+    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count"
+    "  FROM items"
+    " WHERE price BETWEEN %s AND %s LIMIT 50"
+)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
+
+DATASET_LARGE_PATH = "/data/dataset-large.json"
+DATASET_PATH = os.environ.get("DATASET_PATH", "/data/dataset.json")
+DATASET_ITEMS = None
 try:
-    with open(dataset_path) as file:
-        dataset_items = json.load(file)
+    with open(DATASET_PATH) as file:
+        DATASET_ITEMS = json.load(file)
 except Exception:
     pass
 
 # Large dataset for compression (pre-serialised)
-large_json_buf: bytes | None = None
+LARGE_JSON_BUF: bytes | None = None
 try:
-    with open("/data/dataset-large.json") as file:
+    with open(DATASET_LARGE_PATH) as file:
         raw = json.load(file)
     items = [ ]
     for d in raw:
         item = dict(d)
         item["total"] = round(d["price"] * d["quantity"] * 100) / 100
         items.append(item)
-    large_json_buf = orjson.dumps( { "items": items, "count": len(items) } )
+    LARGE_JSON_BUF = orjson.dumps( { "items": items, "count": len(items) } )
 except Exception:
     pass
 
 # -- SQLite (thread-local, sync — runs in threadpool via run_in_executor) --
 
-db_available = os.path.exists("/data/benchmark.db")
-DB_QUERY = (
-    "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count"
-    "  FROM items"
-    " WHERE price BETWEEN ? AND ? LIMIT 50"
-)
 _local = threading.local()
 
 def _get_db() -> sqlite3.Connection:
+    global _local
     conn = getattr(_local, "conn", None)
     if conn is None:
-        conn = sqlite3.connect("/data/benchmark.db", uri = True, check_same_thread = False)
+        conn = sqlite3.connect(DB_PATH, uri = True, check_same_thread = False)
         conn.execute("PRAGMA mmap_size=268435456")
         conn.row_factory = sqlite3.Row
         _local.conn = conn
     return conn
 
+# -- Postgres DB ------------------------------------------------------------
+
+PG_POOL_MIN_SIZE = 2
+PG_POOL_MAX_SIZE = 3
+
+def db_close():
+    global DATABASE_POOL
+    if DATABASE_POOL:
+        try:
+            DATABASE_POOL.close()
+        except Exception:
+            pass
+    DATABASE_POOL = None
+
+def db_setup():
+    global DATABASE_POOL, DATABASE_URL, CPU_COUNT
+    db_close()
+    max_pool_size = 0
+    try:
+        DATABASE_POOL = psycopg_pool.ConnectionPool(
+            conninfo = DATABASE_URL,
+            min_size = PG_POOL_MIN_SIZE,
+            max_size = max(max_pool_size, PG_POOL_MAX_SIZE),
+            kwargs = { 'row_factory': psycopg.rows.dict_row },
+        )
+        #DATABASE_POOL.wait()
+    except Exception:
+        DATABASE_POOL = None
+
 # -- Helpers ----------------------------------------------------------
 
+DEF_TEXT_HEADERS = [ ( 'Content-Type', 'text/plain; charset=utf-8' ) ]
+
 def text_resp(body: str | bytes, status: int = 200):
-    headers = [ ( 'Content-Type', 'text/plain; charset=utf-8' ) ]
     if isinstance(body, str):
         body = body.encode('utf-8')
-    return status, headers, body
+    return status, DEF_TEXT_HEADERS, body
 
 def json_resp(body, status: int = 200, gzip: bool = False):
-    headers = [ ( 'Content-Type', 'application/json' ) ]
     if gzip:
-        headers.append( ( 'Content-Encoding', 'gzip' ) )
+        headers = [ ('Content-Type', 'application/json'), ('Content-Encoding', 'gzip') ]
+    else:
+        headers = [ ('Content-Type', 'application/json') ]
     if isinstance(body, dict):
         body = orjson.dumps(body)
     if isinstance(body, str):
@@ -106,25 +156,28 @@ def baseline2(env):
     return text_resp(str(total))
 
 def json_endpoint(env):
-    if dataset_items is None:
+    global DATASET_ITEMS
+    if not DATASET_ITEMS:
         return text_resp("No dataset", 500)
     items = [ ]
-    for d in dataset_items:
+    for d in DATASET_ITEMS:
         item = dict(d)
         item["total"] = round(d["price"] * d["quantity"] * 100) / 100
         items.append(item)
     return json_resp( { "items": items, "count": len(items) } )
 
 def compression_endpoint(env):
-    if large_json_buf is None:
+    global LARGE_JSON_BUF
+    if not LARGE_JSON_BUF:
         return text_resp("No dataset", 500)
-    compressed = zlib.compress(large_json_buf, level = 1, wbits = 31)
+    compressed = zlib.compress(LARGE_JSON_BUF, level = 1, wbits = 31)
     return json_resp(compressed, gzip = True)
 
 def db_endpoint(env):
-    query_params = parse_qs(env.get('QUERY_STRING', ''))
-    if not db_available:
+    global DB_AVAILABLE, DB_QUERY
+    if not DB_AVAILABLE:
         return json_resp( { "items": [ ], "count": 0 } )
+    query_params = parse_qs(env.get('QUERY_STRING', ''))
     min_val = float(query_params.get("min", [10])[0])
     max_val = float(query_params.get("max", [50])[0])
     conn = _get_db()
@@ -145,6 +198,39 @@ def db_endpoint(env):
         )
     return json_resp( { "items": items, "count": len(items) } )
 
+def async_db_endpoint(env):
+    global DATABASE_POOL, DATABASE_QUERY
+    if not DATABASE_POOL:
+        db_setup()
+    if not DATABASE_POOL:
+        return json_resp( { "items": [ ], "count": 0 } )
+    query_params = parse_qs(env.get('QUERY_STRING', ''))
+    min_val = float(query_params.get("min", [10])[0])
+    max_val = float(query_params.get("max", [50])[0])
+    try:
+        with DATABASE_POOL.connection() as conn:
+            rows = conn.execute(DATABASE_QUERY, (min_val, max_val)).fetchall()
+        items = [
+            {
+                'id'      : row['id'],
+                'name'    : row['name'],
+                'category': row['category'],
+                'price'   : row['price'],
+                'quantity': row['quantity'],
+                'active'  : row['active'],
+                'tags'    : json.loads(row['tags']) if isinstance(row['tags'], str) else row['tags'],
+                'rating': {
+                    'score': row['rating_score'],
+                    'count': row['rating_count'],
+                }
+            }
+            for row in rows
+        ]
+        return json_resp( { "items": items, "count": len(items) } )
+    except Exception:
+        return json_resp( { "items": [ ], "count": 0 } )
+
+
 READ_BUF_SIZE = 256*1024
 
 def upload_endpoint(env):
@@ -162,13 +248,14 @@ def upload_endpoint(env):
                 break
     return text_resp(str(size))
 
-routes = {
+ROUTES = {
     '/pipeline': pipeline,
     '/baseline11': baseline11,
     '/baseline2': baseline2,
     '/json': json_endpoint,
     '/compression': compression_endpoint,
     '/db': db_endpoint,
+    '/async-db': async_db_endpoint,
     '/upload': upload_endpoint,
 }
 
@@ -180,7 +267,7 @@ def handle_405(env):
 
 # -- WSGI app -----------------------------------------------------------
 
-http_status = {
+HTTP_STATUS = {
     200: '200 OK',
     404: '404 Not Found',
     405: '405 Method Not Allowed',
@@ -188,44 +275,25 @@ http_status = {
 }
 
 def app(env, start_response):
-    global routes
+    global ROUTES, HTTP_STATUS
     req_method = env.get('REQUEST_METHOD', '')
     if req_method not in [ 'GET', 'POST' ]:
         status, headers, body = handle_405(env)
     else:
         path = env["PATH_INFO"]    
-        app_handler = routes.get(path, handle_404)
+        app_handler = ROUTES.get(path, handle_404)
         status, headers, body = app_handler(env)
-    start_response(http_status.get(status, str(status)), headers)
+    start_response(HTTP_STATUS.get(status, str(status)), headers)
     return [ body ]
 
 # -----------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import multiprocessing
     import fastpysgi
 
-    workers = int(multiprocessing.cpu_count())
     host = '0.0.0.0'
     port = 8080
 
-    def run_app():
-        fastpysgi.server.read_buffer_size = READ_BUF_SIZE
-        fastpysgi.server.backlog = 4096
-        fastpysgi.run(app, host, port, loglevel = 0)
-        sys.exit(0)
-
-    processes = [ ]
-    # fork limiting the cpu count - 1
-    for i in range(1, workers):
-        try:
-            pid = os.fork()
-            if pid == 0:
-                run_app()
-            else:
-                processes.append(pid)
-        except OSError as e:
-            print("Failed to fork:", e)
-            
-    # run app on the main process too :)
-    run_app()
+    fastpysgi.server.read_buffer_size = READ_BUF_SIZE
+    fastpysgi.server.backlog = 4096
+    fastpysgi.run(app, host, port, workers = CPU_COUNT, loglevel = 0)

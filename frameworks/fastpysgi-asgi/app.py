@@ -17,7 +17,6 @@ CPU_COUNT = int(multiprocessing.cpu_count())
 
 DB_PATH = "/data/benchmark.db"
 DB_AVAILABLE = os.path.exists(DB_PATH)
-
 DB_QUERY = (
     "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count"
     "  FROM items"
@@ -72,7 +71,7 @@ def _get_db() -> sqlite3.Connection:
         _local.conn = conn
     return conn
 
-# -- Posgres DB ------------------------------------------------------------
+# -- Postgres DB ------------------------------------------------------------
 
 PG_POOL_MIN_SIZE = 2
 PG_POOL_MAX_SIZE = 3
@@ -193,7 +192,7 @@ async def json_endpoint(scope, receive, send):
 
 async def compression_endpoint(scope, receive, send):
     global LARGE_JSON_BUF
-    if LARGE_JSON_BUF is None:
+    if not LARGE_JSON_BUF:
         return text_resp("No dataset", 500)
     compressed = zlib.compress(LARGE_JSON_BUF, level = 1, wbits = 31)
     return json_resp(compressed, gzip = True)
@@ -245,7 +244,7 @@ async def async_db_endpoint(scope, receive, send):
             'price'   : row['price'],
             'quantity': row['quantity'],
             'active'  : row['active'],
-            'tags'    : row['tags'],
+            'tags'    : json.loads(row['tags']) if isinstance(row['tags'], str) else row['tags'],
             'rating': {
                 'score': row['rating_score'],
                 'count': row['rating_count'],
@@ -284,19 +283,23 @@ async def handle_405(scope, receive, send):
 
 # -- ASGI app -----------------------------------------------------------
 
+async def asgi_lifespan(receive, send):
+    while True:
+        message = await receive()
+        if message['type'] == 'lifespan.startup':
+            #await db_setup()
+            await send({'type': 'lifespan.startup.complete'})
+        elif message['type'] == 'lifespan.shutdown':
+            await db_close()
+            await send({'type': 'lifespan.shutdown.complete'})
+            return
+
 async def app(scope, receive, send):
     global ROUTES
-    if scope['type'] == 'lifespan':
-        while True:
-            message = await receive()
-            if message['type'] == 'lifespan.startup':
-                await db_setup()
-                await send({'type': 'lifespan.startup.complete'})
-            elif message['type'] == 'lifespan.shutdown':
-                await db_close()
-                await send({'type': 'lifespan.shutdown.complete'})
-                return
-        return
+    req_type = scope['type']
+    if req_type == 'lifespan':
+        return await asgi_lifespan(receive, send)
+    assert req_type == 'http'
     req_method = scope.get('method', '')
     if req_method not in [ 'GET', 'POST' ]:
         await send( { 'type': 'http.response.start', 'status': 405, 'headers': DEF_TEXT_HEADERS } )
