@@ -1,0 +1,21 @@
+{
+  "display_name": "Scotty",
+  "language": "Haskell",
+  "type": "framework",
+  "engine": "warp",
+  "description": "Scotty web framework on Warp, a lightweight Haskell framework inspired by Ruby's Sinatra.",
+  "repo": "https://github.com/scotty-web/scotty",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "noisy",
+    "limited-conn",
+    "json",
+    "upload",
+    "compression",
+    "mixed",
+    "async-db",
+    "static"
+  ]
+}
