@@ -15,6 +15,5 @@ ENTRYPOINT ["java", \
   "-XX:+UseZGC", \
   "-XX:+UseNUMA", \
   "-XX:+AlwaysPreTouch", \
-  "-XX:-StackTraceInThrowable", \
   "-cp", "app.jar:libs/*", \
   "com.httparena.Main"]
