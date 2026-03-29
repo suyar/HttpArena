@@ -111,6 +111,7 @@ public class BenchmarkResource {
 
     @POST
     @Path("/upload")
+    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.TEXT_PLAIN)
     public String upload(InputStream body) throws IOException {
         byte[] buf = new byte[65536];
