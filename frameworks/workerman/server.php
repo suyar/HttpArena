@@ -59,7 +59,7 @@ $http_worker->onMessage = static function ($connection, $request) {
             }
 
             $connection->headers = ['Content-Type' => 'application/json'];
-            return $connection->send(json_encode(['items' => $total, 'count' => count($total)]), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return $connection->send(json_encode(['items' => $total, 'count' => count($total)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         
         case '/upload':
             $connection->headers = ['Content-Type' => 'text/plain'];
