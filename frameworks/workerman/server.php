@@ -11,7 +11,7 @@ require_once __DIR__ . '/Pgsql.php';
 // #### http worker ####
 $http_worker = new Worker('http://0.0.0.0:8080');
 $http_worker->reusePort = true;
-$http_worker->count = (int) shell_exec('nproc') * 4;
+$http_worker->count = (int) shell_exec('nproc');
 
 // Increase max package size to 30MB for file upload test
 TcpConnection::$defaultMaxPackageSize = 30 * 1024 * 1024;
