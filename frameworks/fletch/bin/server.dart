@@ -28,8 +28,13 @@ class _StaticFile {
   const _StaticFile(this.data, this.contentType);
 }
 
-Future<void> main() async {
-  final n = Platform.numberOfProcessors;
+Future<void> main(List<String> args) async {
+  // Prefer the worker count passed via entrypoint.sh (derived from `nproc`,
+  // which respects the cgroup CPU quota set by --cpus=N).  Fall back to
+  // Platform.numberOfProcessors when running outside Docker.
+  final n = args.isNotEmpty
+      ? (int.tryParse(args[0]) ?? Platform.numberOfProcessors)
+      : Platform.numberOfProcessors;
   for (var i = 1; i < n; i++) {
     await Isolate.spawn(_run, null);
   }
