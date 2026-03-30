@@ -57,14 +57,14 @@ DB_QUERY = (
     " WHERE price BETWEEN ? AND ? LIMIT 50"
 )
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://bench:bench@localhost:5432/benchmark")
+DATABASE_URL = os.environ.get("DATABASE_URL", '')
 DATABASE_POOL = None
 DATABASE_QUERY = (
     "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count"
     "  FROM items"
     " WHERE price BETWEEN %s AND %s LIMIT 50"
 )
-if DATABASE_URL.startswith("postgres://"):
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = "postgresql://" + DATABASE_URL[len("postgres://"):]
 
 DATASET_LARGE_PATH = "/data/dataset-large.json"
@@ -121,6 +121,8 @@ def db_close():
 def db_setup():
     global DATABASE_POOL, DATABASE_URL, WRK_COUNT
     db_close()
+    if not DATABASE_URL:
+        return
     max_pool_size = 0
     try:
         DATABASE_POOL = psycopg_pool.ConnectionPool(
