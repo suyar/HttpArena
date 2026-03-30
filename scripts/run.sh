@@ -37,8 +37,9 @@ TESTS=$(python3 -c "import json; print(' '.join(json.load(open('$META_FILE'))['t
 
 cleanup() {
     echo ""
-    echo "[stop] Stopping container..."
+    echo "[stop] Stopping containers..."
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+    docker rm -f httparena-pg 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 
