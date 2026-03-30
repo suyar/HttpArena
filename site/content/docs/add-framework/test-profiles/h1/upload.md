@@ -19,6 +19,14 @@ The Upload profile measures how efficiently a framework handles large request bo
 - **I/O handling efficiency** — how the framework manages sustained large transfers
 - **Connection overhead** — at 20 MB per request, connection setup/teardown is significant
 
+## Implementation rules
+
+The upload endpoint must actually read and process the request body. The returned byte count must be computed by reading the uploaded data, not inferred from request metadata.
+
+- **Do not** return the value of the `Content-Length` header — this defeats the purpose of the test, which is to measure how efficiently the framework processes uploaded content.
+- Frameworks **may** use small read buffers to process the upload incrementally. Holding the entire payload in memory is allowed but not required.
+- The goal is to prove that the framework can efficiently compute a result over a large blob being sent to it.
+
 ## Expected response
 
 ```
