@@ -91,44 +91,12 @@ function startWorker() {
     app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (req, body, done) => done(null, body));
     app.addContentTypeParser('*', { parseAs: 'buffer' }, (req, body, done) => done(null, body));
 
-    // --- /static/:filename ---
-    app.get('/static/:filename', (req, reply) => {
-        const sf = staticFiles[req.params.filename];
-        if (sf) {
-            reply
-                .header('server', SERVER_NAME)
-                .header('content-type', sf.ct)
-                .header('content-length', sf.buf.length)
-                .send(sf.buf);
-        } else {
-            reply.code(404).send();
-        }
-    });
+    // Register shared routes (baseline, static)
+    registerSharedRoutes(app);
 
     // --- /pipeline ---
     app.get('/pipeline', (req, reply) => {
         reply.header('server', SERVER_NAME).type('text/plain').send('ok');
-    });
-
-    // --- /baseline11 GET & POST ---
-    app.get('/baseline11', (req, reply) => {
-        const s = sumQuery(req.query);
-        reply.header('server', SERVER_NAME).type('text/plain').send(String(s));
-    });
-
-    app.post('/baseline11', (req, reply) => {
-        const querySum = sumQuery(req.query);
-        const body = typeof req.body === 'string' ? req.body : (req.body ? req.body.toString() : '');
-        let total = querySum;
-        const n = parseInt(body.trim(), 10);
-        if (n === n) total += n;
-        reply.header('server', SERVER_NAME).type('text/plain').send(String(total));
-    });
-
-    // --- /baseline2 ---
-    app.get('/baseline2', (req, reply) => {
-        const s = sumQuery(req.query);
-        reply.header('server', SERVER_NAME).type('text/plain').send(String(s));
     });
 
     // --- /json ---
@@ -244,8 +212,8 @@ function startWorker() {
     });
 }
 
-function registerH2Routes(app) {
-    // --- /static/:filename ---
+// --- Shared route handlers (used by both H1 and H2 instances) ---
+function registerSharedRoutes(app) {
     app.get('/static/:filename', (req, reply) => {
         const sf = staticFiles[req.params.filename];
         if (sf) {
@@ -259,7 +227,6 @@ function registerH2Routes(app) {
         }
     });
 
-    // --- /baseline11 GET & POST ---
     app.get('/baseline11', (req, reply) => {
         const s = sumQuery(req.query);
         reply.header('server', SERVER_NAME).type('text/plain').send(String(s));
@@ -274,7 +241,6 @@ function registerH2Routes(app) {
         reply.header('server', SERVER_NAME).type('text/plain').send(String(total));
     });
 
-    // --- /baseline2 ---
     app.get('/baseline2', (req, reply) => {
         const s = sumQuery(req.query);
         reply.header('server', SERVER_NAME).type('text/plain').send(String(s));
@@ -301,7 +267,7 @@ function startH2() {
         h2app.addContentTypeParser('application/octet-stream', { parseAs: 'buffer' }, (req, body, done) => done(null, body));
         h2app.addContentTypeParser('*', { parseAs: 'buffer' }, (req, body, done) => done(null, body));
 
-        registerH2Routes(h2app);
+        registerSharedRoutes(h2app);
         h2app.listen({ port: 8443, host: '0.0.0.0' });
     } catch (e) {
         // TLS certs not available, skip H2
