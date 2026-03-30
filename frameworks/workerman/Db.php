@@ -1,6 +1,6 @@
 <?php
 
-class DB
+class Db
 {
     private static $prepared;
 

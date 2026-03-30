@@ -5,8 +5,8 @@ use Workerman\Protocols\Http\Response;
 use Workerman\Connection\TcpConnection;
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/db.php';
-require_once __DIR__ . '/pgsql.php';
+require_once __DIR__ . '/Db.php';
+require_once __DIR__ . '/Pgsql.php';
 
 // #### http worker ####
 $http_worker = new Worker('http://0.0.0.0:8080');
@@ -58,7 +58,7 @@ function loadStaticFiles()
 }
 
 $http_worker->onWorkerStart = static function () {
-    DB::Init();
+    Db::Init();
     Pgsql::init();
 };
 
@@ -108,7 +108,7 @@ $http_worker->onMessage = static function ($connection, $request) {
         case '/db':
             $connection->headers = ['Content-Type' => 'application/json'];
             return $connection->send(
-                DB::query(
+                Db::query(
                     $request->get('min', 10),
                     $request->get('max', 50)
                 )
