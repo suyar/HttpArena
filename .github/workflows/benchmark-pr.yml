@@ -56,9 +56,10 @@ jobs:
           cp -r site/data /tmp/main_site_data 2>/dev/null || true
           cp -r /tmp/pr_site_data/* site/data/ 2>/dev/null || true
 
-      - name: Clean previous containers
+      - name: Clean previous containers and stale results
         run: |
           docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f 2>/dev/null || true
+          rm -rf results/
 
       - name: Run benchmarks
         id: bench
@@ -96,8 +97,18 @@ jobs:
           find results -name "${{ inputs.framework }}.json" -exec git add -f {} +
           find site/static/logs -name "${{ inputs.framework }}.log" -exec git add -f {} +
           git add -f site/data/frameworks.json site/data/current.json 2>/dev/null || true
-          # Only add leaderboard files that the benchmark actually changed
-          git diff --name-only site/data/ 2>/dev/null | xargs -r git add -f
+          # Only add leaderboard files for the profiles that were actually benchmarked
+          profile="${{ inputs.profile }}"
+          if [ -n "$profile" ]; then
+            git add -f site/data/${profile}-*.json 2>/dev/null || true
+          else
+            # No profile filter = all profiles were run; add only files matching this framework's results
+            find results -name "${{ inputs.framework }}.json" -printf '%h\n' | while read dir; do
+              profile_name=$(basename "$(dirname "$dir")")
+              conns=$(basename "$dir")
+              git add -f "site/data/${profile_name}-${conns}.json" 2>/dev/null || true
+            done
+          fi
           if git diff --cached --quiet; then
             echo "No results to commit"
           else
