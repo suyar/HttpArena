@@ -19,11 +19,18 @@ PG_CONTAINER="httparena-validate-postgres"
 PG_NETWORK="httparena-validate-net"
 
 cleanup() {
+    # Kill watchdog if still running
+    [ -n "${WATCHDOG_PID:-}" ] && kill "$WATCHDOG_PID" 2>/dev/null || true
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker network rm "$PG_NETWORK" 2>/dev/null || true
 }
 trap cleanup EXIT
+
+# 5-minute overall timeout
+VALIDATE_TIMEOUT=${VALIDATE_TIMEOUT:-300}
+( trap 'exit 0' TERM; sleep "$VALIDATE_TIMEOUT"; echo ""; echo "FAIL: Validation timed out after ${VALIDATE_TIMEOUT}s"; kill -TERM $$ 2>/dev/null ) &
+WATCHDOG_PID=$!
 
 echo "=== Validating: $FRAMEWORK ==="
 
@@ -125,7 +132,7 @@ docker run "${docker_args[@]}" "$IMAGE_NAME"
 # Wait for server to start
 echo "[wait] Waiting for server..."
 for i in $(seq 1 30); do
-    if curl -s -o /dev/null -w '' "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
+    if curl -s --max-time 2 -o /dev/null -w '' "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null; then
         break
     fi
     if [ "$i" -eq 30 ]; then
@@ -156,7 +163,7 @@ check() {
     local docs_url="$3"
     shift 3
     local response
-    response=$(curl -s -D- "$@")
+    response=$(curl -s --max-time 30 -D- "$@")
     local body
     body=$(echo "$response" | tail -1)
 
@@ -174,7 +181,7 @@ check_status() {
     local docs_url="$3"
     shift 3
     local http_code
-    http_code=$(curl -s -o /dev/null -w '%{http_code}' "$@")
+    http_code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@")
 
     if [ "$http_code" = "$expected_status" ]; then
         echo "  PASS [$label] (HTTP $http_code)"
@@ -191,7 +198,7 @@ check_header() {
     local docs_url="$4"
     shift 4
     local headers
-    headers=$(curl -s -D- -o /dev/null "$@")
+    headers=$(curl -s --max-time 30 -D- -o /dev/null "$@")
     local value
     value=$(echo "$headers" | grep -i "^${header_name}:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
 
@@ -210,7 +217,7 @@ check_header() {
 wait_h2() {
     echo "[wait] Waiting for HTTPS port..."
     for i in $(seq 1 15); do
-        if curl -sk --http2 -o /dev/null "https://localhost:$H2PORT/baseline2?a=1&b=1" 2>/dev/null; then
+        if curl -sk --max-time 30 --http2 -o /dev/null "https://localhost:$H2PORT/baseline2?a=1&b=1" 2>/dev/null; then
             return 0
         fi
         if [ "$i" -eq 15 ]; then
@@ -270,7 +277,7 @@ fi
 if has_test "json" || has_test "mixed"; then
     JSON_DOCS="$DOCS_BASE/h1/json-processing/validation"
     echo "[test] json endpoint"
-    response=$(curl -s "http://localhost:$PORT/json")
+    response=$(curl -s --max-time 30 "http://localhost:$PORT/json")
     json_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -317,7 +324,7 @@ if has_test "upload" || has_test "mixed"; then
     # Anti-cheat: random body to detect hardcoded responses
     RANDOM_BODY=$(head -c 64 /dev/urandom | base64 | head -c 48)
     EXPECTED_RANDOM_LEN=${#RANDOM_BODY}
-    ACTUAL_LEN=$(curl -s -X POST -H "Content-Type: application/octet-stream" --data-binary "$RANDOM_BODY" "http://localhost:$PORT/upload")
+    ACTUAL_LEN=$(curl -s --max-time 30 -X POST -H "Content-Type: application/octet-stream" --data-binary "$RANDOM_BODY" "http://localhost:$PORT/upload")
     if [ "$ACTUAL_LEN" = "$EXPECTED_RANDOM_LEN" ]; then
         echo "  PASS [POST /upload random body] (bytes: $ACTUAL_LEN)"
         PASS=$((PASS + 1))
@@ -333,7 +340,7 @@ if has_test "compression" || has_test "mixed"; then
     echo "[test] compression endpoint"
 
     # Must return Content-Encoding: gzip when Accept-Encoding: gzip is sent
-    comp_headers=$(curl -s -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/compression")
+    comp_headers=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/compression")
     comp_encoding=$(echo "$comp_headers" | grep -i "^content-encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
     if [ "$comp_encoding" = "gzip" ]; then
         echo "  PASS [compression Content-Encoding: gzip]"
@@ -343,7 +350,7 @@ if has_test "compression" || has_test "mixed"; then
     fi
 
     # Verify compressed response is valid JSON with items and totals
-    comp_response=$(curl -s --compressed -H "Accept-Encoding: gzip" "http://localhost:$PORT/compression")
+    comp_response=$(curl -s --max-time 30 --compressed -H "Accept-Encoding: gzip" "http://localhost:$PORT/compression")
     comp_result=$(echo "$comp_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -363,7 +370,7 @@ print(f'{count} {has_total}')
     fi
 
     # Verify compressed size is reasonable (should be well under 1MB uncompressed ~1MB)
-    comp_size=$(curl -s -o /dev/null -w '%{size_download}' -H "Accept-Encoding: gzip" "http://localhost:$PORT/compression")
+    comp_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' -H "Accept-Encoding: gzip" "http://localhost:$PORT/compression")
     if [ "$comp_size" -lt 500000 ]; then
         echo "  PASS [compression size] ($comp_size bytes < 500KB)"
         PASS=$((PASS + 1))
@@ -373,7 +380,7 @@ print(f'{count} {has_total}')
 
     # Verify compression happens per-request (not pre-compressed cache)
     # Request without Accept-Encoding: gzip must NOT return Content-Encoding: gzip
-    no_enc_headers=$(curl -s -D- -o /dev/null "http://localhost:$PORT/compression")
+    no_enc_headers=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/compression")
     no_enc_encoding=$(echo "$no_enc_headers" | grep -i "^content-encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
     if [ -z "$no_enc_encoding" ]; then
         echo "  PASS [per-request compression] (no Content-Encoding without Accept-Encoding)"
@@ -394,7 +401,7 @@ if has_test "noisy"; then
         "http://localhost:$PORT/baseline11?a=13&b=42"
 
     # Bad method should return 4xx (400 or 405)
-    noisy_bad_method=$(curl -s -o /dev/null -w '%{http_code}' -X GETT "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null || echo "000")
+    noisy_bad_method=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' -X GETT "http://localhost:$PORT/baseline11?a=1&b=1" 2>/dev/null || echo "000")
     if [ "$noisy_bad_method" -ge 400 ] && [ "$noisy_bad_method" -lt 500 ]; then
         echo "  PASS [bad method] (HTTP $noisy_bad_method)"
         PASS=$((PASS + 1))
@@ -418,7 +425,7 @@ fi
 if has_test "mixed"; then
     DB_DOCS="$DOCS_BASE/h1/database/validation"
     echo "[test] db endpoint (mixed test prerequisite)"
-    response=$(curl -s "http://localhost:$PORT/db?min=10&max=50")
+    response=$(curl -s --max-time 30 "http://localhost:$PORT/db?min=10&max=50")
     db_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -445,7 +452,7 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
         "http://localhost:$PORT/db?min=10&max=50"
 
     # Anti-cheat: empty range should return 0 items
-    response_empty=$(curl -s "http://localhost:$PORT/db?min=9999&max=9999")
+    response_empty=$(curl -s --max-time 30 "http://localhost:$PORT/db?min=9999&max=9999")
     db_empty=$(echo "$response_empty" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count','-1'))" 2>/dev/null || echo "-1")
     if [ "$db_empty" = "0" ]; then
         echo "  PASS [GET /db empty range] (count=0)"
@@ -462,7 +469,7 @@ if has_test "baseline-h2"; then
     echo "[test] baseline-h2 endpoint"
     if wait_h2; then
         # Verify server actually speaks HTTP/2
-        h2_proto=$(curl -sk --http2 -o /dev/null -w '%{http_version}' "https://localhost:$H2PORT/baseline2?a=1&b=1")
+        h2_proto=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{http_version}' "https://localhost:$H2PORT/baseline2?a=1&b=1")
         if [ "$h2_proto" = "2" ]; then
             echo "  PASS [HTTP/2 protocol negotiation] (HTTP/$h2_proto)"
             PASS=$((PASS + 1))
@@ -499,7 +506,7 @@ if has_test "static" || has_test "mixed"; then
     static_fail=false
     for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
         expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        actual_size=$(curl -s -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/$sf")
+        actual_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/$sf")
         if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
             true
         else
@@ -533,7 +540,7 @@ if has_test "static-h2"; then
             -sk --http2 "https://localhost:$H2PORT/static/manifest.json"
 
         # Check response size is non-zero
-        static_size=$(curl -sk --http2 -o /dev/null -w '%{size_download}' "https://localhost:$H2PORT/static/reset.css")
+        static_size=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{size_download}' "https://localhost:$H2PORT/static/reset.css")
         if [ "$static_size" -gt 0 ]; then
             echo "  PASS [static-h2 response size] ($static_size bytes)"
             PASS=$((PASS + 1))
@@ -552,7 +559,7 @@ fi
 if has_test "async-db" || has_test "mixed"; then
     ASYNCDB_DOCS="$DOCS_BASE/h1/async-database/validation"
     echo "[test] async-db endpoint"
-    response=$(curl -s "http://localhost:$PORT/async-db?min=10&max=50")
+    response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=10&max=50")
     pgdb_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -579,7 +586,7 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
         "http://localhost:$PORT/async-db?min=10&max=50"
 
     # Anti-cheat: empty range should return 0 items
-    response_empty=$(curl -s "http://localhost:$PORT/async-db?min=9999&max=9999")
+    response_empty=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=9999&max=9999")
     pgdb_empty=$(echo "$response_empty" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count','-1'))" 2>/dev/null || echo "-1")
     if [ "$pgdb_empty" = "0" ]; then
         echo "  PASS [GET /async-db empty range] (count=0)"
@@ -594,7 +601,7 @@ fi
 if has_test "echo-ws"; then
     WS_DOCS="$DOCS_BASE/ws/echo/validation"
     echo "[test] echo-ws endpoint"
-    WS_OUTPUT=$(python3 "$SCRIPT_DIR/validate-ws.py" localhost "$PORT" /ws 2>&1)
+    WS_OUTPUT=$(python3 "$SCRIPT_DIR/validate-ws.py" localhost "$PORT" /ws 2>&1) || true
     echo "$WS_OUTPUT"
 
     # Parse pass/fail counts from the script output
