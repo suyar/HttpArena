@@ -160,6 +160,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "SimpleW",
+    "language": "C#",
+    "rps": 12356,
+    "avg_latency": "41.45ms",
+    "p99_latency": "42.10ms",
+    "cpu": "162.5%",
+    "memory": "212.3MiB",
+    "connections": 512,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "84.43KB/s",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 61780,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "workerman-websocket",
     "language": "PHP",
     "rps": 2737835,

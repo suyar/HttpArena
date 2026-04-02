@@ -62,6 +62,7 @@
   "rust-epoll": {"dir": "rust-epoll", "description": "Zero-dependency Rust HTTP engine using raw epoll syscalls, one-thread-per-core with SO_REUSEPORT.", "repo": "", "type": "engine", "engine": "epoll"},
   "salvo": {"dir": "salvo", "description": "Salvo web framework with Quinn HTTP/3 support on Tokio runtime, compiled with -O3 and thin LTO.", "repo": "https://github.com/salvo-rs/salvo", "type": "tuned", "engine": "Salvo"},
   "Scotty": {"dir": "scotty", "description": "Scotty web framework on Warp, a lightweight Haskell framework inspired by Ruby's Sinatra.", "repo": "https://github.com/scotty-web/scotty", "type": "tuned", "engine": "warp"},
+  "SimpleW": {"dir": "simplew", "description": "SimpleW is Web server Library in .NET Core. Powerfully Simple and Blazingly Fast.", "repo": "https://github.com/stratdev3/SimpleW", "type": "tuned", "engine": "SimpleW"},
   "Sinatra": {"dir": "sinatra", "description": "Sinatra DSL web framework on Puma, multi-threaded with one worker per CPU core.", "repo": "https://github.com/sinatra/sinatra", "type": "tuned", "engine": "puma"},
   "Sisk": {"dir": "sisk", "description": "Sisk is a lightweight, agnostic, simple, and robust web development framework.", "repo": "https://github.com/sisk-http", "type": "tuned", "engine": "Sisk"},
   "spring-jvm": {"dir": "spring-jvm", "description": "Spring Boot with embedded Tomcat on JDK 21 (HotSpot JVM with ZGC).", "repo": "https://github.com/spring-projects/spring-boot", "type": "tuned", "engine": "Tomcat"},
