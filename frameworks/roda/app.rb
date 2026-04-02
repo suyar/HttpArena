@@ -6,16 +6,19 @@ Bundler.require(:default)
 require 'zlib'
 
 class App < Roda
+  SERVER_NAME = 'roda'.freeze
+
+  DATA_DIR = ENV.fetch('DATA_DIR', '/data')
   # Load dataset
-  dataset_path = ENV.fetch('DATASET_PATH', '/data/dataset.json')
+  dataset_path = File.join DATA_DIR, 'dataset.json'
   if File.exist?(dataset_path)
     opts[:dataset_items] = JSON.parse(File.read(dataset_path))
   end
 
   # Large dataset for compression
-  large_path = '/data/dataset-large.json'
-  if File.exist?(large_path)
-    raw = JSON.parse(File.read(large_path))
+  dataset_large_path = File.join DATA_DIR, 'dataset-large.json'
+  if File.exist?(dataset_large_path)
+    raw = JSON.parse(File.read(dataset_large_path))
     items = raw.map do |d|
       d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0)
     end
@@ -33,7 +36,7 @@ class App < Roda
     '.json'  => 'application/json'
   }.freeze
 
-  static_dir = '/data/static'
+  static_dir = File.join DATA_DIR, 'static'
   opts[:static_files_cache] = {}
   if Dir.exist?(static_dir)
     Dir.foreach(static_dir) do |name|
@@ -47,12 +50,12 @@ class App < Roda
   end
 
   # SQLite
-  opts[:db_available] = File.exist?('/data/benchmark.db')
+  opts[:database_path] = File.join(DATA_DIR, 'benchmark.db')
 
-  DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'
-  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'
+  DB_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'.freeze
+  PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT 50'.freeze
 
-  plugin :default_headers, 'Server' => 'roda'
+  plugin :default_headers, 'Server' => SERVER_NAME
   plugin :halt
   plugin :request_headers
 
@@ -112,14 +115,11 @@ class App < Roda
     end
 
     r.is 'db' do
-      unless opts[:db_available]
-        response[RodaResponseHeaders::CONTENT_TYPE] = 'application/json'
-        return '{"items":[],"count":0}'
-      end
       min_val = (request.params['min'] || 10).to_i
       max_val = (request.params['max'] || 50).to_i
-      db = get_db
-      rows = db.execute(DB_QUERY, [min_val, max_val])
+
+      rows = get_db&.execute(DB_QUERY, [min_val, max_val]) || []
+
       items = rows.map do |row|
         {
           'id' => row['id'], 'name' => row['name'], 'category' => row['category'],
@@ -133,13 +133,11 @@ class App < Roda
     end
 
     r.is 'async-db' do
-      unless get_pg
-        response[RodaResponseHeaders::CONTENT_TYPE] = 'application/json'
-        return '{"items":[],"count":0}'
-      end
       min_val = (request.params['min'] || 10).to_i
       max_val = (request.params['max'] || 50).to_i
-      rows = get_pg.exec_params(PG_QUERY, [min_val, max_val])
+
+      rows = get_pg&.exec_prepared('select', [min_val, max_val]) || []
+
       items = rows.map do |row|
         {
           'id' => row['id'], 'name' => row['name'], 'category' => row['category'],
@@ -180,16 +178,20 @@ class App < Roda
 
   def get_db
     Thread.current[:roda_db] ||= begin
-      db = SQLite3::Database.new('/data/benchmark.db', readonly: true)
+      db = SQLite3::Database.new(opts[:database_path], readonly: true)
       db.execute('PRAGMA mmap_size=268435456')
       db.results_as_hash = true
       db
+    rescue
+      nil
     end
   end
 
   def get_pg
     Thread.current[:pg_conn] ||= begin
-      PG.connect(ENV['DATABASE_URL'])
+      db = PG.connect(ENV['DATABASE_URL'])
+      db.prepare('select', PG_QUERY)
+      db
     rescue
       nil
     end
