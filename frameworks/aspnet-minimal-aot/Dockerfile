@@ -7,7 +7,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
-RUN dotnet publish -c Release -r linux-x64 -o out
+RUN dotnet publish -c Release -o out /p:OptimizationPreference=Speed /p:GarbageCollectionAdaptationMode=0
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
