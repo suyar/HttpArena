@@ -24,7 +24,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 463090
+    "tpl_async_db": 463090,
+    "type": "production"
   },
   {
     "framework": "aspnet-minimal",
@@ -51,7 +52,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 420310
+    "tpl_async_db": 420310,
+    "type": "production"
   },
   {
     "framework": "aspnet-mvc",
@@ -78,7 +80,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 371073
+    "tpl_async_db": 371073,
+    "type": "production"
   },
   {
     "framework": "bun",
@@ -105,10 +108,11 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 374118
+    "tpl_async_db": 374118,
+    "type": "engine"
   },
   {
-    "framework": "carno.js",
+    "framework": "carno",
     "language": "TS",
     "rps": 107346,
     "avg_latency": "6.62ms",
@@ -132,7 +136,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 368112
+    "tpl_async_db": 368112,
+    "type": "production"
   },
   {
     "framework": "chi",
@@ -159,7 +164,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 53419
+    "tpl_async_db": 53419,
+    "type": "tuned"
   },
   {
     "framework": "deno",
@@ -186,7 +192,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 296506
+    "tpl_async_db": 296506,
+    "type": "production"
   },
   {
     "framework": "django",
@@ -213,34 +220,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 102572
-  },
-  {
-    "framework": "drogon",
-    "language": "C++",
-    "rps": 34795,
-    "avg_latency": "22.89ms",
-    "p99_latency": "103.80ms",
-    "cpu": "1591.3%",
-    "memory": "90.8MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "206.08MB/s",
-    "input_bw": "1.79MB/s",
-    "reconnects": 118985,
-    "status_2xx": 521933,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 221425,
-    "tpl_json": 181056,
-    "tpl_db": 0,
-    "tpl_upload": 0,
-    "tpl_compression": 0,
-    "tpl_static": 0,
-    "tpl_async_db": 119450
+    "tpl_async_db": 102572,
+    "type": "tuned"
   },
   {
     "framework": "echo",
@@ -267,7 +248,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 54728
+    "tpl_async_db": 54728,
+    "type": "tuned"
   },
   {
     "framework": "elysia",
@@ -294,7 +276,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 363816
+    "tpl_async_db": 363816,
+    "type": "production"
   },
   {
     "framework": "express",
@@ -321,7 +304,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 180382
+    "tpl_async_db": 180382,
+    "type": "tuned"
   },
   {
     "framework": "fastapi",
@@ -348,7 +332,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 217784
+    "tpl_async_db": 217784,
+    "type": "tuned"
   },
   {
     "framework": "fastify",
@@ -375,7 +360,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 339594
+    "tpl_async_db": 339594,
+    "type": "tuned"
   },
   {
     "framework": "fastpysgi-asgi",
@@ -402,7 +388,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 34494
+    "tpl_async_db": 34494,
+    "type": "engine"
   },
   {
     "framework": "fastpysgi-wsgi",
@@ -429,7 +416,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 7900
+    "tpl_async_db": 7900,
+    "type": "engine"
   },
   {
     "framework": "fiber",
@@ -456,7 +444,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 68451
+    "tpl_async_db": 68451,
+    "type": "tuned"
   },
   {
     "framework": "flask",
@@ -483,7 +472,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 111501
+    "tpl_async_db": 111501,
+    "type": "tuned"
   },
   {
     "framework": "fletch",
@@ -510,7 +500,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 23604
+    "tpl_async_db": 23604,
+    "type": "tuned"
   },
   {
     "framework": "genhttp",
@@ -537,7 +528,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 421341
+    "tpl_async_db": 421341,
+    "type": "production"
   },
   {
     "framework": "gin",
@@ -564,7 +556,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 53135
+    "tpl_async_db": 53135,
+    "type": "tuned"
   },
   {
     "framework": "go-fasthttp",
@@ -591,7 +584,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 224870
+    "tpl_async_db": 224870,
+    "type": "production"
   },
   {
     "framework": "helidon",
@@ -618,10 +612,11 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 99979
+    "tpl_async_db": 99979,
+    "type": "tuned"
   },
   {
-    "framework": "hono (bun)",
+    "framework": "hono-bun",
     "language": "TS",
     "rps": 100300,
     "avg_latency": "7.12ms",
@@ -645,10 +640,11 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 344008
+    "tpl_async_db": 344008,
+    "type": "production"
   },
   {
-    "framework": "hono (node)",
+    "framework": "hono",
     "language": "JS",
     "rps": 93832,
     "avg_latency": "9.31ms",
@@ -672,10 +668,11 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 321688
+    "tpl_async_db": 321688,
+    "type": "tuned"
   },
   {
-    "framework": "hummingbird",
+    "framework": "humming-bird",
     "language": "Swift",
     "rps": 3824,
     "avg_latency": "92.01ms",
@@ -699,34 +696,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 14033
-  },
-  {
-    "framework": "kemal",
-    "language": "Crystal",
-    "rps": 91214,
-    "avg_latency": "8.34ms",
-    "p99_latency": "240.90ms",
-    "cpu": "1532.3%",
-    "memory": "909.7MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "475.75MB/s",
-    "input_bw": "4.70MB/s",
-    "reconnects": 312367,
-    "status_2xx": 1368222,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 585286,
-    "tpl_json": 469730,
-    "tpl_db": 0,
-    "tpl_upload": 0,
-    "tpl_compression": 0,
-    "tpl_static": 0,
-    "tpl_async_db": 313205
+    "tpl_async_db": 14033,
+    "type": "tuned"
   },
   {
     "framework": "koa",
@@ -753,7 +724,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 311005
+    "tpl_async_db": 311005,
+    "type": "tuned"
   },
   {
     "framework": "ktor",
@@ -780,7 +752,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 421359
+    "tpl_async_db": 421359,
+    "type": "tuned"
   },
   {
     "framework": "nginx-openresty",
@@ -807,7 +780,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 164021
+    "tpl_async_db": 164021,
+    "type": "tuned"
   },
   {
     "framework": "ngx-php",
@@ -834,7 +808,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 329496
+    "tpl_async_db": 329496,
+    "type": "tuned"
   },
   {
     "framework": "node",
@@ -861,7 +836,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 358127
+    "tpl_async_db": 358127,
+    "type": "engine"
   },
   {
     "framework": "ntex-tokio",
@@ -888,7 +864,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 414592
+    "tpl_async_db": 414592,
+    "type": "production"
   },
   {
     "framework": "phoenix",
@@ -915,7 +892,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 136821
+    "tpl_async_db": 136821,
+    "type": "tuned"
   },
   {
     "framework": "quarkus-jvm",
@@ -942,7 +920,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 352538
+    "tpl_async_db": 352538,
+    "type": "tuned"
   },
   {
     "framework": "rage",
@@ -969,7 +948,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 34772
+    "tpl_async_db": 34772,
+    "type": "tuned"
   },
   {
     "framework": "rails",
@@ -996,34 +976,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 84007
-  },
-  {
-    "framework": "rocket",
-    "language": "Rust",
-    "rps": 87483,
-    "avg_latency": "8.26ms",
-    "p99_latency": "35.10ms",
-    "cpu": "1531.5%",
-    "memory": "116.0MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "464.46MB/s",
-    "input_bw": "4.51MB/s",
-    "reconnects": 299708,
-    "status_2xx": 1312255,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 560641,
-    "tpl_json": 451138,
-    "tpl_db": 0,
-    "tpl_upload": 0,
-    "tpl_compression": 0,
-    "tpl_static": 0,
-    "tpl_async_db": 300473
+    "tpl_async_db": 84007,
+    "type": "tuned"
   },
   {
     "framework": "roda",
@@ -1050,61 +1004,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 189616
-  },
-  {
-    "framework": "salvo",
-    "language": "Rust",
-    "rps": 114546,
-    "avg_latency": "5.43ms",
-    "p99_latency": "24.30ms",
-    "cpu": "1602.8%",
-    "memory": "113.2MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "601.93MB/s",
-    "input_bw": "5.90MB/s",
-    "reconnects": 392427,
-    "status_2xx": 1718196,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 735435,
-    "tpl_json": 589893,
-    "tpl_db": 0,
-    "tpl_upload": 0,
-    "tpl_compression": 0,
-    "tpl_static": 0,
-    "tpl_async_db": 392861
-  },
-  {
-    "framework": "scotty",
-    "language": "Haskell",
-    "rps": 7191,
-    "avg_latency": "121.02ms",
-    "p99_latency": "185.10ms",
-    "cpu": "709.5%",
-    "memory": "2.4GiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "37.35MB/s",
-    "input_bw": "379.21KB/s",
-    "reconnects": 24402,
-    "status_2xx": 107876,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 46226,
-    "tpl_json": 37029,
-    "tpl_db": 0,
-    "tpl_upload": 0,
-    "tpl_compression": 0,
-    "tpl_static": 0,
-    "tpl_async_db": 24621
+    "tpl_async_db": 189616,
+    "type": "tuned"
   },
   {
     "framework": "servicestack",
@@ -1131,7 +1032,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 72123
+    "tpl_async_db": 72123,
+    "type": "tuned"
   },
   {
     "framework": "simplew",
@@ -1158,7 +1060,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 69335
+    "tpl_async_db": 69335,
+    "type": "tuned"
   },
   {
     "framework": "sinatra",
@@ -1185,7 +1088,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 159757
+    "tpl_async_db": 159757,
+    "type": "tuned"
   },
   {
     "framework": "sisk",
@@ -1212,7 +1116,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 21600
+    "tpl_async_db": 21600,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm",
@@ -1239,7 +1144,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 202965
+    "tpl_async_db": 202965,
+    "type": "tuned"
   },
   {
     "framework": "starlette",
@@ -1266,34 +1172,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 248527
-  },
-  {
-    "framework": "ulfius",
-    "language": "C",
-    "rps": 9399,
-    "avg_latency": "77.84ms",
-    "p99_latency": "1.25s",
-    "cpu": "379.4%",
-    "memory": "239.3MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "34.10MB/s",
-    "input_bw": "495.65KB/s",
-    "reconnects": 636248,
-    "status_2xx": 140992,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 58405,
-    "tpl_json": 47216,
-    "tpl_db": 0,
-    "tpl_upload": 0,
-    "tpl_compression": 0,
-    "tpl_static": 0,
-    "tpl_async_db": 35371
+    "tpl_async_db": 248527,
+    "type": "tuned"
   },
   {
     "framework": "ultimate-express",
@@ -1320,7 +1200,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 457296
+    "tpl_async_db": 457296,
+    "type": "tuned"
   },
   {
     "framework": "workerman",
@@ -1347,6 +1228,7 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 0,
-    "tpl_async_db": 309548
+    "tpl_async_db": 309548,
+    "type": "tuned"
   }
 ]

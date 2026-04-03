@@ -1,5 +1,5 @@
 {
-    "display_name": "FastPySGI-ASGI",
+    "display_name": "fastpysgi-asgi",
     "language": "Python",
     "type": "engine",
     "engine": "libuv",
@@ -17,6 +17,7 @@
         "api-4",
         "api-16",
         "async-db",
+        "sync-db",
         "static",
         "tcp-frag"
     ]

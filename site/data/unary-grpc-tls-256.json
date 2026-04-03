@@ -17,7 +17,8 @@
     "status_2xx": 11011762,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "grpc-go",
@@ -37,7 +38,8 @@
     "status_2xx": 2625462,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "quarkus-jvm-grpc",
@@ -57,7 +59,8 @@
     "status_2xx": 14931600,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm-grpc",
@@ -77,7 +80,8 @@
     "status_2xx": 930499,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "tonic-grpc",
@@ -97,6 +101,7 @@
     "status_2xx": 5030379,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   }
 ]

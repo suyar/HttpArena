@@ -17,7 +17,8 @@
     "status_2xx": 1026351,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "aspnet-minimal",
@@ -37,7 +38,8 @@
     "status_2xx": 1344640,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "aspnet-mvc",
@@ -57,7 +59,8 @@
     "status_2xx": 1294655,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "bun",
@@ -77,10 +80,11 @@
     "status_2xx": 1078562,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
-    "framework": "carno.js",
+    "framework": "carno",
     "language": "TS",
     "rps": 105156,
     "avg_latency": "7.86ms",
@@ -97,7 +101,8 @@
     "status_2xx": 1051560,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "chi",
@@ -117,7 +122,8 @@
     "status_2xx": 230637,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "deno",
@@ -137,7 +143,8 @@
     "status_2xx": 754557,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "django",
@@ -157,27 +164,8 @@
     "status_2xx": 436617,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "drogon",
-    "language": "C++",
-    "rps": 65680,
-    "avg_latency": "13.83ms",
-    "p99_latency": "17.40ms",
-    "cpu": "8854.6%",
-    "memory": "126.4MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "581.23MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 656804,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "echo",
@@ -197,7 +185,8 @@
     "status_2xx": 229778,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "elysia",
@@ -217,7 +206,8 @@
     "status_2xx": 1027040,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "express",
@@ -237,7 +227,8 @@
     "status_2xx": 924334,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastapi",
@@ -257,7 +248,8 @@
     "status_2xx": 854511,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastify",
@@ -277,7 +269,8 @@
     "status_2xx": 1199261,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastpysgi-asgi",
@@ -297,7 +290,8 @@
     "status_2xx": 23495,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "fastpysgi-wsgi",
@@ -317,7 +311,8 @@
     "status_2xx": 379779,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "fiber",
@@ -337,7 +332,8 @@
     "status_2xx": 253695,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "flask",
@@ -357,7 +353,8 @@
     "status_2xx": 460030,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "fletch",
@@ -377,7 +374,8 @@
     "status_2xx": 32642,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "genhttp",
@@ -397,7 +395,8 @@
     "status_2xx": 1552057,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "gin",
@@ -417,7 +416,8 @@
     "status_2xx": 226515,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "go-fasthttp",
@@ -437,7 +437,8 @@
     "status_2xx": 272462,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "helidon",
@@ -457,10 +458,11 @@
     "status_2xx": 161880,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
-    "framework": "hono (bun)",
+    "framework": "hono-bun",
     "language": "TS",
     "rps": 104750,
     "avg_latency": "7.82ms",
@@ -477,10 +479,11 @@
     "status_2xx": 1047500,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
-    "framework": "hono (node)",
+    "framework": "hono",
     "language": "JS",
     "rps": 120465,
     "avg_latency": "6.45ms",
@@ -497,10 +500,11 @@
     "status_2xx": 1204651,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
-    "framework": "hummingbird",
+    "framework": "humming-bird",
     "language": "Swift",
     "rps": 9750,
     "avg_latency": "96.55ms",
@@ -517,27 +521,8 @@
     "status_2xx": 97505,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "kemal",
-    "language": "Crystal",
-    "rps": 125705,
-    "avg_latency": "6.29ms",
-    "p99_latency": "16.70ms",
-    "cpu": "5479.9%",
-    "memory": "2.7GiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "995.21MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 1257054,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "koa",
@@ -557,7 +542,8 @@
     "status_2xx": 1179042,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "ktor",
@@ -577,7 +563,8 @@
     "status_2xx": 1317176,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "nginx-openresty",
@@ -597,7 +584,8 @@
     "status_2xx": 1079008,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "ngx-php",
@@ -617,7 +605,8 @@
     "status_2xx": 1675256,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "node",
@@ -637,7 +626,8 @@
     "status_2xx": 1244054,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "ntex-tokio",
@@ -657,7 +647,8 @@
     "status_2xx": 992890,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "phoenix",
@@ -677,7 +668,8 @@
     "status_2xx": 323613,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "quarkus-jvm",
@@ -697,7 +689,8 @@
     "status_2xx": 1123253,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "rage",
@@ -717,7 +710,8 @@
     "status_2xx": 23895,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "rails",
@@ -737,27 +731,8 @@
     "status_2xx": 632386,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "rocket",
-    "language": "Rust",
-    "rps": 102069,
-    "avg_latency": "7.78ms",
-    "p99_latency": "130.50ms",
-    "cpu": "4864.8%",
-    "memory": "152.6MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "805.34MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 1020691,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "roda",
@@ -777,47 +752,8 @@
     "status_2xx": 874405,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "salvo",
-    "language": "Rust",
-    "rps": 114363,
-    "avg_latency": "6.34ms",
-    "p99_latency": "137.00ms",
-    "cpu": "5140.9%",
-    "memory": "210.2MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "898.64MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 1143630,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "scotty",
-    "language": "Haskell",
-    "rps": 2491,
-    "avg_latency": "350.05ms",
-    "p99_latency": "3.27s",
-    "cpu": "615.8%",
-    "memory": "3.0GiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "19.70MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 24915,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "servicestack",
@@ -837,7 +773,8 @@
     "status_2xx": 144471,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "simplew",
@@ -857,7 +794,8 @@
     "status_2xx": 1588467,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "sinatra",
@@ -877,7 +815,8 @@
     "status_2xx": 827179,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "sisk",
@@ -897,7 +836,8 @@
     "status_2xx": 1246,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm",
@@ -917,7 +857,8 @@
     "status_2xx": 1021878,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "starlette",
@@ -937,27 +878,8 @@
     "status_2xx": 891857,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "ulfius",
-    "language": "C",
-    "rps": 62937,
-    "avg_latency": "9.68ms",
-    "p99_latency": "295.30ms",
-    "cpu": "5747.6%",
-    "memory": "184.4MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "539.75MB/s",
-    "input_bw": "",
-    "reconnects": 344043,
-    "status_2xx": 629378,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "ultimate-express",
@@ -977,7 +899,8 @@
     "status_2xx": 1226689,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "workerman",
@@ -997,6 +920,7 @@
     "status_2xx": 1776291,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   }
 ]

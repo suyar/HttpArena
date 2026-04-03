@@ -5,7 +5,7 @@
   "engine": "drogon",
   "description": "Drogon C++ framework using HttpController with async callbacks, mimalloc allocator, and -flto optimization.",
   "repo": "https://github.com/drogonframework/drogon",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "noisy",
@@ -19,6 +19,7 @@
     "api-16",
     "static",
     "tcp-frag",
-    "async-db"
+    "async-db",
+        "sync-db"
   ]
 }

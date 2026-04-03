@@ -57,20 +57,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 1796937,
-      "avg_latency": "8.81ms",
-      "p99_latency": "39.70ms",
-      "cpu": "1982.2%",
-      "memory": "269.8MiB",
-      "connections": 16384,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
       "framework": "express",
       "language": "JS",
       "rps": 314496,
@@ -262,20 +248,6 @@
       "p99_latency": "17.10ms",
       "cpu": "2313.7%",
       "memory": "8.6GiB",
-      "connections": 4096,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 2284486,
-      "avg_latency": "1.79ms",
-      "p99_latency": "8.70ms",
-      "cpu": "2102.7%",
-      "memory": "78.6MiB",
       "connections": 4096,
       "threads": 12,
       "duration": "5s",
@@ -481,20 +453,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 2393634,
-      "avg_latency": "213us",
-      "p99_latency": "3.15ms",
-      "cpu": "2137.0%",
-      "memory": "20.1MiB",
-      "connections": 512,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
       "framework": "express",
       "language": "JS",
       "rps": 342596,
@@ -679,20 +637,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 11791660,
-      "avg_latency": "8.96ms",
-      "p99_latency": "8.96ms",
-      "cpu": "2441.0%",
-      "memory": "279.4MiB",
-      "connections": 1024,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
       "framework": "h2o",
       "language": "C",
       "rps": 13373100,
@@ -821,20 +765,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 13815260,
-      "avg_latency": "1.85ms",
-      "p99_latency": "1.85ms",
-      "cpu": "2277.7%",
-      "memory": "92.2MiB",
-      "connections": 256,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
       "framework": "h2o",
       "language": "C",
       "rps": 15069680,
@@ -956,20 +886,6 @@
       "p99_latency": "9.64ms",
       "cpu": "2491.1%",
       "memory": "161.0MiB",
-      "connections": 64,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 13819720,
-      "avg_latency": "465us",
-      "p99_latency": "465us",
-      "cpu": "2060.0%",
-      "memory": "30.1MiB",
       "connections": 64,
       "threads": 12,
       "duration": "5s",
@@ -1112,20 +1028,6 @@
       "p99_latency": "75.50ms",
       "cpu": "2149.8%",
       "memory": "1.7GiB",
-      "connections": 16384,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 1058809,
-      "avg_latency": "11.90ms",
-      "p99_latency": "33.10ms",
-      "cpu": "1513.7%",
-      "memory": "341.9MiB",
       "connections": 16384,
       "threads": 12,
       "duration": "5s",
@@ -1317,20 +1219,6 @@
       "reconnects": 30744
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 638491,
-      "avg_latency": "23.89ms",
-      "p99_latency": "54.00ms",
-      "cpu": "926.5%",
-      "memory": "579.5MiB",
-      "connections": 32768,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 9129
-    },
-    {
       "framework": "express",
       "language": "JS",
       "rps": 209583,
@@ -1508,20 +1396,6 @@
       "p99_latency": "12.60ms",
       "cpu": "1884.7%",
       "memory": "1.1GiB",
-      "connections": 4096,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 798680,
-      "avg_latency": "1.21ms",
-      "p99_latency": "8.16ms",
-      "cpu": "869.9%",
-      "memory": "81.0MiB",
       "connections": 4096,
       "threads": 12,
       "duration": "5s",
@@ -1711,20 +1585,6 @@
       "duration": "5s",
       "pipeline": 1,
       "reconnects": 396105
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 1683019,
-      "avg_latency": "2.39ms",
-      "p99_latency": "53.50ms",
-      "cpu": "1834.5%",
-      "memory": "65.4MiB",
-      "connections": 4096,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 841916
     },
     {
       "framework": "express",
@@ -1925,20 +1785,6 @@
       "reconnects": 510055
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 1441590,
-      "avg_latency": "350us",
-      "p99_latency": "6.71ms",
-      "cpu": "1713.5%",
-      "memory": "24.6MiB",
-      "connections": 512,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 720789
-    },
-    {
       "framework": "express",
       "language": "JS",
       "rps": 266638,
@@ -2123,20 +1969,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 12862140,
-      "avg_latency": "19.41ms",
-      "p99_latency": "68.80ms",
-      "cpu": "2342.2%",
-      "memory": "518.3MiB",
-      "connections": 16384,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 16,
-      "reconnects": 0
-    },
-    {
       "framework": "express",
       "language": "JS",
       "rps": 468633,
@@ -2286,20 +2118,6 @@
       "p99_latency": "67.70ms",
       "cpu": "1948.9%",
       "memory": "1.1GiB",
-      "connections": 4096,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 16,
-      "reconnects": 0
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 13869136,
-      "avg_latency": "4.72ms",
-      "p99_latency": "18.40ms",
-      "cpu": "2318.1%",
-      "memory": "142.6MiB",
       "connections": 4096,
       "threads": 12,
       "duration": "5s",
@@ -2463,20 +2281,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 16843731,
-      "avg_latency": "485us",
-      "p99_latency": "3.50ms",
-      "cpu": "2324.3%",
-      "memory": "29.9MiB",
-      "connections": 512,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 16,
-      "reconnects": 0
-    },
-    {
       "framework": "express",
       "language": "JS",
       "rps": 429073,
@@ -2633,20 +2437,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 723499,
-      "avg_latency": "138.44ms",
-      "p99_latency": "138.44ms",
-      "cpu": "1959.7%",
-      "memory": "3.2GiB",
-      "connections": 1024,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
       "framework": "h2o",
       "language": "C",
       "rps": 1251940,
@@ -2775,20 +2565,6 @@
       "reconnects": 0
     },
     {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 757656,
-      "avg_latency": "33.66ms",
-      "p99_latency": "33.66ms",
-      "cpu": "2067.0%",
-      "memory": "854.9MiB",
-      "connections": 256,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
       "framework": "h2o",
       "language": "C",
       "rps": 1320267,
@@ -2910,20 +2686,6 @@
       "p99_latency": "11.36ms",
       "cpu": "2132.4%",
       "memory": "439.7MiB",
-      "connections": 64,
-      "threads": 12,
-      "duration": "5s",
-      "pipeline": 1,
-      "reconnects": 0
-    },
-    {
-      "framework": "drogon",
-      "language": "C++",
-      "rps": 963977,
-      "avg_latency": "6.58ms",
-      "p99_latency": "6.58ms",
-      "cpu": "2002.5%",
-      "memory": "325.6MiB",
       "connections": 64,
       "threads": 12,
       "duration": "5s",

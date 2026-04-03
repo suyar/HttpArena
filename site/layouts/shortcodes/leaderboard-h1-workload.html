@@ -1430,7 +1430,6 @@ function applyH1WkMixedPanel(panel) {
   var rowData = [];
   var maxWeighted = 0;
   rows.forEach(function(row) {
-    if (row.classList.contains('lb-hidden')) return;
     var d = {
       baseline: Number(row.dataset.tplBaseline) || 0,
       json: Number(row.dataset.tplJson) || 0,
@@ -1442,8 +1441,9 @@ function applyH1WkMixedPanel(panel) {
     };
     var weighted = 0;
     cfg.keys.forEach(function(k) { weighted += (d[k] || 0) * cfg.weights[k]; });
-    if (weighted > maxWeighted) maxWeighted = weighted;
-    rowData.push({row: row, d: d, weighted: weighted});
+    var hidden = row.classList.contains('lb-hidden');
+    if (!hidden && weighted > maxWeighted) maxWeighted = weighted;
+    rowData.push({row: row, d: d, weighted: weighted, hidden: hidden});
   });
 
   /* Normalize so top = 100 */
@@ -1490,13 +1490,17 @@ function applyH1WkMixedPanel(panel) {
 
   /* Update rows: re-rank, add score cell, add mix bar */
   var lb = panel.querySelector('.lb');
+  var visibleRank = 0;
   rowData.forEach(function(rd, idx) {
     var row = rd.row;
     row.style.gridTemplateColumns = cfg.grid;
 
-    /* Update rank */
+    /* Update rank — only count visible rows */
     var rankEl = row.querySelector('.lb-rank');
-    if (rankEl) rankEl.textContent = String(idx + 1);
+    if (!rd.hidden) {
+      visibleRank++;
+      if (rankEl) rankEl.textContent = String(visibleRank);
+    }
 
     /* Replace bar cell with score */
     var barCell = row.querySelector('.lb-bar-cell');
@@ -1545,11 +1549,11 @@ function applyH1WkMixedScores() {
     var best = {};
 
     connPanels.forEach(function(cp) {
-      cp.querySelectorAll('.lb-row:not(.lb-header):not(.lb-hidden)').forEach(function(row) {
+      cp.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
         var name = row.dataset.name;
         var score = parseFloat(row.dataset.mixedScore || '0');
         if (!best[name] || score > best[name].score) {
-          best[name] = { score: score, row: row };
+          best[name] = { score: score, row: row, hidden: row.classList.contains('lb-hidden') };
         }
       });
     });
@@ -1589,12 +1593,19 @@ function applyH1WkMixedScores() {
     }
 
     var entries = Object.values(best).sort(function(a, b) { return b.score - a.score; });
-    entries.forEach(function(entry, idx) {
+    var visibleRank = 0;
+    entries.forEach(function(entry) {
       var clone = entry.row.cloneNode(true);
       clone.dataset.mixedScore = entry.score;
       clone.style.gridTemplateColumns = cfg.grid;
+      if (entry.hidden) {
+        clone.classList.add('lb-hidden');
+      } else {
+        clone.classList.remove('lb-hidden');
+        visibleRank++;
+      }
       var rankEl = clone.querySelector('.lb-rank');
-      rankEl.textContent = String(idx + 1);
+      rankEl.textContent = String(visibleRank);
       lb.appendChild(clone);
     });
   });

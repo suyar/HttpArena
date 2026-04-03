@@ -1,23 +1,24 @@
 {
-  "display_name": "hono (bun)",
-  "language": "TS",
-  "type": "production",
-  "engine": "jsc",
-  "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
-  "repo": "https://github.com/honojs/hono",
-  "enabled": true,
-  "tests": [
-    "baseline",
-    "pipelined",
-    "limited-conn",
-    "json",
-    "upload",
-    "compression",
-    "mixed",
-    "api-4",
-    "api-16",
-    "async-db",
-    "static",
-    "tcp-frag"
-  ]
+    "display_name": "hono-bun",
+    "language": "TS",
+    "type": "production",
+    "engine": "jsc",
+    "description": "Ultrafast Web Standards framework running natively on Bun \u2014 no adapter overhead.",
+    "repo": "https://github.com/honojs/hono",
+    "enabled": true,
+    "tests": [
+        "baseline",
+        "pipelined",
+        "limited-conn",
+        "json",
+        "upload",
+        "compression",
+        "mixed",
+        "api-4",
+        "api-16",
+        "async-db",
+        "sync-db",
+        "static",
+        "tcp-frag"
+    ]
 }

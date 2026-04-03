@@ -22,7 +22,8 @@
     "tpl_json": 31661,
     "tpl_db": 35930,
     "tpl_upload": 40856,
-    "tpl_compression": 31506
+    "tpl_compression": 31506,
+    "type": "production"
   },
   {
     "framework": "aspnet-minimal",
@@ -47,7 +48,8 @@
     "tpl_json": 17543,
     "tpl_db": 3970,
     "tpl_upload": 3563,
-    "tpl_compression": 4643
+    "tpl_compression": 4643,
+    "type": "production"
   },
   {
     "framework": "bun",
@@ -72,7 +74,8 @@
     "tpl_json": 29278,
     "tpl_db": 30881,
     "tpl_upload": 32358,
-    "tpl_compression": 52784
+    "tpl_compression": 52784,
+    "type": "engine"
   },
   {
     "framework": "deno",
@@ -97,32 +100,8 @@
     "tpl_json": 26006,
     "tpl_db": 27565,
     "tpl_upload": 25334,
-    "tpl_compression": 33746
-  },
-  {
-    "framework": "drogon",
-    "language": "C++",
-    "rps": 21593,
-    "avg_latency": "22.07ms",
-    "p99_latency": "128.60ms",
-    "cpu": "8682.8%",
-    "memory": "489.1MiB",
-    "connections": 512,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "627.25MB/s",
-    "input_bw": "2.11GB/s",
-    "reconnects": 920,
-    "status_2xx": 107968,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 48820,
-    "tpl_json": 15610,
-    "tpl_db": 15653,
-    "tpl_upload": 12418,
-    "tpl_compression": 15463
+    "tpl_compression": 33746,
+    "type": "production"
   },
   {
     "framework": "flask",
@@ -147,7 +126,8 @@
     "tpl_json": 15619,
     "tpl_db": 15633,
     "tpl_upload": 15554,
-    "tpl_compression": 31220
+    "tpl_compression": 31220,
+    "type": "tuned"
   },
   {
     "framework": "go-fasthttp",
@@ -172,7 +152,8 @@
     "tpl_json": 43643,
     "tpl_db": 44424,
     "tpl_upload": 35354,
-    "tpl_compression": 46593
+    "tpl_compression": 46593,
+    "type": "production"
   },
   {
     "framework": "nginx-openresty",
@@ -197,7 +178,8 @@
     "tpl_json": 17933,
     "tpl_db": 18064,
     "tpl_upload": 15340,
-    "tpl_compression": 18855
+    "tpl_compression": 18855,
+    "type": "tuned"
   },
   {
     "framework": "node",
@@ -222,7 +204,8 @@
     "tpl_json": 29258,
     "tpl_db": 30631,
     "tpl_upload": 32279,
-    "tpl_compression": 49944
+    "tpl_compression": 49944,
+    "type": "engine"
   },
   {
     "framework": "quarkus-jvm",
@@ -247,32 +230,8 @@
     "tpl_json": 40857,
     "tpl_db": 16443,
     "tpl_upload": 5040,
-    "tpl_compression": 22852
-  },
-  {
-    "framework": "salvo",
-    "language": "Rust",
-    "rps": 44922,
-    "avg_latency": "10.32ms",
-    "p99_latency": "48.30ms",
-    "cpu": "9624.7%",
-    "memory": "958.8MiB",
-    "connections": 512,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "1.90GB/s",
-    "input_bw": "4.39GB/s",
-    "reconnects": 2106,
-    "status_2xx": 225064,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0,
-    "tpl_baseline": 90751,
-    "tpl_json": 28599,
-    "tpl_db": 31956,
-    "tpl_upload": 35028,
-    "tpl_compression": 38708
+    "tpl_compression": 22852,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm",
@@ -297,7 +256,8 @@
     "tpl_json": 29157,
     "tpl_db": 32213,
     "tpl_upload": 32878,
-    "tpl_compression": 17092
+    "tpl_compression": 17092,
+    "type": "tuned"
   },
   {
     "framework": "ultimate-express",
@@ -322,6 +282,7 @@
     "tpl_json": 28132,
     "tpl_db": 29298,
     "tpl_upload": 30300,
-    "tpl_compression": 47976
+    "tpl_compression": 47976,
+    "type": "tuned"
   }
 ]

@@ -18,6 +18,7 @@
     "api-4",
     "api-16",
     "static",
-    "async-db"
+    "async-db",
+        "sync-db"
   ]
 }

@@ -16,6 +16,7 @@
     "status_2xx": 69694900,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   }
 ]

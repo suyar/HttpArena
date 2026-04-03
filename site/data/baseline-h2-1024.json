@@ -17,7 +17,8 @@
     "status_2xx": 20629400,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "aspnet-minimal",
@@ -37,7 +38,8 @@
     "status_2xx": 14232512,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "aspnet-mvc",
@@ -57,7 +59,8 @@
     "status_2xx": 6385355,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "bun",
@@ -77,7 +80,8 @@
     "status_2xx": 5373655,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "caddy",
@@ -96,7 +100,8 @@
     "status_2xx": 2422746,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "express",
@@ -116,7 +121,8 @@
     "status_2xx": 5673100,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastify",
@@ -136,7 +142,8 @@
     "status_2xx": 5397100,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "h2o",
@@ -155,7 +162,8 @@
     "status_2xx": 71299000,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "h2o-mruby",
@@ -174,10 +182,11 @@
     "status_2xx": 28560500,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
-    "framework": "hono (node)",
+    "framework": "hono",
     "language": "JS",
     "rps": 1104640,
     "avg_latency": "88.21ms",
@@ -194,7 +203,8 @@
     "status_2xx": 5585100,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "hyper",
@@ -213,7 +223,8 @@
     "status_2xx": 36055386,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "koa",
@@ -233,7 +244,8 @@
     "status_2xx": 5517000,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "nginx",
@@ -253,7 +265,8 @@
     "status_2xx": 16956772,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "nginx-openresty",
@@ -272,7 +285,8 @@
     "status_2xx": 11800290,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "ngx-php",
@@ -292,7 +306,8 @@
     "status_2xx": 12000611,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "node",
@@ -311,7 +326,8 @@
     "status_2xx": 5534800,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "quarkus-jvm",
@@ -331,46 +347,8 @@
     "status_2xx": 27901400,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "rocket",
-    "language": "Rust",
-    "rps": 371113,
-    "avg_latency": "256.66ms",
-    "p99_latency": "256.66ms",
-    "cpu": "4021.7%",
-    "memory": "643.8MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "14.21MB/s",
-    "input_bw": "",
-    "reconnects": 0,
-    "status_2xx": 1856180,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "salvo",
-    "language": "Rust",
-    "rps": 815329,
-    "avg_latency": "117.79ms",
-    "p99_latency": "117.79ms",
-    "cpu": "8459.0%",
-    "memory": "934.1MiB",
-    "connections": 1024,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "21.82MB/s",
-    "reconnects": 0,
-    "status_2xx": 4076962,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm",
@@ -390,7 +368,8 @@
     "status_2xx": 1118102,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "vertx",
@@ -410,6 +389,7 @@
     "status_2xx": 34127400,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   }
 ]

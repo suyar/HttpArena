@@ -1,24 +1,25 @@
 {
-  "display_name": "hummingbird",
-  "language": "Swift",
-  "type": "tuned",
-  "engine": "hummingbird",
-  "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
-  "repo": "https://github.com/hummingbird-project/hummingbird",
-  "enabled": true,
-  "tests": [
-    "baseline",
-    "noisy",
-    "pipelined",
-    "limited-conn",
-    "json",
-    "upload",
-    "compression",
-    "mixed",
-    "api-4",
-    "api-16",
-    "async-db",
-    "static",
-    "tcp-frag"
-  ]
+    "display_name": "humming-bird",
+    "language": "Swift",
+    "type": "tuned",
+    "engine": "hummingbird",
+    "description": "Lightweight, flexible HTTP server framework written in Swift, built on SwiftNIO with minimal dependencies.",
+    "repo": "https://github.com/hummingbird-project/hummingbird",
+    "enabled": true,
+    "tests": [
+        "baseline",
+        "noisy",
+        "pipelined",
+        "limited-conn",
+        "json",
+        "upload",
+        "compression",
+        "mixed",
+        "api-4",
+        "api-16",
+        "async-db",
+        "sync-db",
+        "static",
+        "tcp-frag"
+    ]
 }

@@ -1,7 +1,7 @@
 {
   "display_name": "node",
   "language": "JS",
-  "type": "tuned",
+  "type": "engine",
   "engine": "v8",
   "description": "Bare Node.js HTTP server using the cluster module for multi-core scaling.",
   "repo": "https://github.com/nodejs/node",
@@ -18,6 +18,7 @@
     "api-16",
     "noisy",
     "async-db",
+    "sync-db",
     "static",
     "tcp-frag",
     "baseline-h2",

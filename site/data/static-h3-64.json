@@ -16,7 +16,8 @@
     "status_2xx": 0,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "h2o-mruby",
@@ -35,7 +36,8 @@
     "status_2xx": 2051517,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "nginx",
@@ -54,6 +56,7 @@
     "status_2xx": 1372140,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   }
 ]

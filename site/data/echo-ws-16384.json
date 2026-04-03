@@ -17,7 +17,8 @@
     "status_2xx": 14573674,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "aspnet-websocket",
@@ -37,7 +38,8 @@
     "status_2xx": 7783006,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "blitz",
@@ -57,7 +59,8 @@
     "status_2xx": 14519885,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "bun-websocket",
@@ -77,7 +80,8 @@
     "status_2xx": 14839336,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "deno-websocket",
@@ -97,7 +101,8 @@
     "status_2xx": 10447264,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "genhttp",
@@ -117,7 +122,8 @@
     "status_2xx": 9743302,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "go-websocket",
@@ -137,7 +143,8 @@
     "status_2xx": 4764537,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "node-websocket",
@@ -157,7 +164,8 @@
     "status_2xx": 10208030,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "simplew",
@@ -177,7 +185,8 @@
     "status_2xx": 1932975,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "workerman-websocket",
@@ -197,6 +206,7 @@
     "status_2xx": 15052863,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   }
 ]

@@ -16,7 +16,8 @@
     "status_2xx": 1466937,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "h2o",
@@ -35,7 +36,8 @@
     "status_2xx": 0,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "h2o-mruby",
@@ -54,7 +56,8 @@
     "status_2xx": 2025845,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "nginx",
@@ -73,6 +76,7 @@
     "status_2xx": 2272117,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   }
 ]

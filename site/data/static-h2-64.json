@@ -16,7 +16,8 @@
     "status_2xx": 6731327,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "aspnet-minimal",
@@ -35,7 +36,8 @@
     "status_2xx": 234492,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "production"
   },
   {
     "framework": "caddy",
@@ -54,7 +56,8 @@
     "status_2xx": 1864657,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "h2o",
@@ -73,7 +76,8 @@
     "status_2xx": 0,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "h2o-mruby",
@@ -92,7 +96,8 @@
     "status_2xx": 4743636,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "hyper",
@@ -111,7 +116,8 @@
     "status_2xx": 6344916,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "nginx",
@@ -130,7 +136,8 @@
     "status_2xx": 5829716,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "nginx-openresty",
@@ -149,7 +156,8 @@
     "status_2xx": 2558128,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "node",
@@ -168,7 +176,8 @@
     "status_2xx": 3304200,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "engine"
   },
   {
     "framework": "quarkus-jvm",
@@ -187,26 +196,8 @@
     "status_2xx": 2561764,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
-  },
-  {
-    "framework": "salvo",
-    "language": "Rust",
-    "rps": 879459,
-    "avg_latency": "6.79ms",
-    "p99_latency": "6.79ms",
-    "cpu": "6183.6%",
-    "memory": "392.1MiB",
-    "connections": 64,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "13.35GB/s",
-    "reconnects": 0,
-    "status_2xx": 4398270,
-    "status_3xx": 0,
-    "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm",
@@ -225,6 +216,7 @@
     "status_2xx": 1056926,
     "status_3xx": 0,
     "status_4xx": 0,
-    "status_5xx": 0
+    "status_5xx": 0,
+    "type": "tuned"
   }
 ]

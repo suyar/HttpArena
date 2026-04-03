@@ -1,6 +1,6 @@
 {{ $profiles := slice
   (dict "id" "mixed" "label" "Mixed" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 4096) "scored" true "engineScored" false)
-  (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" false)
+  (dict "id" "api-4" "label" "API-4" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 256) "scored" true "engineScored" true)
   (dict "id" "api-16" "label" "API-16" "sublabel" "H/1.1 Workload" "proto" "h1wk" "conns" (slice 1024) "scored" true "engineScored" false)
   (dict "id" "baseline" "label" "Baseline" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" true "engineScored" true)
   (dict "id" "pipelined" "label" "Pipelined" "sublabel" "H/1.1 Isolated" "proto" "h1iso" "conns" (slice 512 4096 16384) "scored" false "engineScored" true)
@@ -492,12 +492,16 @@ function renderComposite() {
   var activeTypes = getActiveTypes();
   var hasEngine = activeTypes.indexOf('engine') >= 0;
 
-  // Separate scored and reference-only profiles (engine uses different scored set)
-  function isScoredForType(pid) {
-    return hasEngine ? profileEngineScored[pid] : profileScored[pid];
+  // Per-framework scored profile check: engines use engineScored, others use scored
+  function isScoredForFw(pid, fw) {
+    var fmeta = meta[fw] || {};
+    var ftype = fmeta.type || 'production';
+    return ftype === 'engine' ? profileEngineScored[pid] : profileScored[pid];
   }
-  var scoredIds = activeIds.filter(function(pid) { return isScoredForType(pid); });
+  var scoredIds = activeIds.filter(function(pid) { return profileScored[pid]; });
   var scoredCount = scoredIds.length;
+  var engineScoredIds = activeIds.filter(function(pid) { return profileEngineScored[pid]; });
+  var engineScoredCount = engineScoredIds.length;
 
   // Search filter
   var searchVal = (document.querySelector('.composite-search-input').value || '').toLowerCase().trim();
@@ -637,7 +641,7 @@ function renderComposite() {
           profileScore += memScore * wMem;
         }
         scores.push(profileScore / totalWeight);
-        if (isScoredForType(pid)) participated++;
+        if (isScoredForFw(pid, fw)) participated++;
       } else {
         scores.push(0);
       }
@@ -646,11 +650,14 @@ function renderComposite() {
     if (participated === 0) {
       return;
     } else {
+      var fmeta = meta[fw] || {};
+      var ftype = fmeta.type || 'production';
+      var fwScoredCount = ftype === 'engine' ? engineScoredCount : scoredCount;
       var sum = 0;
       activeIds.forEach(function(pid, i) {
-        if (isScoredForType(pid) && scores[i] > 0) sum += scores[i];
+        if (isScoredForFw(pid, fw) && scores[i] > 0) sum += scores[i];
       });
-      composite = (sum / scoredCount);
+      composite = fwScoredCount > 0 ? (sum / fwScoredCount) : 0;
     }
     results.push({ framework: fw, language: fwLang[fw] || '', scores: scores, composite: composite, participated: participated });
   });
@@ -683,7 +690,7 @@ function renderComposite() {
     '<div class="composite-sort-col" data-sort="composite" style="font-weight:700; padding-left:0.5rem;' + sortableStyle + (compositeSortCol === 'composite' || compositeSortCol === null ? activeSort : '') + '" title="Sort by composite score">Score</div>';
   activeIds.forEach(function(pid, i) {
     var proto = profileProtos[pid];
-    var scored = isScoredForType(pid);
+    var scored = profileScored[pid];
     var bgStyle;
     if (!scored) {
       bgStyle = ' background:rgba(148,163,184,0.08); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px; opacity:0.6;';
@@ -735,7 +742,7 @@ function renderComposite() {
     r.scores.forEach(function(s, i) {
       var pid = activeIds[i];
       var proto = profileProtos[pid];
-      var scored = isScoredForType(pid);
+      var scored = isScoredForFw(pid, r.framework);
       var bgStyle;
       if (!scored) {
         bgStyle = ' background:rgba(148,163,184,0.08); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px; opacity:0.5;';

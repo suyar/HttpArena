@@ -31,7 +31,8 @@
     "tf_headers": 70136,
     "tf_headers_err": 1174,
     "tf_body29": 70106,
-    "tf_body29_err": 1141
+    "tf_body29_err": 1141,
+    "type": "production"
   },
   {
     "framework": "aspnet-minimal",
@@ -65,7 +66,8 @@
     "tf_headers": 13550,
     "tf_headers_err": 0,
     "tf_body29": 0,
-    "tf_body29_err": 13480
+    "tf_body29_err": 13480,
+    "type": "production"
   },
   {
     "framework": "aspnet-mvc",
@@ -99,7 +101,8 @@
     "tf_headers": 13643,
     "tf_headers_err": 0,
     "tf_body29": 0,
-    "tf_body29_err": 13729
+    "tf_body29_err": 13729,
+    "type": "production"
   },
   {
     "framework": "bun",
@@ -133,10 +136,11 @@
     "tf_headers": 61200,
     "tf_headers_err": 0,
     "tf_body29": 61343,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "engine"
   },
   {
-    "framework": "carno.js",
+    "framework": "carno",
     "language": "TS",
     "rps": 84597,
     "avg_latency": "29.29ms",
@@ -167,7 +171,8 @@
     "tf_headers": 60605,
     "tf_headers_err": 3,
     "tf_body29": 60563,
-    "tf_body29_err": 2
+    "tf_body29_err": 2,
+    "type": "production"
   },
   {
     "framework": "chi",
@@ -201,7 +206,8 @@
     "tf_headers": 17831,
     "tf_headers_err": 0,
     "tf_body29": 17499,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "deno",
@@ -235,7 +241,8 @@
     "tf_headers": 36353,
     "tf_headers_err": 0,
     "tf_body29": 36190,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "production"
   },
   {
     "framework": "django",
@@ -269,41 +276,8 @@
     "tf_headers": 39321,
     "tf_headers_err": 1782,
     "tf_body29": 39453,
-    "tf_body29_err": 1718
-  },
-  {
-    "framework": "drogon",
-    "language": "C++",
-    "rps": 90845,
-    "avg_latency": "27.80ms",
-    "p99_latency": "227.70ms",
-    "cpu": "3937.1%",
-    "memory": "149.2MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "20.16MB/s",
-    "input_bw": "53.19MB/s",
-    "reconnects": 259477,
-    "status_2xx": 455134,
-    "status_3xx": 0,
-    "status_4xx": 58447,
-    "status_5xx": 0,
-    "tf_get": 130059,
-    "tf_get_err": 0,
-    "tf_post": 64992,
-    "tf_post_err": 0,
-    "tf_chunked": 64953,
-    "tf_chunked_err": 0,
-    "tf_noise": 19,
-    "tf_noise_err": 58447,
-    "tf_cookie": 65038,
-    "tf_cookie_err": 0,
-    "tf_headers": 65043,
-    "tf_headers_err": 0,
-    "tf_body29": 65030,
-    "tf_body29_err": 0
+    "tf_body29_err": 1718,
+    "type": "tuned"
   },
   {
     "framework": "echo",
@@ -337,7 +311,8 @@
     "tf_headers": 17190,
     "tf_headers_err": 0,
     "tf_body29": 16889,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "elysia",
@@ -371,7 +346,8 @@
     "tf_headers": 60989,
     "tf_headers_err": 0,
     "tf_body29": 61051,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "production"
   },
   {
     "framework": "express",
@@ -405,7 +381,8 @@
     "tf_headers": 18177,
     "tf_headers_err": 0,
     "tf_body29": 17955,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastapi",
@@ -439,7 +416,8 @@
     "tf_headers": 53144,
     "tf_headers_err": 0,
     "tf_body29": 53025,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastify",
@@ -473,7 +451,8 @@
     "tf_headers": 19745,
     "tf_headers_err": 0,
     "tf_body29": 19494,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "fastpysgi-asgi",
@@ -507,7 +486,8 @@
     "tf_headers": 62602,
     "tf_headers_err": 0,
     "tf_body29": 62666,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "engine"
   },
   {
     "framework": "fastpysgi-wsgi",
@@ -541,7 +521,8 @@
     "tf_headers": 64390,
     "tf_headers_err": 0,
     "tf_body29": 64377,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "engine"
   },
   {
     "framework": "fiber",
@@ -575,7 +556,8 @@
     "tf_headers": 24125,
     "tf_headers_err": 0,
     "tf_body29": 23865,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "flask",
@@ -609,7 +591,8 @@
     "tf_headers": 40375,
     "tf_headers_err": 1716,
     "tf_body29": 40281,
-    "tf_body29_err": 1787
+    "tf_body29_err": 1787,
+    "type": "tuned"
   },
   {
     "framework": "genhttp",
@@ -643,7 +626,8 @@
     "tf_headers": 56705,
     "tf_headers_err": 8526,
     "tf_body29": 590,
-    "tf_body29_err": 62615
+    "tf_body29_err": 62615,
+    "type": "production"
   },
   {
     "framework": "gin",
@@ -677,41 +661,8 @@
     "tf_headers": 18807,
     "tf_headers_err": 0,
     "tf_body29": 18527,
-    "tf_body29_err": 0
-  },
-  {
-    "framework": "gleam-mist",
-    "language": "Gleam",
-    "rps": 10415,
-    "avg_latency": "89.45ms",
-    "p99_latency": "101.50ms",
-    "cpu": "806.1%",
-    "memory": "419.0MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "2.09MB/s",
-    "input_bw": "6.10MB/s",
-    "reconnects": 55032,
-    "status_2xx": 52079,
-    "status_3xx": 0,
-    "status_4xx": 7572,
-    "status_5xx": 0,
-    "tf_get": 14889,
-    "tf_get_err": 0,
-    "tf_post": 7435,
-    "tf_post_err": 0,
-    "tf_chunked": 7457,
-    "tf_chunked_err": 0,
-    "tf_noise": 0,
-    "tf_noise_err": 7572,
-    "tf_cookie": 7643,
-    "tf_cookie_err": 0,
-    "tf_headers": 7379,
-    "tf_headers_err": 0,
-    "tf_body29": 7276,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "go-fasthttp",
@@ -745,7 +696,8 @@
     "tf_headers": 67613,
     "tf_headers_err": 0,
     "tf_body29": 67287,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "production"
   },
   {
     "framework": "h2o-mruby",
@@ -779,7 +731,8 @@
     "tf_headers": 41128,
     "tf_headers_err": 1,
     "tf_body29": 41118,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "helidon",
@@ -813,10 +766,11 @@
     "tf_headers": 6012,
     "tf_headers_err": 0,
     "tf_body29": 5879,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
-    "framework": "hono (bun)",
+    "framework": "hono-bun",
     "language": "TS",
     "rps": 84968,
     "avg_latency": "29.23ms",
@@ -847,10 +801,11 @@
     "tf_headers": 60849,
     "tf_headers_err": 1,
     "tf_body29": 60804,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "production"
   },
   {
-    "framework": "hono (node)",
+    "framework": "hono",
     "language": "JS",
     "rps": 29142,
     "avg_latency": "18.07ms",
@@ -881,10 +836,11 @@
     "tf_headers": 20139,
     "tf_headers_err": 0,
     "tf_body29": 19988,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
-    "framework": "hummingbird",
+    "framework": "humming-bird",
     "language": "Swift",
     "rps": 15041,
     "avg_latency": "18.66ms",
@@ -915,41 +871,8 @@
     "tf_headers": 10591,
     "tf_headers_err": 0,
     "tf_body29": 10544,
-    "tf_body29_err": 0
-  },
-  {
-    "framework": "kemal",
-    "language": "Crystal",
-    "rps": 36058,
-    "avg_latency": "68.26ms",
-    "p99_latency": "272.90ms",
-    "cpu": "2424.7%",
-    "memory": "3.9GiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "74.70MB/s",
-    "input_bw": "21.11MB/s",
-    "reconnects": 104448,
-    "status_2xx": 181375,
-    "status_3xx": 0,
-    "status_4xx": 13599,
-    "status_5xx": 0,
-    "tf_get": 52024,
-    "tf_get_err": 113,
-    "tf_post": 25955,
-    "tf_post_err": 56,
-    "tf_chunked": 25882,
-    "tf_chunked_err": 68,
-    "tf_noise": 2,
-    "tf_noise_err": 13105,
-    "tf_cookie": 25741,
-    "tf_cookie_err": 137,
-    "tf_headers": 25888,
-    "tf_headers_err": 59,
-    "tf_body29": 25883,
-    "tf_body29_err": 61
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "koa",
@@ -983,7 +906,8 @@
     "tf_headers": 21150,
     "tf_headers_err": 0,
     "tf_body29": 20915,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "ktor",
@@ -1017,7 +941,8 @@
     "tf_headers": 51103,
     "tf_headers_err": 3,
     "tf_body29": 50921,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "ngx-php",
@@ -1051,41 +976,8 @@
     "tf_headers": 3012,
     "tf_headers_err": 0,
     "tf_body29": 2087,
-    "tf_body29_err": 0
-  },
-  {
-    "framework": "ntex-iouring",
-    "language": "Rust",
-    "rps": 96067,
-    "avg_latency": "25.57ms",
-    "p99_latency": "41.40ms",
-    "cpu": "3817.6%",
-    "memory": "226.3MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "11.79MB/s",
-    "input_bw": "56.25MB/s",
-    "reconnects": 274413,
-    "status_2xx": 481297,
-    "status_3xx": 0,
-    "status_4xx": 68794,
-    "status_5xx": 0,
-    "tf_get": 137428,
-    "tf_get_err": 4,
-    "tf_post": 68805,
-    "tf_post_err": 4,
-    "tf_chunked": 68792,
-    "tf_chunked_err": 3,
-    "tf_noise": 0,
-    "tf_noise_err": 68772,
-    "tf_cookie": 68782,
-    "tf_cookie_err": 4,
-    "tf_headers": 68785,
-    "tf_headers_err": 4,
-    "tf_body29": 68705,
-    "tf_body29_err": 3
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "ntex-tokio",
@@ -1119,7 +1011,8 @@
     "tf_headers": 68962,
     "tf_headers_err": 2,
     "tf_body29": 68907,
-    "tf_body29_err": 1
+    "tf_body29_err": 1,
+    "type": "production"
   },
   {
     "framework": "phoenix",
@@ -1153,41 +1046,8 @@
     "tf_headers": 39724,
     "tf_headers_err": 0,
     "tf_body29": 39247,
-    "tf_body29_err": 0
-  },
-  {
-    "framework": "prologue",
-    "language": "Nim",
-    "rps": 93841,
-    "avg_latency": "26.38ms",
-    "p99_latency": "43.40ms",
-    "cpu": "4019.2%",
-    "memory": "4.7GiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "11.18MB/s",
-    "input_bw": "54.95MB/s",
-    "reconnects": 267956,
-    "status_2xx": 470147,
-    "status_3xx": 0,
-    "status_4xx": 67174,
-    "status_5xx": 0,
-    "tf_get": 134322,
-    "tf_get_err": 0,
-    "tf_post": 67176,
-    "tf_post_err": 0,
-    "tf_chunked": 67216,
-    "tf_chunked_err": 0,
-    "tf_noise": 17,
-    "tf_noise_err": 67174,
-    "tf_cookie": 67183,
-    "tf_cookie_err": 0,
-    "tf_headers": 67124,
-    "tf_headers_err": 0,
-    "tf_body29": 67109,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "quarkus-jvm",
@@ -1221,7 +1081,8 @@
     "tf_headers": 67361,
     "tf_headers_err": 3,
     "tf_body29": 15,
-    "tf_body29_err": 67418
+    "tf_body29_err": 67418,
+    "type": "tuned"
   },
   {
     "framework": "rails",
@@ -1255,41 +1116,8 @@
     "tf_headers": 19858,
     "tf_headers_err": 0,
     "tf_body29": 19862,
-    "tf_body29_err": 0
-  },
-  {
-    "framework": "rocket",
-    "language": "Rust",
-    "rps": 63308,
-    "avg_latency": "5.76ms",
-    "p99_latency": "23.40ms",
-    "cpu": "2777.1%",
-    "memory": "171.4MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "17.23MB/s",
-    "input_bw": "37.07MB/s",
-    "reconnects": 213520,
-    "status_2xx": 316541,
-    "status_3xx": 0,
-    "status_4xx": 45618,
-    "status_5xx": 0,
-    "tf_get": 90261,
-    "tf_get_err": 0,
-    "tf_post": 45097,
-    "tf_post_err": 0,
-    "tf_chunked": 45151,
-    "tf_chunked_err": 0,
-    "tf_noise": 1,
-    "tf_noise_err": 45618,
-    "tf_cookie": 46148,
-    "tf_cookie_err": 0,
-    "tf_headers": 45310,
-    "tf_headers_err": 0,
-    "tf_body29": 44573,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "roda",
@@ -1323,41 +1151,8 @@
     "tf_headers": 25054,
     "tf_headers_err": 0,
     "tf_body29": 24926,
-    "tf_body29_err": 0
-  },
-  {
-    "framework": "salvo",
-    "language": "Rust",
-    "rps": 73694,
-    "avg_latency": "8.82ms",
-    "p99_latency": "208.50ms",
-    "cpu": "3260.3%",
-    "memory": "189.2MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "23.03MB/s",
-    "input_bw": "43.15MB/s",
-    "reconnects": 234165,
-    "status_2xx": 368470,
-    "status_3xx": 0,
-    "status_4xx": 40425,
-    "status_5xx": 0,
-    "tf_get": 104835,
-    "tf_get_err": 0,
-    "tf_post": 52523,
-    "tf_post_err": 0,
-    "tf_chunked": 52631,
-    "tf_chunked_err": 0,
-    "tf_noise": 9,
-    "tf_noise_err": 40425,
-    "tf_cookie": 53644,
-    "tf_cookie_err": 0,
-    "tf_headers": 52679,
-    "tf_headers_err": 0,
-    "tf_body29": 52149,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "sinatra",
@@ -1391,7 +1186,8 @@
     "tf_headers": 23815,
     "tf_headers_err": 0,
     "tf_body29": 23765,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "spring-jvm",
@@ -1425,7 +1221,8 @@
     "tf_headers": 5622,
     "tf_headers_err": 0,
     "tf_body29": 5643,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "starlette",
@@ -1459,41 +1256,8 @@
     "tf_headers": 52935,
     "tf_headers_err": 3,
     "tf_body29": 52905,
-    "tf_body29_err": 3
-  },
-  {
-    "framework": "ulfius",
-    "language": "C",
-    "rps": 16712,
-    "avg_latency": "208.36ms",
-    "p99_latency": "259.10ms",
-    "cpu": "681.6%",
-    "memory": "50.0MiB",
-    "connections": 4096,
-    "threads": 64,
-    "duration": "5s",
-    "pipeline": 1,
-    "bandwidth": "2.36MB/s",
-    "input_bw": "9.79MB/s",
-    "reconnects": 80539,
-    "status_2xx": 83564,
-    "status_3xx": 0,
-    "status_4xx": 12144,
-    "status_5xx": 0,
-    "tf_get": 23851,
-    "tf_get_err": 0,
-    "tf_post": 11850,
-    "tf_post_err": 0,
-    "tf_chunked": 11918,
-    "tf_chunked_err": 0,
-    "tf_noise": 0,
-    "tf_noise_err": 12144,
-    "tf_cookie": 12187,
-    "tf_cookie_err": 0,
-    "tf_headers": 11910,
-    "tf_headers_err": 0,
-    "tf_body29": 11848,
-    "tf_body29_err": 0
+    "tf_body29_err": 3,
+    "type": "tuned"
   },
   {
     "framework": "ultimate-express",
@@ -1527,7 +1291,8 @@
     "tf_headers": 62117,
     "tf_headers_err": 0,
     "tf_body29": 62156,
-    "tf_body29_err": 0
+    "tf_body29_err": 0,
+    "type": "tuned"
   },
   {
     "framework": "workerman",
@@ -1561,6 +1326,7 @@
     "tf_headers": 3480,
     "tf_headers_err": 143,
     "tf_body29": 989,
-    "tf_body29_err": 165
+    "tf_body29_err": 165,
+    "type": "tuned"
   }
 ]

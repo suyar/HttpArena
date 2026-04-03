@@ -28,27 +28,28 @@ CERTS_DIR="$ROOT_DIR/certs"
 #           "static" = multi-URI static files (gcannon --raw), "ws-echo" = WebSocket echo (gcannon --ws)
 declare -A PROFILES=(
     [baseline]="1|0|64|512,4096,16384|"
-    [pipelined]="16|0||512,4096,16384|pipeline"
-    [limited-conn]="1|10||512,4096|"
-    [json]="1|0||4096,16384|json"
-    [upload]="1|0||64,256,512|upload"
-    [compression]="1|0||4096,16384|compression"
-    [noisy]="1|0||512,4096,16384|noisy"
-    [mixed]="1|5||4096|mixed"
+    [pipelined]="16|0|64|512,4096,16384|pipeline"
+    [limited-conn]="1|10|64|512,4096|"
+    [json]="1|0|64|4096,16384|json"
+    [upload]="1|0|64|64,256,512|upload"
+    [compression]="1|0|64|4096,16384|compression"
+    [noisy]="1|0|64|512,4096,16384|noisy"
+    [mixed]="1|5|64|4096|mixed"
     [api-4]="1|5|4|256|api-4"
     [api-16]="1|5|16|1024|api-16"
-    [static]="1|10||4096,16384|static"
-    [tcp-frag]="1|2||512,4096,16384|tcp-frag"
-    [baseline-h2]="1|0||256,1024|h2"
-    [static-h2]="1|0||256,1024|static-h2"
-    [baseline-h3]="32|0||256,512|h3"
-    [static-h3]="32|0||256,512|static-h3"
-    [unary-grpc]="1|0||256,1024|grpc"
-    [unary-grpc-tls]="1|0||256,1024|grpc-tls"
-    [echo-ws]="1|0||512,4096,16384|ws-echo"
-    [async-db]="1|0||1024|async-db"
+    [static]="1|10|64|4096,16384|static"
+    [tcp-frag]="1|2|64|512,4096,16384|tcp-frag"
+    [baseline-h2]="1|0|64|256,1024|h2"
+    [static-h2]="1|0|64|256,1024|static-h2"
+    [baseline-h3]="32|0|64|256,512|h3"
+    [static-h3]="32|0|64|256,512|static-h3"
+    [unary-grpc]="1|0|64|256,1024|grpc"
+    [unary-grpc-tls]="1|0|64|256,1024|grpc-tls"
+    [echo-ws]="1|0|64|512,4096,16384|ws-echo"
+    [sync-db]="1|0|64|1024|sync-db"
+    [async-db]="1|0|64|1024|async-db"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed api-4 api-16 static async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
+PROFILE_ORDER=(baseline pipelined limited-conn json upload compression noisy mixed api-4 api-16 static sync-db async-db baseline-h2 static-h2 baseline-h3 static-h3 unary-grpc unary-grpc-tls echo-ws)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -579,6 +580,9 @@ for profile in "${profiles_to_run[@]}"; do
         gc_args=("http://localhost:$PORT"
             --raw "$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/json-get.raw,$REQUESTS_DIR/async-db-get.raw,$REQUESTS_DIR/async-db-get.raw"
             -c "$CONNS" -t 64 -d 15s -p "$pipeline")
+    elif [ "$endpoint" = "sync-db" ]; then
+        gc_args=("http://localhost:$PORT/db?min=10&max=50"
+            -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline")
     elif [ "$endpoint" = "async-db" ]; then
         gc_args=("http://localhost:$PORT/async-db?min=10&max=50"
             -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline")

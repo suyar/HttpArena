@@ -24,6 +24,7 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 68745,
-    "tpl_async_db": 110197
+    "tpl_async_db": 110197,
+    "type": "production"
   }
 ]

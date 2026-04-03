@@ -375,6 +375,7 @@ html.dark .lb-card-title { color: #ffffff; }
   (dict "id" "static"       "label" "Static Files"          "conns" (slice 4096 16384) "desc" "Serves 20 pre-loaded static files (CSS, JS, HTML, fonts, images, JSON) from <code>/static/{filename}</code> over HTTP/1.1. Files are loaded into memory at startup. Requests cycle through all 20 files. Measures static file serving throughput, MIME type handling, and memory-mapped I/O efficiency.")
   (dict "id" "tcp-frag"     "label" "TCP Fragmentation"     "conns" (slice 512 4096 16384) "desc" "Same baseline workload but with loopback MTU forced to 69 bytes, causing extreme TCP fragmentation. Every request and response is split into multiple tiny segments (~29 bytes payload each). Measures how efficiently a framework's TCP stack handles segment reassembly, small-buffer I/O, and syscall overhead under fragmented network conditions.")
   (dict "id" "noisy"       "label" "Noisy"                 "conns" (slice 512 4096 16384) "desc" "Valid baseline requests interleaved with malformed noise — nonexistent paths, bad content-length, and raw binary. Only 2xx responses count. Measures resilience: how well a framework maintains throughput while rejecting garbage traffic.")
+  (dict "id" "sync-db"     "label" "Sync DB"               "conns" (slice 1024) "desc" "Synchronous SQLite query over 100K rows with no index on price, forcing a sequential scan per request. Each worker thread maintains its own read-only connection. Measures raw query throughput, thread-local connection handling, and how efficiently the framework dispatches blocking I/O across workers.")
   (dict "id" "async-db"    "label" "Async DB"              "conns" (slice 1024) "desc" "Async Postgres query over 100K rows with no index on price, forcing a sequential scan per request. The framework manages its own connection pool and uses an async Postgres driver. Measures event loop scheduling, connection pooling efficiency, and async I/O throughput. Framework-only — engines are excluded.")
 }}
 
@@ -1423,7 +1424,6 @@ function applyH1IsoMixedPanel(panel) {
   var rowData = [];
   var maxWeighted = 0;
   rows.forEach(function(row) {
-    if (row.classList.contains('lb-hidden')) return;
     var d = {
       baseline: Number(row.dataset.tplBaseline) || 0,
       json: Number(row.dataset.tplJson) || 0,
@@ -1435,8 +1435,9 @@ function applyH1IsoMixedPanel(panel) {
     };
     var weighted = 0;
     h1Iso_mixedKeys.forEach(function(k) { weighted += d[k] * h1Iso_mixedWeights[k]; });
-    if (weighted > maxWeighted) maxWeighted = weighted;
-    rowData.push({row: row, d: d, weighted: weighted});
+    var hidden = row.classList.contains('lb-hidden');
+    if (!hidden && weighted > maxWeighted) maxWeighted = weighted;
+    rowData.push({row: row, d: d, weighted: weighted, hidden: hidden});
   });
 
   /* Normalize so top = 100 */
@@ -1475,13 +1476,17 @@ function applyH1IsoMixedPanel(panel) {
 
   /* Update rows: re-rank, add score cell, add mix bar */
   var lb = panel.querySelector('.lb');
+  var visibleRank = 0;
   rowData.forEach(function(rd, idx) {
     var row = rd.row;
     row.style.gridTemplateColumns = h1Iso_mixedGrid;
 
-    /* Update rank */
+    /* Update rank — only count visible rows */
     var rankEl = row.querySelector('.lb-rank');
-    if (rankEl) rankEl.textContent = String(idx + 1);
+    if (!rd.hidden) {
+      visibleRank++;
+      if (rankEl) rankEl.textContent = String(visibleRank);
+    }
 
     /* Replace bar cell with score */
     var barCell = row.querySelector('.lb-bar-cell');
@@ -1527,11 +1532,11 @@ function applyH1IsoMixedScores() {
     var best = {};
 
     connPanels.forEach(function(cp) {
-      cp.querySelectorAll('.lb-row:not(.lb-header):not(.lb-hidden)').forEach(function(row) {
+      cp.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
         var name = row.dataset.name;
         var score = parseFloat(row.dataset.mixedScore || '0');
         if (!best[name] || score > best[name].score) {
-          best[name] = { score: score, row: row };
+          best[name] = { score: score, row: row, hidden: row.classList.contains('lb-hidden') };
         }
       });
     });
@@ -1564,12 +1569,19 @@ function applyH1IsoMixedScores() {
     }
 
     var entries = Object.values(best).sort(function(a, b) { return b.score - a.score; });
-    entries.forEach(function(entry, idx) {
+    var visibleRank = 0;
+    entries.forEach(function(entry) {
       var clone = entry.row.cloneNode(true);
       clone.dataset.mixedScore = entry.score;
       clone.style.gridTemplateColumns = h1Iso_mixedGrid;
+      if (entry.hidden) {
+        clone.classList.add('lb-hidden');
+      } else {
+        clone.classList.remove('lb-hidden');
+        visibleRank++;
+      }
       var rankEl = clone.querySelector('.lb-rank');
-      rankEl.textContent = String(idx + 1);
+      rankEl.textContent = String(visibleRank);
       lb.appendChild(clone);
     });
   });

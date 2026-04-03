@@ -24,7 +24,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 73956,
-    "tpl_async_db": 118393
+    "tpl_async_db": 118393,
+    "type": "production"
   },
   {
     "framework": "genhttp",
@@ -51,7 +52,8 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 70400,
-    "tpl_async_db": 112730
+    "tpl_async_db": 112730,
+    "type": "production"
   },
   {
     "framework": "go-fasthttp",
@@ -78,6 +80,7 @@
     "tpl_upload": 0,
     "tpl_compression": 0,
     "tpl_static": 43821,
-    "tpl_async_db": 70121
+    "tpl_async_db": 70121,
+    "type": "production"
   }
 ]

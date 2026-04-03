@@ -5,7 +5,7 @@
   "engine": "rocket",
   "description": "Rocket 0.5 on Tokio with Rustls for HTTP/2, compiled with -O3 and thin LTO.",
   "repo": "https://github.com/SergioBenitez/Rocket",
-  "enabled": true,
+  "enabled": false,
   "tests": [
     "baseline",
     "noisy",
@@ -18,6 +18,7 @@
     "api-4",
     "api-16",
     "async-db",
+    "sync-db",
     "static",
     "tcp-frag",
     "baseline-h2",
