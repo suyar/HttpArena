@@ -1,2 +1,3 @@
 site/** linguist-documentation linguist-vendored
 data/** linguist-documentation linguist-vendored
+*.sh text eol=lf
