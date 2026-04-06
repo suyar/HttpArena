@@ -332,6 +332,9 @@ html.dark .lb-tab { color: #94a3b8; border-color: rgba(255, 255, 255, 0.1); }
 html.dark .lb-tab:hover { color: #e2e8f0; background: rgba(255, 255, 255, 0.06); }
 html.dark .lb-tab.active { color: #93c5fd; background: rgba(59, 130, 246, 0.15); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2), 0 1px 3px rgba(0, 0, 0, 0.3); font-weight: 700; }
 html.dark .lb-desc { color: #94a3b8; }
+.lb-desc-link { color: #3b82f6; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.lb-desc-link:hover { text-decoration: underline; }
+html.dark .lb-desc-link { color: #60a5fa; }
 html.dark .lb-filters-label { color: #64748b; }
 html.dark .lb-search-input { color: #e2e8f0; border-color: #334155; }
 html.dark .lb-search-input::placeholder { color: #64748b; }
@@ -366,8 +369,8 @@ html.dark .lb-card-title { color: #ffffff; }
 </style>
 
 {{ $profiles := slice
-  (dict "id" "api-4"         "label" "API-4"                  "conns" (slice 256) "desc" "Lighter workload (baseline, JSON, async-db) with the server constrained to 4 CPUs. 4 threads, 256 connections. Measures framework efficiency under limited resources — closer to a typical production deployment.")
-  (dict "id" "api-16"        "label" "API-16"                 "conns" (slice 1024) "desc" "Same API workload (baseline, JSON, async-db) with the server constrained to 16 CPUs and 32 GB memory. 64 threads, 256 connections. Tests performance scaling with more resources.")
+  (dict "id" "api-4"         "label" "API-4"                  "conns" (slice 256) "desc" "Lighter workload (baseline, JSON, async-db) with the server constrained to 4 CPUs. 4 threads, 256 connections. Measures framework efficiency under limited resources — closer to a typical production deployment. <a href='/docs/test-profiles/h1/workload/api-4/' class='lb-desc-link'>Learn more &rarr;</a>")
+  (dict "id" "api-16"        "label" "API-16"                 "conns" (slice 1024) "desc" "Same API workload (baseline, JSON, async-db) with the server constrained to 16 CPUs and 32 GB memory. 64 threads, 256 connections. Tests performance scaling with more resources. <a href='/docs/test-profiles/h1/workload/api-16/' class='lb-desc-link'>Learn more &rarr;</a>")
 }}
 
 {{/* Build JSON data blob for round switching */}}
@@ -962,8 +965,9 @@ lbH1WkRoot.querySelectorAll('.lb-type-filter').forEach(function(btn) {
 function h1Wk_parseSortValue(row, key) {
   var isReconn = row.classList.contains('lb-row-reconn');
   var isCompression = row.dataset.compressionDone === '1';
+  var isMixed = row.dataset.mixedDone === '1';
   var offset = isReconn ? 1 : 0;
-  var extraOffset = isCompression ? 1 : 0; /* BW/req cell */
+  var extraOffset = (isCompression ? 1 : 0) + (isMixed ? 1 : 0); /* BW/req cell + mixed score cell */
   var stats = row.querySelectorAll('.lb-stat');
   if (key === 'rps') return Number(row.dataset.rps);
   if (key === 'errors') return Number(row.dataset.s4xx || 0) + Number(row.dataset.s5xx || 0);
@@ -997,7 +1001,7 @@ function h1Wk_parseSortValue(row, key) {
   return lv;
 }
 
-document.querySelectorAll('.lb-sortable').forEach(function(hdr) {
+lbH1WkRoot.querySelectorAll('.lb-sortable').forEach(function(hdr) {
   hdr.addEventListener('click', function() {
     var lb = hdr.closest('.lb');
     var key = hdr.dataset.sort;

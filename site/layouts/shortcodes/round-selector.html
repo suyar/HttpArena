@@ -22,8 +22,9 @@ window.currentRoundMeta = {{ $currentMeta | jsonify | safeJS }};
 window.currentRound = null;
 </script>
 
-{{ if gt (len $roundsIndex) 0 }}
+{{ if $currentMeta.cpu }}
 <div class="lb-card" style="margin-top:0.75rem; margin-bottom:0.5rem; padding:0.5rem 1rem;">
+  {{ if gt (len $roundsIndex) 0 }}
   <div style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
     <span style="font-size:0.8rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.05em;">Round</span>
     <div id="round-selector" style="display:flex; gap:0.35rem; flex-wrap:wrap;">
@@ -33,7 +34,8 @@ window.currentRound = null;
       {{ end }}
     </div>
   </div>
-  <div id="round-info" style="display:none; margin-top:0.6rem; padding-top:0.6rem; border-top:1px solid #e2e8f0;">
+  {{ end }}
+  <div id="round-info" style="display:none; margin-top:0.6rem; {{ if gt (len $roundsIndex) 0 }}padding-top:0.6rem; border-top:1px solid #e2e8f0;{{ end }}">
     <div style="display:flex; align-items:center; gap:0.5rem 1.5rem; flex-wrap:wrap;">
       <span class="round-meta" id="round-info-commit"></span>
       <span class="round-meta" id="round-info-hw"></span>
@@ -167,6 +169,7 @@ html.dark .round-toggle:hover { color:#94a3b8; border-color:#475569; }
 <script>
 window.roundsIndex = [];
 window.roundsData = {};
+window.currentRoundMeta = {};
 window.currentRound = null;
 </script>
 {{ end }}
