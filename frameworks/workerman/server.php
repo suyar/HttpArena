@@ -18,7 +18,6 @@ $http_worker->name = 'bench';
 
 // Increase max package size to 30MB for file upload test
 TcpConnection::$defaultMaxPackageSize = 30 * 1024 * 1024;
-Http::uploadTmpDir('/dev/shm');
 
 // benchmark data
 define('JSON_DATA', json_decode(file_get_contents('/data/dataset.json'), true));
