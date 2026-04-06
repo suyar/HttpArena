@@ -12,7 +12,6 @@
     "limited-conn",
     "json",
     "upload",
-    "compression",
     "noisy",
     "static",
     "sync-db",
