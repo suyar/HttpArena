@@ -136,6 +136,86 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
 {{< leaderboard-composite >}}
 </div>
 
+<style>
+.lb-row { position:relative; padding-left:1.75rem !important; }
+.lb-fav-star { position:absolute; left:0; top:0; bottom:0; width:1.75rem; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:1.15rem; color:transparent; transition:color 0.15s; user-select:none; z-index:2; border-right:1px solid rgba(0,0,0,0.06); }
+.lb-header .lb-fav-star { cursor:default; font-size:0.65rem; color:#94a3b8 !important; border-right:none; }
+.lb-row:not(.lb-header):hover .lb-fav-star { color:#d1d5db; }
+.lb-fav-star:hover { color:#fbbf24 !important; }
+.lb-fav-star.lb-fav-active { color:#f59e0b !important; }
+.lb-fav { box-shadow:inset 3px 0 0 #f59e0b; }
+.lb-fav .lb-name { font-weight:700 !important; }
+html.dark .lb-fav-star { border-right-color:rgba(255,255,255,0.06); }
+html.dark .lb-header .lb-fav-star { color:#64748b !important; }
+html.dark .lb-row:not(.lb-header):hover .lb-fav-star { color:#4b5563; }
+html.dark .lb-fav-star:hover { color:#fbbf24 !important; }
+html.dark .lb-fav-star.lb-fav-active { color:#f59e0b !important; }
+</style>
+<script>
+(function() {
+  /* Favorites — star toggle on leaderboard rows, stored in localStorage */
+  var STOR = 'httparena-favorites';
+  var favs = new Set();
+  try { JSON.parse(localStorage.getItem(STOR) || '[]').forEach(function(f) { favs.add(f); }); } catch(e) {}
+  function save() { try { localStorage.setItem(STOR, JSON.stringify(Array.from(favs))); } catch(e) {} }
+
+  function applyFavorites() {
+    /* Header rows — add column marker */
+    document.querySelectorAll('.lb-row.lb-header').forEach(function(hdr) {
+      if (hdr.querySelector('.lb-fav-star')) return;
+      var s = document.createElement('span');
+      s.className = 'lb-fav-star';
+      s.textContent = '\u2605';
+      hdr.appendChild(s);
+    });
+    /* Data rows — add interactive star */
+    document.querySelectorAll('.lb-row:not(.lb-header)').forEach(function(row) {
+      var name = row.dataset.name;
+      if (!name) return;
+      var star = row.querySelector('.lb-fav-star');
+      if (!star) {
+        star = document.createElement('span');
+        star.className = 'lb-fav-star';
+        star.textContent = '\u2605';
+        row.appendChild(star);
+      }
+      var isFav = favs.has(name);
+      star.classList.toggle('lb-fav-active', isFav);
+      row.classList.toggle('lb-fav', isFav);
+    });
+  }
+
+  /* Star click — capture phase + stopPropagation to prevent row popup */
+  document.addEventListener('click', function(e) {
+    var star = e.target.closest('.lb-fav-star');
+    if (!star) return;
+    e.stopPropagation();
+    e.preventDefault();
+    var row = star.closest('.lb-row');
+    var name = row ? row.dataset.name : null;
+    if (!name) return;
+    if (favs.has(name)) favs.delete(name); else favs.add(name);
+    save();
+    applyFavorites();
+  }, true);
+
+  /* Apply on load */
+  applyFavorites();
+
+  /* Watch for DOM changes (tab/filter/round switches rebuild rows) */
+  var favTimer = 0;
+  var obs = new MutationObserver(function() {
+    clearTimeout(favTimer);
+    favTimer = setTimeout(applyFavorites, 50);
+  });
+  ['lb-h1iso-wrapper','lb-h1wk-wrapper','lb-h2-wrapper','lb-h3-wrapper','lb-grpc-wrapper','lb-ws-wrapper','lb-composite-wrapper'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) obs.observe(el, { childList: true, subtree: true });
+  });
+  window.applyFavorites = applyFavorites;
+})();
+</script>
+
 <script>
 (function() {
   /* Deep linking — encode/restore full leaderboard UI state via URL hash
