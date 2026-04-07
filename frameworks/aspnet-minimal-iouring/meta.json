@@ -20,5 +20,6 @@
     "sync-db",
     "baseline-h2",
     "static-h2"
-  ]
+  ],
+  "maintainers": []
 }

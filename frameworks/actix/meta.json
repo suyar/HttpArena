@@ -22,5 +22,6 @@
     "baseline-h2",
     "static-h2",
     "tcp-frag"
-  ]
+  ],
+  "maintainers": []
 }

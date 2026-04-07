@@ -8,5 +8,6 @@
   "enabled": true,
   "tests": [
     "echo-ws"
-  ]
+  ],
+  "maintainers": []
 }

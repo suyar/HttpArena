@@ -20,5 +20,6 @@
     "sync-db",
     "static",
     "tcp-frag"
-  ]
+  ],
+  "maintainers": []
 }

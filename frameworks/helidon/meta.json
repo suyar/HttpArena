@@ -2,8 +2,8 @@
   "display_name": "helidon",
   "language": "Java",
   "type": "tuned",
-  "engine": "n\u00edma (virtual threads)",
-  "description": "Helidon SE 4.4 on N\u00edma WebServer with Java 21 virtual threads, Jackson for JSON.",
+  "engine": "níma (virtual threads)",
+  "description": "Helidon SE 4.4 on Níma WebServer with Java 21 virtual threads, Jackson for JSON.",
   "repo": "https://github.com/helidon-io/helidon",
   "enabled": true,
   "tests": [
@@ -20,5 +20,6 @@
     "sync-db",
     "static",
     "tcp-frag"
-  ]
+  ],
+  "maintainers": []
 }

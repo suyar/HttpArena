@@ -11,5 +11,6 @@
     "pipelined",
     "limited-conn",
     "echo-ws"
-  ]
+  ],
+  "maintainers": []
 }

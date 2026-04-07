@@ -9,5 +9,6 @@
   "tests": [
     "unary-grpc",
     "unary-grpc-tls"
-  ]
+  ],
+  "maintainers": []
 }

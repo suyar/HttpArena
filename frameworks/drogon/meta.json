@@ -20,5 +20,6 @@
     "tcp-frag",
     "async-db",
     "sync-db"
-  ]
+  ],
+  "maintainers": []
 }

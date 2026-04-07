@@ -1,0 +1,85 @@
+name: Notify Framework Maintainers
+
+on:
+  pull_request:
+    paths:
+      - 'frameworks/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed frameworks and notify maintainers
+        run: |
+          frameworks=$(git diff --name-only origin/${{ github.base_ref }}...HEAD \
+            | grep '^frameworks/' \
+            | cut -d'/' -f2 \
+            | sort -u)
+
+          if [ -z "$frameworks" ]; then
+            echo "No framework changes detected"
+            exit 0
+          fi
+
+          mentions=""
+
+          for fw in $frameworks; do
+            meta="frameworks/$fw/meta.json"
+            if [ ! -f "$meta" ]; then
+              continue
+            fi
+
+            maintainers=$(jq -r '.maintainers // [] | .[]' "$meta" 2>/dev/null)
+            if [ -z "$maintainers" ]; then
+              continue
+            fi
+
+            display_name=$(jq -r '.display_name // empty' "$meta" 2>/dev/null)
+            display_name="${display_name:-$fw}"
+
+            pings=""
+            for user in $maintainers; do
+              # Strip leading @ if present
+              user="${user#@}"
+              # Skip the PR author to avoid self-ping
+              if [ "$user" != "$PR_AUTHOR" ]; then
+                pings="$pings @$user"
+              fi
+            done
+
+            if [ -n "$pings" ]; then
+              mentions="$mentions\n- **$display_name** →$pings"
+            fi
+          done
+
+          if [ -z "$mentions" ]; then
+            echo "No maintainers to notify"
+            exit 0
+          fi
+
+          body="$(printf "👋 Heads up! This PR modifies the following frameworks:\n$mentions\n")"
+
+          # Check if we already posted a maintainer notification on this PR
+          existing=$(gh api "/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("👋 Heads up!"))) | .id' \
+            | head -1)
+
+          if [ -n "$existing" ]; then
+            gh api "/repos/${{ github.repository }}/issues/comments/$existing" \
+              -X PATCH -f body="$body"
+            echo "Updated existing comment"
+          else
+            gh pr comment "${{ github.event.pull_request.number }}" --body "$body"
+            echo "Posted new comment"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}

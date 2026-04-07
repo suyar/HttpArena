@@ -19,5 +19,6 @@
     "static",
     "async-db",
     "sync-db"
-  ]
+  ],
+  "maintainers": []
 }
