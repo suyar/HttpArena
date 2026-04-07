@@ -944,6 +944,34 @@ function renderComposite() {
             '</div>';
         }
       });
+      // Build popup badge section
+      var popupBadges = '';
+      var popupCrowns = crownsByFw[r.framework];
+      var popupProfileBadges = badgesByFw[r.framework];
+      var popupSnails = snailCount;
+      var protoColorsPopup = { h1iso: '#3b82f6', h1wk: '#2563eb', h2: '#eab308', h3: '#22c55e', grpc: '#7c3aed', ws: '#0891b2' };
+      if (popupCrowns && popupCrowns.length > 0) {
+        popupBadges += '<div style="margin-bottom:0.4rem;"><span style="font-weight:600; font-size:0.8rem; color:#64748b;">\u265A Section Champion</span><div style="margin-top:0.2rem;">';
+        popupCrowns.forEach(function(c) {
+          popupBadges += '<span style="display:inline-block; margin:0.15rem 0.3rem 0.15rem 0; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.78rem; font-weight:600; color:' + c.color + '; background:rgba(0,0,0,0.04); border:1px solid ' + c.color + ';">\u265A #1 in ' + c.label + '</span>';
+        });
+        popupBadges += '</div></div>';
+      }
+      if (popupProfileBadges && popupProfileBadges.length > 0) {
+        popupBadges += '<div style="margin-bottom:0.4rem;"><span style="font-weight:600; font-size:0.8rem; color:#64748b;">\u2655 Test Leader</span><div style="margin-top:0.2rem;">';
+        popupProfileBadges.forEach(function(b) {
+          var color = protoColorsPopup[b.proto] || '#3b82f6';
+          var sublabel = profileSublabels[b.pid] || b.proto;
+          popupBadges += '<span style="display:inline-block; margin:0.15rem 0.3rem 0.15rem 0; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.78rem; font-weight:500; color:' + color + '; background:rgba(0,0,0,0.04); border:1px solid ' + color + ';">#1 ' + b.label + ' (' + sublabel + ')</span>';
+        });
+        popupBadges += '</div></div>';
+      }
+      if (popupSnails >= 3) {
+        var snailTier = popupSnails >= 7 ? 'gold' : popupSnails >= 5 ? 'silver' : 'bronze';
+        popupBadges += '<div style="margin-bottom:0.4rem;"><span style="display:inline-block; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.78rem; font-weight:500; color:#94a3b8; background:rgba(0,0,0,0.04); border:1px solid #cbd5e1;">\uD83D\uDC0C ' + popupSnails + ' tests scored below 20 (' + snailTier + ')</span></div>';
+      }
+      var popupBadgeSection = popupBadges ? '<div style="margin:0.75rem 0; padding:0.75rem; background:rgba(0,0,0,0.02); border-radius:8px; border:1px solid rgba(0,0,0,0.06);">' + popupBadges + '</div>' : '';
+
       var repoHtml = fmeta.repo ? '<a class="lb-popup-link" href="' + fmeta.repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
       var benchHtml = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(r.framework) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
       var overlay = document.createElement('div');
@@ -954,6 +982,7 @@ function renderComposite() {
           '<div class="lb-popup-name">' + r.framework + '</div>' +
           '<div class="lb-popup-lang">' + r.language + '</div>' +
           '<div class="lb-popup-desc">' + (fmeta.description || '') + '</div>' +
+          popupBadgeSection +
           '<div class="lb-popup-stats">' +
             '<div><div class="lb-popup-stat-label">Composite Score</div><div class="lb-popup-stat-value" style="font-size:1.5rem; font-weight:700;">' + r.composite.toFixed(1) + '</div></div>' +
             profileDetails +
