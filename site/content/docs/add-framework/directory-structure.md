@@ -38,10 +38,13 @@ CMD ["/server"]
 
 The benchmark runner mounts these paths into your container (read-only):
 
-| Path | Purpose | When |
-|------|---------|------|
-| `/data/dataset.json` | 50-item dataset for `/json` endpoint | Always |
-| `/data/dataset-large.json` | 6000-item dataset for `/compression` endpoint | If `compression` in tests |
-| `/data/static/` | 20 static files (CSS, JS, HTML, fonts, images) | If `static-h2` or `static-h3` in tests |
-| `/certs/server.crt` | TLS certificate | If any H2/H3 test in tests |
-| `/certs/server.key` | TLS private key | If any H2/H3 test in tests |
+| Path | Purpose |
+|------|---------|
+| `/data/dataset.json` | 50-item dataset for `/json` endpoint |
+| `/data/dataset-large.json` | 6000-item dataset for `/compression` endpoint |
+| `/data/benchmark.db` | SQLite database (100K rows) for `/db` endpoint |
+| `/data/static/` | 20 static files (CSS, JS, HTML, fonts, images) |
+| `/certs/server.crt` | TLS certificate for HTTPS/H2/H3 |
+| `/certs/server.key` | TLS private key for HTTPS/H2/H3 |
+
+All data mounts are provided unconditionally — your container always has access to all files regardless of which profiles it participates in.

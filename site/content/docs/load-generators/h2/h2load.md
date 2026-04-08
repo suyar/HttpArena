@@ -13,14 +13,14 @@ sudo apt install nghttp2-client
 ## How it's used
 
 ```bash
-h2load https://localhost:8443/baseline2?a=1&b=1 -c 64 -m 100 -t 12 -D 5s
+h2load https://localhost:8443/baseline2?a=1&b=1 -c 256 -m 100 -t 128 -D 5s
 ```
 
 | Flag | Description | Value |
 |------|-------------|-------|
-| `-c` | Number of connections | 64, 256, or 1,024 |
+| `-c` | Number of connections | 256 or 1,024 |
 | `-m` | Max concurrent streams per connection | 100 |
-| `-t` | Threads | 12 |
+| `-t` | Threads | 128 |
 | `-D` | Duration | 5s |
 
 ## Why h2load?

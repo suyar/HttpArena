@@ -13,7 +13,7 @@ The HTTP/3 Static Files profile serves 20 static files of various types over QUI
 1. The load generator ([oha](/docs/load-generators)) connects over HTTP/3 (QUIC) on port 8443
 2. Cycles through 20 URIs from `requests/static-h2-uris.txt` (same file set as the HTTP/2 static test)
 3. Each request fetches a different static file - CSS, JavaScript, HTML, fonts, SVGs, WebP images, and JSON
-4. The server returns pre-loaded file contents with the correct `Content-Type`
+4. The server returns file contents with the correct `Content-Type`
 
 ## What it measures
 
@@ -23,7 +23,7 @@ The HTTP/3 Static Files profile serves 20 static files of various types over QUI
 
 ## Static files
 
-20 files (~360 KB total) pre-loaded into memory at startup:
+20 files (~360 KB total):
 
 | Type | Files | Examples |
 |------|-------|---------|

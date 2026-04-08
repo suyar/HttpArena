@@ -13,7 +13,7 @@ Create a `meta.json` file in your framework directory:
   "description": "Short description of the framework and its key features.",
   "repo": "https://github.com/org/repo",
   "enabled": true,
-  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "compression", "noisy", "mixed", "baseline-h2", "static-h2"],
+  "tests": ["baseline", "pipelined", "limited-conn", "json", "upload", "compression", "noisy", "api-4", "api-16", "baseline-h2", "static-h2"],
   "maintainers": ["your-github-username"]
 }
 ```
@@ -36,17 +36,21 @@ Create a `meta.json` file in your framework directory:
 
 | Profile | Protocol | Required endpoints |
 |---------|----------|--------------------|
-| `baseline` | HTTP/1.1 | `/baseline11`, `/pipeline` |
+| `baseline` | HTTP/1.1 | `/baseline11` |
 | `pipelined` | HTTP/1.1 | `/pipeline` |
 | `limited-conn` | HTTP/1.1 | `/baseline11` |
 | `json` | HTTP/1.1 | `/json` |
 | `upload` | HTTP/1.1 | `/upload` |
 | `compression` | HTTP/1.1 | `/compression` |
 | `noisy` | HTTP/1.1 | `/baseline11` |
-| `mixed` | HTTP/1.1 | `/baseline11`, `/json`, `/db`, `/upload`, `/compression`, `/static/*`, `/async-db` |
 | `static` | HTTP/1.1 | `/static/*` (port 8080) |
 | `tcp-frag` | HTTP/1.1 | `/baseline11` (loopback MTU 69) |
+| `sync-db` | HTTP/1.1 | `/db` (requires `/data/benchmark.db` mount) |
 | `async-db` | HTTP/1.1 | `/async-db` (requires `DATABASE_URL` env var) |
+| `api-4` | HTTP/1.1 | `/baseline11`, `/json`, `/async-db` (4 CPU, 16 GB) |
+| `api-16` | HTTP/1.1 | `/baseline11`, `/json`, `/async-db` (16 CPU, 32 GB) |
+| `assets-4` | HTTP/1.1 | `/static/*`, `/json`, `/compression` (4 CPU, 16 GB) |
+| `assets-16` | HTTP/1.1 | `/static/*`, `/json`, `/compression` (16 CPU, 32 GB) |
 | `baseline-h2` | HTTP/2 | `/baseline2` (TLS, port 8443) |
 | `static-h2` | HTTP/2 | `/static/*` (TLS, port 8443) |
 | `baseline-h3` | HTTP/3 | `/baseline2` (QUIC, port 8443) |

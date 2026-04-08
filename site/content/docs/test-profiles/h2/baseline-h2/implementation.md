@@ -6,7 +6,7 @@ title: Implementation Guidelines
 
 Same workload as the HTTP/1.1 baseline - query parameter parsing and sum computation - but over encrypted HTTP/2 connections using TLS and ALPN negotiation.
 
-**Connections:** 64, 256, 1,024
+**Connections:** 256, 1,024
 **Concurrent streams per connection:** 100
 
 ## Workload
@@ -38,7 +38,7 @@ Content-Type: text/plain
 | | Baseline (HTTP/1.1) | Baseline (HTTP/2) |
 |---|---|---|
 | Protocol | HTTP/1.1 plaintext | HTTP/2 over TLS |
-| Connections | 512 - 16,384 | 64 - 1,024 |
+| Connections | 512 - 4,096 | 256 - 1,024 |
 | Requests per connection | 1 at a time | 100 concurrent streams |
 | Load generator | gcannon | h2load |
 | Port | 8080 | 8443 |
@@ -50,7 +50,7 @@ HTTP/2 uses far fewer connections because each connection multiplexes many strea
 | Parameter | Value |
 |-----------|-------|
 | Endpoint | `GET /baseline2?a=1&b=1` |
-| Connections | 64, 256, 1,024 |
+| Connections | 256, 1,024 |
 | Streams per connection | 100 (`-m 100`) |
 | Duration | 5s |
 | Runs | 3 (best taken) |

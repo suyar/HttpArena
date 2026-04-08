@@ -4,7 +4,7 @@ title: Implementation Guidelines
 {{< type-rules production="Must use an async PostgreSQL driver with standard connection pooling. Pool size should follow common defaults (e.g. CPU count × 4)." tuned="May use custom pool sizes, prepared statement caching, or driver-specific optimizations beyond defaults." engine="No specific rules." >}}
 
 
-The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection. Unlike the [synchronous SQLite `/db` endpoint](../../database) (CPU-bound, tested only within mixed workloads), this test exercises async I/O scheduling, connection pooling, and async Postgres driver efficiency.
+The Async Database profile measures how efficiently a framework handles concurrent database queries over a network connection. Unlike the [synchronous SQLite `/db` endpoint](../../database) (CPU-bound, tested as the `sync-db` profile), this test exercises async I/O scheduling, connection pooling, and async Postgres driver efficiency.
 
 **This test is for framework-type entries only** - engines (nginx, h2o, etc.) are excluded.
 
@@ -99,12 +99,12 @@ The benchmark runner provides these environment variables to your container:
 | Variable | Value | Description |
 |----------|-------|-------------|
 | `DATABASE_URL` | `postgres://bench:bench@localhost:5432/benchmark` | Postgres connection string. Always read from this - never hardcode. |
-| `DATABASE_MAX_CONN` | `512` | Maximum connections allowed by the Postgres instance. Use this to size your connection pool. |
+| `DATABASE_MAX_CONN` | `256` | Maximum connections allowed by the Postgres instance. Use this to size your connection pool. May be lower for CPU-constrained tests (e.g. API-4, API-16). |
 
 ## Implementation notes
 
 - **Async driver required** - use your language's async Postgres driver (e.g., `asyncpg` for Python, `tokio-postgres` for Rust, `pg` for Node.js, `r2d2`/`deadpool` for connection pools)
-- **Connection pool** - initialize a pool at startup. Read `DATABASE_MAX_CONN` to set your pool size. A good default is `min(DATABASE_MAX_CONN, num_cpus)` or a fixed value like 128-256
+- **Connection pool** - initialize a pool at startup. Read `DATABASE_MAX_CONN` to set your pool size. A good default is `min(DATABASE_MAX_CONN, num_cpus)` or a fixed value like 64-128
 - **Prepared statements** - prepare the query once per connection, reuse across requests
 - **Default parameters** - if `min` or `max` query parameters are missing, default to `10` and `50` respectively
 - **Tags are JSONB** - Postgres returns them as native JSON, no string parsing needed (unlike the SQLite `/db` endpoint)
@@ -140,6 +140,6 @@ on_request /async-db:
 | Endpoint | `GET /async-db` |
 | Connections | 1,024 |
 | Pipeline | 1 |
-| Duration | 5s |
+| Duration | 10s |
 | Runs | 3 (best taken) |
 | Database | Postgres 17, 100,000 rows, no index on `price` |

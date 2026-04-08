@@ -4,7 +4,7 @@ title: Implementation Guidelines
 {{< type-rules production="Must use the framework standard SQLite integration with read-only connections and default settings." tuned="May use custom PRAGMA settings, mmap, or driver-specific optimizations." engine="No specific rules." >}}
 
 
-The Database Query endpoint measures how efficiently a framework handles SQLite queries, result parsing, and JSON serialization. It is not a standalone benchmark profile - it is exercised as part of the [Mixed Workload](../../../workload/mixed) profile.
+The Database Query endpoint measures how efficiently a framework handles SQLite queries, result parsing, and JSON serialization. Tested as the standalone `sync-db` profile.
 
 ## How it works
 

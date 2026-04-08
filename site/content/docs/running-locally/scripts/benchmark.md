@@ -21,9 +21,9 @@ Without `--save`, results are displayed but not persisted.
 
 ## What it does
 
-1. **System tuning** — sets CPU governor to `performance`, increases TCP buffer sizes, flushes filesystem caches, and adjusts loopback MTU for fragmentation tests
+1. **System tuning** — sets CPU governor to `performance`, increases TCP buffer sizes, and flushes filesystem caches
 2. **Docker build** — builds the framework image (or runs `build.sh` if present)
-3. **Sidecar setup** — starts a Postgres container for `async-db` and `mixed` profiles
+3. **Sidecar setup** — starts a Postgres container for `async-db`, `api-4`, and `api-16` profiles
 4. **Load testing** — for each profile the framework is subscribed to:
    - Runs at each connection count defined for the profile
    - Executes 3 runs per configuration, keeps the best result
@@ -49,6 +49,6 @@ Without `--save`, results are displayed but not persisted.
 Each profile defines its own configuration:
 
 - **Pipeline depth** — 1 (sequential) or 16 (pipelined)
-- **Connection counts** — varies by profile (e.g. 512/4096/16384 for baseline, 64/512 for HTTP/3)
-- **Duration** — 5 seconds per run (15 seconds for mixed)
+- **Connection counts** — varies by profile (e.g. 512/4096 for baseline, 256/512 for HTTP/3)
+- **Duration** — 5 seconds per run (10s for sync-db/async-db, 15s for workload profiles)
 - **Runs** — 3 per configuration, best kept

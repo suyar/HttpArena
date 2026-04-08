@@ -14,14 +14,14 @@ Run the validation suite against a framework. Builds the Docker image, starts th
 1. Reads the framework's `meta.json` to determine which tests are subscribed
 2. Builds the Docker image
 3. Mounts only the data volumes required by the subscribed tests
-4. Starts a Postgres sidecar when `async-db` or `mixed` tests are enabled
+4. Starts a Postgres sidecar when `async-db`, `api-4`, or `api-16` tests are enabled
 5. Waits for the server to start (up to 30 seconds)
 6. Runs all validation checks for the subscribed tests
 7. Prints a pass/fail summary and exits with code 1 if any check failed
 
 ## Validation coverage
 
-Each subscribed test triggers its corresponding validation checks. Subscribing to `mixed` automatically triggers validation for all 7 endpoints it uses (baseline, json, db, upload, compression, static, async-db), even if those individual tests are not in `meta.json`.
+Each subscribed test triggers its corresponding validation checks. Workload profiles (`api-4`, `api-16`, `assets-4`, `assets-16`) automatically trigger validation for all endpoints they use, even if those individual tests are not in `meta.json`.
 
 On failure, each check prints a link to the relevant validation documentation page for reference.
 

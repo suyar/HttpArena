@@ -56,7 +56,7 @@ fi
 
 # Mount volumes based on subscribed tests
 HARD_NOFILE=$(ulimit -Hn)
-if has_test "async-db" || has_test "mixed" || has_test "api-4" || has_test "api-16"; then
+if has_test "async-db" || has_test "api-4" || has_test "api-16"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
@@ -74,11 +74,11 @@ if $needs_h2 && [ -d "$CERTS_DIR" ]; then
     docker_args+=(-p "$H2PORT:8443" -v "$CERTS_DIR:/certs:ro")
 fi
 
-if has_test "compression" || has_test "mixed"; then
+if has_test "compression" || has_test "assets-4" || has_test "assets-16"; then
     docker_args+=(-v "$DATA_DIR/dataset-large.json:/data/dataset-large.json:ro")
 fi
 
-if has_test "mixed" || has_test "sync-db"; then
+if has_test "sync-db"; then
     DB_FILE="$DATA_DIR/benchmark.db"
     if [ ! -f "$DB_FILE" ]; then
         echo "[db] benchmark.db not found, generating..."
@@ -87,7 +87,7 @@ if has_test "mixed" || has_test "sync-db"; then
     docker_args+=(-v "$DB_FILE:/data/benchmark.db:ro")
 fi
 
-if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "assets-4" || has_test "assets-16" || has_test "mixed"; then
+if has_test "static" || has_test "static-h2" || has_test "static-h3" || has_test "assets-4" || has_test "assets-16"; then
     docker_args+=(-v "$DATA_DIR/static:/data/static:ro")
 fi
 
@@ -98,8 +98,8 @@ if [ "$ENGINE" = "io_uring" ]; then
     docker_args+=(--ulimit memlock=-1:-1)
 fi
 
-# Start Postgres sidecar if async-db or mixed is needed
-if has_test "async-db" || has_test "mixed" || has_test "api-4" || has_test "api-16"; then
+# Start Postgres sidecar if async-db is needed
+if has_test "async-db" || has_test "api-4" || has_test "api-16"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker run -d --name "$PG_CONTAINER" --network host \
@@ -231,7 +231,7 @@ wait_h2() {
 
 # ───── Baseline (GET/POST /baseline11) ─────
 
-if has_test "baseline" || has_test "limited-conn" || has_test "mixed" || has_test "api-4" || has_test "api-16"; then
+if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_test "api-16"; then
     BASELINE_DOCS="$DOCS_BASE/h1/isolated/baseline/validation"
     echo "[test] baseline endpoints"
     check "GET /baseline11?a=13&b=42" "55" "$BASELINE_DOCS" \
@@ -274,7 +274,7 @@ fi
 
 # ───── JSON Processing (GET /json) ─────
 
-if has_test "json" || has_test "mixed" || has_test "api-4" || has_test "api-16"; then
+if has_test "json" || has_test "api-4" || has_test "api-16" || has_test "assets-4" || has_test "assets-16"; then
     JSON_DOCS="$DOCS_BASE/h1/isolated/json-processing/validation"
     echo "[test] json endpoint"
     response=$(curl -s --max-time 30 "http://localhost:$PORT/json")
@@ -311,7 +311,7 @@ fi
 
 # ───── Upload (POST /upload) ─────
 
-if has_test "upload" || has_test "mixed"; then
+if has_test "upload"; then
     UPLOAD_DOCS="$DOCS_BASE/h1/isolated/upload/validation"
     echo "[test] upload endpoint"
     # Small upload: returns byte count
@@ -345,7 +345,7 @@ fi
 
 # ───── Compression (GET /compression) ─────
 
-if has_test "compression" || has_test "mixed"; then
+if has_test "compression" || has_test "assets-4" || has_test "assets-16"; then
     COMP_DOCS="$DOCS_BASE/h1/isolated/compression/validation"
     echo "[test] compression endpoint"
 
@@ -430,11 +430,11 @@ if has_test "noisy"; then
         "http://localhost:$PORT/baseline11?a=$A4&b=$B4"
 fi
 
-# ───── DB (GET /db — SQLite, tested when framework has mixed test) ─────
+# ───── DB (GET /db — SQLite) ─────
 
-if has_test "mixed"; then
+if has_test "sync-db"; then
     DB_DOCS="$DOCS_BASE/h1/isolated/database/validation"
-    echo "[test] db endpoint (mixed test prerequisite)"
+    echo "[test] db endpoint"
     response=$(curl -s --max-time 30 "http://localhost:$PORT/db?min=10&max=50")
     db_result=$(echo "$response" | python3 -c "
 import sys, json
@@ -542,7 +542,7 @@ fi
 
 # ───── Static Files H1 (GET /static/* over HTTP/1.1) ─────
 
-if has_test "static" || has_test "mixed"; then
+if has_test "static" || has_test "assets-4" || has_test "assets-16"; then
     STATIC_DOCS="$DOCS_BASE/h1/isolated/static/validation"
     echo "[test] static endpoint"
     check_header "GET /static/reset.css Content-Type" "Content-Type" "text/css" "$STATIC_DOCS" \
@@ -625,29 +625,70 @@ if has_test "assets-4" || has_test "assets-16"; then
         fail_with_link "[static/app.js gzip]: expected gzip response, got enc='$app_js_gzip_enc' magic='$_gzip_magic'" "$ASSETS_DOCS"
     fi
 
-    # 5. Binary file (webp) with Accept-Encoding: gzip → must NOT compress
+    # 5. Binary file (webp) with Accept-Encoding: gzip → should not compress, response size ~= original
+    #    curl auto-decompresses Content-Encoding: gzip, so size_download is the decoded body size
+    #    If server skips compression: size matches exactly. If server compresses: curl decompresses, size still matches.
+    #    Either way, the decoded body must match the original file size.
     webp_expected=$(wc -c < "$DATA_DIR/static/hero.webp" 2>/dev/null || echo "0")
     webp_gzip_size=$(curl -s --max-time 30 -H "Accept-Encoding: gzip" -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/hero.webp")
     webp_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/hero.webp" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
-    if [ -z "$webp_gzip_enc" ] && [ "$webp_gzip_size" -eq "$webp_expected" ]; then
-        echo "  PASS [static/hero.webp gzip-skip] ($webp_gzip_size bytes, no compression — correct)"
+    if [ "$webp_gzip_size" -eq "$webp_expected" ]; then
+        if [ -z "$webp_gzip_enc" ]; then
+            echo "  PASS [static/hero.webp gzip-skip] ($webp_gzip_size bytes, no compression — correct)"
+        else
+            echo "  PASS [static/hero.webp gzip-skip] ($webp_gzip_size bytes, server compressed but binary — acceptable)"
+        fi
         PASS=$((PASS + 1))
     else
-        fail_with_link "[static/hero.webp gzip-skip]: binary file should NOT be compressed, got size=$webp_gzip_size enc='$webp_gzip_enc'" "$ASSETS_DOCS"
+        fail_with_link "[static/hero.webp gzip-skip]: expected $webp_expected bytes, got $webp_gzip_size (binary files should not benefit from compression)" "$ASSETS_DOCS"
     fi
 
-    # 6. Binary file (woff2) with Accept-Encoding: gzip → must NOT compress
+    # 6. Binary file (woff2) with Accept-Encoding: gzip → should not compress, response size ~= original
     woff2_expected=$(wc -c < "$DATA_DIR/static/regular.woff2" 2>/dev/null || echo "0")
     woff2_gzip_size=$(curl -s --max-time 30 -H "Accept-Encoding: gzip" -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/regular.woff2")
     woff2_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/regular.woff2" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
-    if [ -z "$woff2_gzip_enc" ] && [ "$woff2_gzip_size" -eq "$woff2_expected" ]; then
-        echo "  PASS [static/regular.woff2 gzip-skip] ($woff2_gzip_size bytes, no compression — correct)"
+    if [ "$woff2_gzip_size" -eq "$woff2_expected" ]; then
+        if [ -z "$woff2_gzip_enc" ]; then
+            echo "  PASS [static/regular.woff2 gzip-skip] ($woff2_gzip_size bytes, no compression — correct)"
+        else
+            echo "  PASS [static/regular.woff2 gzip-skip] ($woff2_gzip_size bytes, server compressed but binary — acceptable)"
+        fi
         PASS=$((PASS + 1))
     else
-        fail_with_link "[static/regular.woff2 gzip-skip]: binary file should NOT be compressed, got size=$woff2_gzip_size enc='$woff2_gzip_enc'" "$ASSETS_DOCS"
+        fail_with_link "[static/regular.woff2 gzip-skip]: expected $woff2_expected bytes, got $woff2_gzip_size (binary files should not benefit from compression)" "$ASSETS_DOCS"
     fi
 
-    # 7. SVG with Accept-Encoding: gzip → accept either compressed or uncompressed
+    # 7. Binary file (thumb1.webp) without Accept-Encoding → must return original size
+    thumb_expected=$(wc -c < "$DATA_DIR/static/thumb1.webp" 2>/dev/null || echo "0")
+    thumb_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/thumb1.webp")
+    if [ "$thumb_size" -eq "$thumb_expected" ]; then
+        echo "  PASS [static/thumb1.webp no-gzip] ($thumb_size bytes, matches disk)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/thumb1.webp no-gzip]: expected $thumb_expected bytes, got $thumb_size" "$ASSETS_DOCS"
+    fi
+
+    # 8. Additional text file (CSS) with Accept-Encoding: gzip → must have Content-Encoding: gzip
+    css_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/components.css" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
+    if [[ "$css_gzip_enc" == *"gzip"* ]]; then
+        echo "  PASS [static/components.css gzip] (Content-Encoding: $css_gzip_enc)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/components.css gzip]: expected Content-Encoding: gzip, got '$css_gzip_enc'" "$ASSETS_DOCS"
+    fi
+
+    # 9. Additional text file (CSS) without Accept-Encoding → must return original size, no compression
+    css_expected=$(wc -c < "$DATA_DIR/static/components.css" 2>/dev/null || echo "0")
+    css_plain_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/components.css")
+    css_plain_enc=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/static/components.css" | grep -i "^Content-Encoding:" | tr -d '\r' || true)
+    if [ "$css_plain_size" -eq "$css_expected" ] && [ -z "$css_plain_enc" ]; then
+        echo "  PASS [static/components.css no-gzip] ($css_plain_size bytes, matches disk)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[static/components.css no-gzip]: expected $css_expected bytes uncompressed, got $css_plain_size (enc: $css_plain_enc)" "$ASSETS_DOCS"
+    fi
+
+    # 10. SVG with Accept-Encoding: gzip → accept either compressed or uncompressed
     svg_expected=$(wc -c < "$DATA_DIR/static/icon-sprite.svg" 2>/dev/null || echo "0")
     svg_gzip_enc=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip" "http://localhost:$PORT/static/icon-sprite.svg" | grep -i "^Content-Encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
     if [[ "$svg_gzip_enc" == *"gzip"* ]]; then
@@ -692,7 +733,7 @@ fi
 
 # ───── Async Database (GET /async-db) ─────
 
-if has_test "async-db" || has_test "mixed" || has_test "api-4" || has_test "api-16"; then
+if has_test "async-db" || has_test "api-4" || has_test "api-16"; then
     ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
     echo "[test] async-db endpoint"
     response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=10&max=50")

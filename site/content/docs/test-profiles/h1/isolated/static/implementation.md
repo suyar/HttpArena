@@ -26,7 +26,7 @@ Total payload: ~325 KB across 20 files.
 
 - Static file serving throughput over HTTP/1.1
 - Content-Type handling for different file types
-- Memory-mapped or pre-loaded file serving performance
+- File serving strategy efficiency (disk I/O vs caching, depending on type)
 - Response efficiency with varied payload sizes
 
 ## Expected request/response

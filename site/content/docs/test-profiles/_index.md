@@ -14,7 +14,7 @@ Each profile is run at multiple connection counts to show how frameworks scale u
 
 | Parameter | Value |
 |-----------|-------|
-| Threads | 12 |
+| Threads | 64 (gcannon) / 128 (h2load) |
 | Duration | 5s |
 | Runs | 3 (best taken) |
 | Networking | Docker `--network host` |

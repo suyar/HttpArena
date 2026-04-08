@@ -34,34 +34,59 @@ Frameworks that don't participate in a scored profile receive 0 for that profile
 
 Not all profiles count toward the composite score. Profiles marked as **scored** contribute to the composite. Reference-only profiles (marked with **\***) are displayed for comparison but do not affect the ranking.
 
-### HTTP/1.1
+### H/1.1 Isolated
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Mixed GET/POST with query parsing |
+| Pipelined | Yes | 16 requests batched per connection |
 | Short-lived | Yes | Connections closed after 10 requests |
 | JSON | Yes | Dataset processing and serialization |
 | Upload | Yes | 20 MB body ingestion, return byte count |
 | Compression | Yes | ~1 MB gzip-compressed JSON response |
-| Mixed | Yes | Weighted mix of baseline, JSON, DB, upload, compression |
-| Pipelined | Yes | 16 requests batched per connection |
+| Static | Yes | 20 static files served over HTTP/1.1 |
+| Sync DB | Yes | SQLite range query with JSON serialization |
+| Async DB | Yes | Async Postgres query with connection pooling |
+| TCP Frag | No (*) | Baseline with MTU 69 — TCP fragmentation stress |
 | Noisy | No (*) | Valid requests interleaved with malformed noise |
 
-### HTTP/2
+### H/1.1 Workload
+
+| Profile | Scored | Workload |
+|---|---|---|
+| API-4 | Yes | Baseline + JSON + async-db on 4 CPUs |
+| API-16 | Yes | Baseline + JSON + async-db on 16 CPUs |
+| Assets-4 | Yes | Static + JSON + compression on 4 CPUs |
+| Assets-16 | Yes | Static + JSON + compression on 16 CPUs |
+
+### H/2
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Query parsing over TLS with multiplexed streams |
 | Static | Yes | 20 static files served over TLS with multiplexed streams |
 
-### HTTP/3
+### H/3
 
 | Profile | Scored | Workload |
 |---|---|---|
 | Baseline | Yes | Query parsing over QUIC (UDP) with TLS 1.3 |
 | Static | Yes | 20 static files served over QUIC (UDP) with TLS 1.3 |
 
-Noisy is reference-only because noisy traffic handling varies too widely to be fairly scored.
+### gRPC
+
+| Profile | Scored | Workload |
+|---|---|---|
+| Unary | Yes | gRPC unary call over cleartext HTTP/2 |
+| Unary TLS | Yes | gRPC unary call over TLS |
+
+### WebSocket
+
+| Profile | Scored | Workload |
+|---|---|---|
+| Echo | Yes | WebSocket echo throughput |
+
+TCP Frag and Noisy are reference-only — shown for comparison but not counted in the composite score.
 
 ## Resource efficiency factors
 
@@ -117,8 +142,8 @@ Framework A still leads because its raw throughput advantage outweighs B's CPU e
 
 Engines and frameworks are scored **separately** — each type has its own composite ranking and normalization pool. The scored profiles differ by type:
 
-- **Frameworks** are scored on all H1 profiles (Baseline, Pipelined, Short-lived, JSON, Upload, Compression, Noisy, Mixed) plus all H2/H3 profiles.
-- **Engines** are scored on a reduced H1 set (Baseline, Pipelined, Short-lived only) plus all H2/H3 profiles, since most engines don't implement the heavier endpoints (JSON, DB, upload, compression).
+- **Frameworks** are scored on all scored profiles across H/1.1, H/2, H/3, gRPC, and WebSocket.
+- **Engines** are scored on a reduced set: Baseline, Pipelined, Short-lived, API-4, H/2 (both), H/3 (both), gRPC (both), and WebSocket, since most engines don't implement the heavier endpoints (JSON, DB, upload, compression).
 
 The Type filter on the composite leaderboard switches between the two rankings.
 

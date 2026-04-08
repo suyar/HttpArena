@@ -2,7 +2,7 @@
 title: Validation
 ---
 
-The following checks are executed by `validate.sh` for every framework subscribed to the `mixed` test (which exercises the `/db` endpoint).
+The following checks are executed by `validate.sh` for every framework subscribed to the `sync-db` test.
 
 ## Response structure
 

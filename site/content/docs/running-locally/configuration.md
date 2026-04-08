@@ -35,29 +35,31 @@ GCANNON=/usr/local/bin/gcannon H2LOAD=/usr/local/bin/h2load ./scripts/benchmark.
 
 Each profile defines: pipeline depth, requests per connection, CPU limit, connection counts, and endpoint type.
 
-| Profile | Pipeline | Req/conn | CPU limit | Connections | Endpoint |
-|---------|----------|----------|-----------|-------------|----------|
-| baseline | 1 | 0 | 64 | 512, 4096, 16384 | `/baseline11` |
-| pipelined | 16 | 0 | — | 512, 4096, 16384 | `/pipeline` |
-| limited-conn | 1 | 10 | — | 512, 4096 | `/baseline11` |
-| json | 1 | 0 | — | 4096, 16384 | `/json` |
-| upload | 1 | 0 | — | 64, 256, 512 | `/upload` |
-| compression | 1 | 0 | — | 4096, 16384 | `/compression` |
-| noisy | 1 | 0 | — | 512, 4096, 16384 | `/baseline11` + noise |
-| mixed | 1 | 5 | — | 4096, 16384 | 7 endpoints (14 templates) |
-| static | 1 | 10 | — | 4096, 16384 | `/static/*` (20 files) |
-| async-db | 1 | 0 | — | 1024 | `/async-db` |
-| baseline-h2 | 1 | 0 | — | 256, 1024 | `/baseline2` (h2load) |
-| static-h2 | 1 | 0 | — | 256, 1024 | `/static/*` (h2load) |
-| baseline-h3 | 32 | 0 | — | 256, 512 | `/baseline2` (oha) |
-| static-h3 | 32 | 0 | — | 256, 512 | `/static/*` (oha) |
-| unary-grpc | 1 | 0 | — | 256, 1024 | gRPC `GetSum` (h2load h2c) |
-| unary-grpc-tls | 1 | 0 | — | 256, 1024 | gRPC `GetSum` (h2load TLS) |
-| echo-ws | 1 | 0 | — | 512, 4096, 16384 | `/ws` (gcannon `--ws`) |
+| Profile | Pipeline | Req/conn | CPU pinning | Connections | Endpoint |
+|---------|----------|----------|-------------|-------------|----------|
+| baseline | 1 | 0 | 0-31,64-95 | 512, 4096 | `/baseline11` |
+| pipelined | 16 | 0 | 0-31,64-95 | 512, 4096 | `/pipeline` |
+| limited-conn | 1 | 10 | 0-31,64-95 | 512, 4096 | `/baseline11` |
+| json | 1 | 0 | 0-31,64-95 | 4096 | `/json` |
+| upload | 1 | 0 | 0-31,64-95 | 32, 256 | `/upload` |
+| compression | 1 | 0 | 0-31,64-95 | 512, 4096 | `/compression` |
+| noisy | 1 | 0 | 0-31,64-95 | 512, 4096, 16384 | `/baseline11` + noise |
+| api-4 | 1 | 5 | 0-3 | 256 | mixed (baseline, json, async-db) |
+| api-16 | 1 | 5 | 0-7,64-71 | 1024 | mixed (baseline, json, async-db) |
+| assets-4 | 1 | 10 | 0-3 | 256 | mixed (static, json, compression) |
+| assets-16 | 1 | 10 | 0-7,64-71 | 1024 | mixed (static, json, compression) |
+| static | 1 | 10 | 0-31,64-95 | 1024, 4096, 6800 | `/static/*` (20 files) |
+| sync-db | 1 | 0 | 0-31,64-95 | 1024 | `/db` |
+| async-db | 1 | 0 | 0-31,64-95 | 1024 | `/async-db` |
+| baseline-h2 | 1 | 0 | 0-31,64-95 | 256, 1024 | `/baseline2` (h2load) |
+| static-h2 | 1 | 0 | 0-31,64-95 | 256, 1024 | `/static/*` (h2load) |
+| unary-grpc | 1 | 0 | 0-31,64-95 | 256, 1024 | gRPC `GetSum` (h2load h2c) |
+| unary-grpc-tls | 1 | 0 | 0-31,64-95 | 256, 1024 | gRPC `GetSum` (h2load TLS) |
+| echo-ws | 1 | 0 | 0-31,64-95 | 512, 4096, 16384 | `/ws` (gcannon `--ws`) |
 
 - **Pipeline** — requests sent back-to-back per connection before waiting for responses
 - **Req/conn** — requests per connection before disconnect and reconnect (0 = keep-alive, no limit)
-- **CPU limit** — container `--cpus` limit (blank = no limit)
+- **CPU pinning** — container `--cpuset-cpus` value (pins to specific CPU cores)
 
 ## Overriding for local testing
 
