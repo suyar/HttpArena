@@ -208,9 +208,17 @@ html.dark #composite-type-note { color: #e2e8f0 !important; background: linear-g
   html.dark .composite-search-input:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.12); }
   html.dark .composite-search-clear { color:#64748b; }
   html.dark .composite-search-clear:hover { color:#94a3b8; }
+  .composite-vote-link:hover { border-color:rgba(234,179,8,0.45); background:linear-gradient(135deg, rgba(234,179,8,0.1), rgba(202,138,4,0.1)); }
+  html.dark .composite-vote-link { color:#FACC15; background:linear-gradient(135deg, rgba(250,204,21,0.08), rgba(234,179,8,0.08)); border-color:rgba(250,204,21,0.25); }
+  html.dark .composite-vote-link:hover { border-color:rgba(250,204,21,0.45); background:linear-gradient(135deg, rgba(250,204,21,0.15), rgba(234,179,8,0.15)); }
   </style>
 
-  <div style="overflow-x:auto; overflow-y:hidden; margin-top:1rem;">
+  <a class="composite-vote-link" href="https://strawpoll.com/6QnMQ0pmane" target="_blank" rel="noreferrer" style="display:flex; align-items:center; gap:0.6rem; margin-top:0.75rem; margin-bottom:0.75rem; padding:0.7rem 1rem; border-radius:8px; background:linear-gradient(135deg, rgba(234,179,8,0.06), rgba(202,138,4,0.06)); border:1px solid rgba(234,179,8,0.25); color:#CA8A04; font-size:0.88rem; font-weight:500; text-decoration:none; transition:border-color 0.15s, background 0.15s;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+    Which tests matter the most to you? Help us improve our benchmark — <span style="font-size:1.05rem; font-weight:700; color:#EAB308;">Vote here</span>
+  </a>
+
+  <div style="overflow-x:auto; overflow-y:hidden;">
   <div id="composite-table" class="lb" style="min-width:50rem;">
   </div>
   </div>
