@@ -1,5 +1,5 @@
 {
-  "display_name": "actix-websocket",
+  "display_name": "actix",
   "language": "Rust",
   "type": "tuned",
   "engine": "actix",

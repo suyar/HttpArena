@@ -1,5 +1,5 @@
 {
-  "display_name": "quarkus-jvm-grpc",
+  "display_name": "quarkus-jvm",
   "language": "Java",
   "type": "tuned",
   "engine": "vert.x (grpc)",

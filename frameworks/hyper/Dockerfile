@@ -1,4 +1,4 @@
-FROM rust:1.88 AS build
+FROM rust:1.94 AS build
 WORKDIR /app
 COPY Cargo.toml .
 RUN mkdir src && echo "fn main() {}" > src/main.rs && cargo build --release && rm -rf src/ target/release/httparena-hyper* target/release/deps/httparena_hyper*

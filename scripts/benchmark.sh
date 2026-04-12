@@ -743,9 +743,11 @@ for profile in "${profiles_to_run[@]}"; do
             rps_int=$(echo "$output" | grep -oP 'finished in [\d.]+s, \K[\d.]+' | cut -d. -f1 || echo "0")
             rps_int=${rps_int:-0}
         else
-            duration_secs=$(echo "$output" | grep -oP 'requests in ([\d.]+)s' | grep -oP '[\d.]+' || echo "1")
+            duration_secs=$(echo "$output" | grep -oP '(?:requests|frames sent) in ([\d.]+)s' | grep -oP '[\d.]+' || echo "1")
             if [ "$endpoint" = "caching" ]; then
                 run_ok=$(echo "$output" | grep -oP '3xx=\K\d+' || echo "0")
+            elif [ "$endpoint" = "ws-echo" ]; then
+                run_ok=$(echo "$output" | grep -oP 'WS frames:\s+\K\d+' || echo "0")
             else
                 run_ok=$(echo "$output" | grep -oP '2xx=\K\d+' || echo "0")
             fi
@@ -812,10 +814,15 @@ for profile in "${profiles_to_run[@]}"; do
         status_4xx=$(echo "$best_output" | grep -oP '\d+(?= 4xx)' || echo "0")
         status_5xx=$(echo "$best_output" | grep -oP '\d+(?= 5xx)' || echo "0")
     else
-        status_2xx=$(echo "$best_output" | grep -oP '2xx=\K\d+' || echo "0")
-        status_3xx=$(echo "$best_output" | grep -oP '3xx=\K\d+' || echo "0")
-        status_4xx=$(echo "$best_output" | grep -oP '4xx=\K\d+' || echo "0")
-        status_5xx=$(echo "$best_output" | grep -oP '5xx=\K\d+' || echo "0")
+        if [ "$endpoint" = "ws-echo" ]; then
+            status_2xx=$(echo "$best_output" | grep -oP 'WS frames:\s+\K\d+' || echo "0")
+            status_3xx=0; status_4xx=0; status_5xx=0
+        else
+            status_2xx=$(echo "$best_output" | grep -oP '2xx=\K\d+' || echo "0")
+            status_3xx=$(echo "$best_output" | grep -oP '3xx=\K\d+' || echo "0")
+            status_4xx=$(echo "$best_output" | grep -oP '4xx=\K\d+' || echo "0")
+            status_5xx=$(echo "$best_output" | grep -oP '5xx=\K\d+' || echo "0")
+        fi
     fi
 
     # Compute input bandwidth from raw template sizes × RPS

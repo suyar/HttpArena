@@ -1,5 +1,5 @@
 {
-  "display_name": "aspnet-websocket",
+  "display_name": "aspnet-minimal",
   "language": "C#",
   "type": "production",
   "engine": "kestrel",
