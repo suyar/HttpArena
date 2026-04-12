@@ -1,5 +1,5 @@
 {
-  "display_name": "aspnet-grpc",
+  "display_name": "aspnet-minimal",
   "language": "C#",
   "type": "production",
   "engine": "kestrel",
