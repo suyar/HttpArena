@@ -65,19 +65,27 @@ class App < Roda
     r.root { 'ok' }
 
     r.is 'pipeline' do
-      response[RodaResponseHeaders::CONTENT_TYPE] = 'text/plain'
-      'ok'
+      render_plain 'ok'
     end
 
-    r.is('baseline11') { handle_baseline11 }
+    r.is('baseline11') do
+      total = 0
+      request.GET.each do |_k, v|
+        total += v.to_i
+      end
+      if request.post?
+        body_str = request.body.read
+        total += body_str.to_i
+      end
+      render_plain total.to_s
+    end
 
     r.is 'baseline2' do
       total = 0
       request.GET.each do |_k, v|
         total += v.to_i
       end
-      response[RodaResponseHeaders::CONTENT_TYPE] = 'text/plain'
-      total.to_s
+      render_plain total.to_s
     end
 
     r.is 'json' do
@@ -86,8 +94,7 @@ class App < Roda
       items = dataset.map do |d|
         d.merge('total' => (d['price'] * d['quantity'] * 100).round / 100.0)
       end
-      response[RodaResponseHeaders::CONTENT_TYPE] = 'application/json'
-      JSON.generate({ 'items' => items, 'count' => items.length })
+      render_json JSON.generate({ 'items' => items, 'count' => items.length })
     end
 
     r.is 'compression' do
@@ -132,8 +139,7 @@ class App < Roda
           'rating' => { 'score' => row['rating_score'], 'count' => row['rating_count'] }
         }
       end
-      response[RodaResponseHeaders::CONTENT_TYPE] = 'application/json'
-      JSON.generate({ 'items' => items, 'count' => items.length })
+      render_json JSON.generate({ 'items' => items, 'count' => items.length })
     end
 
     r.is 'async-db' do
@@ -152,8 +158,7 @@ class App < Roda
           'rating' => { 'score' => row['rating_score'], 'count' => row['rating_count'] }
         }
       end
-      response[RodaResponseHeaders::CONTENT_TYPE] = 'application/json'
-      JSON.generate({ 'items' => items, 'count' => items.length })
+      render_json JSON.generate({ 'items' => items, 'count' => items.length })
     end
 
     r.on 'static', String do |filename|
@@ -166,21 +171,17 @@ class App < Roda
     end
   end
 
-  def handle_baseline11
-    total = 0
-    request.GET.each do |_k, v|
-      total += v.to_i
-    end
-    if request.post?
-      request.body.rewind
-      body_str = request.body.read.strip
-      total += body_str.to_i
-    end
-    response[RodaResponseHeaders::CONTENT_TYPE] = 'text/plain'
-    total.to_s
+  private
+
+  def render_json(json)
+    response[RodaResponseHeaders::CONTENT_TYPE] = 'application/json'
+    json
   end
 
-  private
+  def render_plain(plain)
+    response[RodaResponseHeaders::CONTENT_TYPE] = 'text/plain'
+    plain
+  end
 
   def self.get_db_statement
     @db_statement ||= begin
