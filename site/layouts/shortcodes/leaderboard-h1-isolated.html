@@ -219,13 +219,16 @@ html.dark .lb-sortable.sort-desc::after { color: #60a5fa; }
   border-radius: 12px;
   padding: 2rem 2.5rem;
   max-width: 520px; width: 90vw;
+  max-height: 85vh; overflow-y: auto;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
   position: relative;
 }
 .lb-popup-close {
-  position: absolute; top: 1rem; right: 1.25rem;
+  position: sticky; top: 0; float: right;
+  margin: -0.5rem -1rem 0 0;
   background: none; border: none; font-size: 1.4rem;
   color: #94a3b8; cursor: pointer; line-height: 1;
+  z-index: 1;
 }
 .lb-popup-close:hover { color: #334155; }
 .lb-popup-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }

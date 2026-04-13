@@ -79,26 +79,47 @@ rebuild_site_data() {
     local site_data="$ROOT_DIR/site/data"
     mkdir -p "$site_data"
 
-    # Rebuild frameworks.json from individual meta.json files
+    # Rebuild frameworks.json from individual meta.json files.
+    # Hybrid shape: the "primary" entry fields (dir/description/repo/type/engine)
+    # stay at top level for backwards compatibility with all leaderboards.
+    # Additional entries that share the same display_name go in `variants`
+    # (read only by the composite popup to show every aggregated variant).
+    # Primary is chosen as the entry whose dir matches the display_name, or
+    # the first alphabetically.
     local fw_json="$site_data/frameworks.json"
-    echo '{' > "$fw_json"
-    local fw_first=true
-    for fw_dir in "$ROOT_DIR"/frameworks/*/; do
-        [ -d "$fw_dir" ] || continue
-        local fw=$(basename "$fw_dir")
-        local meta="$fw_dir/meta.json"
-        [ -f "$meta" ] || continue
-        $fw_first || echo ',' >> "$fw_json"
-        local dn=$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('display_name',sys.argv[2]))" "$meta" "$fw")
-        local desc=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('description',''))" "$meta")
-        local repo=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('repo',''))" "$meta")
-        local ftype=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('type','realistic'))" "$meta")
-        local engine=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('engine',''))" "$meta")
-        printf '  "%s": {"dir": "%s", "description": "%s", "repo": "%s", "type": "%s", "engine": "%s"}' "$dn" "$fw" "$desc" "$repo" "$ftype" "$engine" >> "$fw_json"
-        fw_first=false
-    done
-    echo '' >> "$fw_json"
-    echo '}' >> "$fw_json"
+    python3 - "$ROOT_DIR" > "$fw_json" <<'PYEOF'
+import json, sys, os, glob
+root = sys.argv[1]
+groups = {}
+for meta_path in sorted(glob.glob(os.path.join(root, "frameworks", "*", "meta.json"))):
+    fw_dir = os.path.basename(os.path.dirname(meta_path))
+    try:
+        with open(meta_path) as f:
+            m = json.load(f)
+    except Exception:
+        continue
+    display = m.get("display_name", fw_dir)
+    entry = {
+        "dir": fw_dir,
+        "description": m.get("description", ""),
+        "repo": m.get("repo", ""),
+        "type": m.get("type", "realistic"),
+        "engine": m.get("engine", ""),
+    }
+    groups.setdefault(display, []).append(entry)
+
+out = {}
+for display, entries in groups.items():
+    # Primary = the one whose dir == display_name, else first alphabetical
+    entries_sorted = sorted(entries, key=lambda e: e["dir"])
+    primary = next((e for e in entries_sorted if e["dir"] == display), entries_sorted[0])
+    variants = [e for e in entries_sorted if e["dir"] != primary["dir"]]
+    obj = dict(primary)
+    if variants:
+        obj["variants"] = variants
+    out[display] = obj
+print(json.dumps(out, indent=2))
+PYEOF
     echo "[updated] site/data/frameworks.json"
 
     for profile_dir in "$RESULTS_DIR"/*/; do

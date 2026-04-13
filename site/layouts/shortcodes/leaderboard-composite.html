@@ -1009,10 +1009,33 @@ function renderComposite() {
       if (r.framework === 'genhttp') {
         popupBadges += '<div style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;"><span style="font-size:1.5rem; filter:brightness(0.7) sepia(1) saturate(3) hue-rotate(-10deg);">\uD83C\uDFC5</span><span style="font-weight:700; font-size:0.95rem; color:#B45309;">Participation Award</span></div><div style="margin-bottom:0.5rem; font-size:0.8rem; font-style:italic; color:#B45309;">He\'s happy to be here</div>';
       }
-      var popupBadgeSection = popupBadges ? '<div style="margin:0.75rem 0; padding:0.75rem; background:rgba(0,0,0,0.02); border-radius:8px; border:1px solid rgba(0,0,0,0.06);">' + popupBadges + '</div>' : '';
+      // Awards section collapsed by default (<details>) — was occupying too much vertical space
+      var popupBadgeSection = popupBadges
+        ? '<details class="lb-popup-awards" style="margin:0.75rem 0; padding:0.6rem 0.75rem; background:rgba(0,0,0,0.02); border-radius:8px; border:1px solid rgba(0,0,0,0.06);">'
+          + '<summary style="cursor:pointer; font-weight:600; font-size:0.85rem; color:#475569; user-select:none;">Awards &amp; Badges</summary>'
+          + '<div style="margin-top:0.6rem;">' + popupBadges + '</div>'
+          + '</details>'
+        : '';
 
-      var repoHtml = fmeta.repo ? '<a class="lb-popup-link" href="' + fmeta.repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
-      var benchHtml = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(r.framework) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
+      // Build one "variant" section per framework directory sharing this display_name.
+      // `fmeta.variants` contains sibling entries; we merge primary + variants into one list.
+      var variantsList = [{ dir: fmeta.dir || r.framework, description: fmeta.description || '', repo: fmeta.repo || '' }];
+      if (Array.isArray(fmeta.variants)) {
+        fmeta.variants.forEach(function(v) {
+          variantsList.push({ dir: v.dir, description: v.description || '', repo: v.repo || '' });
+        });
+      }
+      var variantsHtml = variantsList.map(function(v) {
+        var header = variantsList.length > 1
+          ? '<div style="font-size:0.75rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-top:0.5rem;">' + v.dir + '</div>'
+          : '';
+        var desc = v.description ? '<div class="lb-popup-desc" style="margin-top:0.2rem;">' + v.description + '</div>' : '';
+        var repoLink = v.repo ? '<a class="lb-popup-link" href="' + v.repo + '" target="_blank" rel="noreferrer">View source &rarr;</a>' : '';
+        var benchLink = '<a class="lb-popup-link" href="https://github.com/MDA2AV/HttpArena/tree/main/frameworks/' + encodeURIComponent(v.dir) + '" target="_blank" rel="noreferrer">Benchmark implementation &rarr;</a>';
+        var links = '<div class="lb-popup-links" style="margin-top:0.35rem;">' + repoLink + benchLink + '</div>';
+        return header + desc + links;
+      }).join('');
+
       var overlay = document.createElement('div');
       overlay.className = 'lb-overlay';
       overlay.innerHTML =
@@ -1020,13 +1043,12 @@ function renderComposite() {
           '<button class="lb-popup-close" aria-label="Close">&times;</button>' +
           '<div class="lb-popup-name">' + r.framework + '</div>' +
           '<div class="lb-popup-lang">' + r.language + '</div>' +
-          '<div class="lb-popup-desc">' + (fmeta.description || '') + '</div>' +
+          variantsHtml +
           popupBadgeSection +
           '<div class="lb-popup-stats">' +
             '<div><div class="lb-popup-stat-label">Composite Score</div><div class="lb-popup-stat-value" style="font-size:1.5rem; font-weight:700;">' + r.composite.toFixed(1) + '</div></div>' +
             profileDetails +
           '</div>' +
-          '<div class="lb-popup-links">' + repoHtml + benchHtml + '</div>' +
         '</div>';
       document.body.appendChild(overlay);
       function close() { overlay.remove(); }
