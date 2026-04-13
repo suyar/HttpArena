@@ -3,9 +3,8 @@ FROM oven/bun AS build
 
 WORKDIR /app
 
-# Cache packages installation
+# Cache packages installation (bun.lock intentionally omitted — regenerated in-container)
 COPY package.json package.json
-COPY bun.lock bun.lock
 
 RUN bun install --production
 

@@ -1,5 +1,7 @@
 import { Elysia } from "elysia";
+import { staticPlugin } from "@elysiajs/static";
 import { readFileSync } from "fs";
+import { brotliCompressSync } from "node:zlib";
 import cluster from "cluster";
 import { availableParallelism } from "os";
 
@@ -13,6 +15,27 @@ const WORKERS = Math.max(
 	),
 );
 
+// Preload dataset for /json (both primary and workers read it, ~1 MB).
+const datasetItems: any[] = JSON.parse(
+	readFileSync("/data/dataset.json", "utf8"),
+);
+
+// Resolve the async staticPlugin at real top level (outside the cluster
+// conditional) — `bun build --compile` can't handle top-level await inside
+// if/else blocks, and we need the plugin fully resolved before .use() so
+// its routes register synchronously into the main Elysia chain.
+//
+// alwaysStatic: false — `true` (the NODE_ENV=production default) pre-registers
+// each file as a Bun static route, which requires a fully-buffered body and
+// crashes with `Bun.file()` streams. Dynamic routing reads disk per request
+// which is also more production-rule compliant.
+const staticModule = await staticPlugin({
+	assets: "/data/static",
+	prefix: "/static",
+	etag: false,
+	alwaysStatic: false,
+});
+
 if (cluster.isPrimary) {
 	for (let i = 0; i < WORKERS; i++) cluster.fork();
 	cluster.on("exit", (w) => {
@@ -21,31 +44,18 @@ if (cluster.isPrimary) {
 	});
 } else {
 
-const MIME_TYPES: Record<string, string> = {
-	".css": "text/css",
-	".js": "application/javascript",
-	".html": "text/html",
-	".woff2": "font/woff2",
-	".svg": "image/svg+xml",
-	".webp": "image/webp",
-	".json": "application/json",
-};
-
-// Preload dataset for /json
-const datasetItems: any[] = JSON.parse(
-	readFileSync("/data/dataset.json", "utf8"),
-);
-
-const STATIC_DIR = "/data/static";
-
 // PostgreSQL pool for /async-db (node-postgres via Bun's node_modules resolver).
+// Pool size per worker is DATABASE_MAX_CONN / WORKERS so the total across the
+// cluster matches the server's configured max_connections (256 by default).
 let pgPool: any = null;
 {
 	const dbUrl = process.env.DATABASE_URL;
 	if (dbUrl) {
 		try {
 			const { Pool } = require("pg");
-			pgPool = new Pool({ connectionString: dbUrl, max: 4 });
+			const totalMax = parseInt(process.env.DATABASE_MAX_CONN ?? "", 10) || 256;
+			const perWorker = Math.max(1, Math.floor(totalMax / WORKERS));
+			pgPool = new Pool({ connectionString: dbUrl, max: perWorker });
 		} catch (_) {}
 	}
 }
@@ -78,44 +88,47 @@ new Elysia()
 			headers: { "content-type": "text/plain" },
 		});
 	})
-	.get("/json/:count", ({ params, query, request }) => {
+	.get("/json/:count", ({ params, query, headers, set }) => {
 		const count = Math.max(
 			0,
-			Math.min(parseInt(params.count, 10) || 0, datasetItems.length),
+			Math.min(+params.count || 0, datasetItems.length),
 		);
-		const m = parseInt((query.m as string) ?? "", 10) || 1;
+		const m = query.m ? +query.m || 1 : 1;
 
-		const items = datasetItems.slice(0, count).map((d: any) => ({
-			id: d.id,
-			name: d.name,
-			category: d.category,
-			price: d.price,
-			quantity: d.quantity,
-			active: d.active,
-			tags: d.tags,
-			rating: d.rating,
-			total: d.price * d.quantity * m,
-		}));
-		const body = JSON.stringify({ count, items });
+		const result = {
+			count,
+			items: datasetItems.slice(0, count).map((d: any) => ({
+				id: d.id,
+				name: d.name,
+				category: d.category,
+				price: d.price,
+				quantity: d.quantity,
+				active: d.active,
+				tags: d.tags,
+				rating: d.rating,
+				total: d.price * d.quantity * m,
+			})),
+		};
 
-		const ae = request.headers.get("accept-encoding") || "";
-		if (ae.includes("gzip")) {
-			const compressed = Bun.gzipSync(body);
-			return new Response(compressed, {
-				headers: {
-					"content-type": "application/json",
-					"content-encoding": "gzip",
-					"content-length": String(compressed.length),
-				},
-			});
+		const encoding = headers["accept-encoding"];
+		if (encoding) {
+			const index = encoding.indexOf(",");
+			const type = index === -1 ? encoding : encoding.slice(0, index);
+
+			set.headers["content-type"] = "application/json";
+			if (type === "gzip") {
+				set.headers["content-encoding"] = "gzip";
+				return Bun.gzipSync(JSON.stringify(result));
+			} else if (type === "br") {
+				set.headers["content-encoding"] = "br";
+				return brotliCompressSync(JSON.stringify(result));
+			} else if (type === "deflate") {
+				set.headers["content-encoding"] = "deflate";
+				return Bun.deflateSync(JSON.stringify(result));
+			}
 		}
 
-		return new Response(body, {
-			headers: {
-				"content-type": "application/json",
-				"content-length": String(Buffer.byteLength(body)),
-			},
-		});
+		return result;
 	})
 	.get("/async-db", async ({ query }) => {
 		if (!pgPool) {
@@ -165,18 +178,7 @@ new Elysia()
 			headers: { "content-type": "text/plain" },
 		});
 	})
-	.get("/static/:filename", async ({ params }) => {
-		const name = params.filename;
-		const file = Bun.file(`${STATIC_DIR}/${name}`);
-		if (!(await file.exists())) {
-			return new Response("Not found", { status: 404 });
-		}
-		const ext = name.slice(name.lastIndexOf("."));
-		const ct = MIME_TYPES[ext] || "application/octet-stream";
-		return new Response(file, {
-			headers: { "content-type": ct },
-		});
-	})
+	.use(staticModule)
 	.all("*", () => new Response("Not found", { status: 404 }))
 	.listen({ port: 8080, reusePort: true });
 }
