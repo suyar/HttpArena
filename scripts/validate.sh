@@ -69,7 +69,9 @@ if [ "$GATEWAY_ONLY" = "false" ]; then
 fi
 
 # Mount volumes based on subscribed tests
-HARD_NOFILE=$(ulimit -Hn)
+HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
+# Docker --ulimit nofile rejects "unlimited"; fall back to a large numeric cap
+[[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
 if has_test "async-db" || has_test "api-4" || has_test "api-16" || has_test "gateway-64"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
@@ -176,7 +178,7 @@ check() {
     local docs_url="$3"
     shift 3
     local response
-    response=$(curl -s --max-time 30 -D- "$@")
+    response=$(curl -s --max-time 30 -D- "$@" || true)
     local body
     body=$(echo "$response" | tail -1)
 
@@ -194,7 +196,7 @@ check_status() {
     local docs_url="$3"
     shift 3
     local http_code
-    http_code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@")
+    http_code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@" || true)
 
     if [ "$http_code" = "$expected_status" ]; then
         echo "  PASS [$label] (HTTP $http_code)"
@@ -211,7 +213,7 @@ check_header() {
     local docs_url="$4"
     shift 4
     local headers
-    headers=$(curl -s --max-time 30 -D- -o /dev/null "$@")
+    headers=$(curl -s --max-time 30 -D- -o /dev/null "$@" || true)
     local value
     value=$(echo "$headers" | grep -i "^${header_name}:" | sed 's/^[^:]*: *//' | tr -d '\r' || true)
 
@@ -295,7 +297,7 @@ if has_test "json" || has_test "api-4" || has_test "api-16"; then
     for jp in "${json_params[@]}"; do
         jcount="${jp%%:*}"
         jm="${jp##*:}"
-        response=$(curl -s --max-time 30 "http://localhost:$PORT/json/$jcount?m=$jm")
+        response=$(curl -s --max-time 30 "http://localhost:$PORT/json/$jcount?m=$jm" || true)
         json_result=$(echo "$response" | python3 -c "
 import sys, json
 m = $jm
@@ -339,7 +341,7 @@ if has_test "json-comp"; then
     echo "[test] json-comp endpoint"
 
     # Must return Content-Encoding: gzip or br when Accept-Encoding is sent
-    jc_headers=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/json/50?m=1")
+    jc_headers=$(curl -s --max-time 30 -D- -o /dev/null -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/json/50?m=1" || true)
     jc_encoding=$(echo "$jc_headers" | grep -i "^content-encoding:" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
     if [ "$jc_encoding" = "gzip" ] || [ "$jc_encoding" = "br" ]; then
         echo "  PASS [json-comp Content-Encoding: $jc_encoding]"
@@ -354,7 +356,7 @@ if has_test "json-comp"; then
     for jcp in "${jc_params[@]}"; do
         jccount="${jcp%%:*}"
         jcm="${jcp##*:}"
-        jc_response=$(curl -s --max-time 30 --compressed -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/json/$jccount?m=$jcm")
+        jc_response=$(curl -s --max-time 30 --compressed -H "Accept-Encoding: gzip, br" "http://localhost:$PORT/json/$jccount?m=$jcm" || true)
         jc_result=$(echo "$jc_response" | python3 -c "
 import sys, json
 m = $jcm
@@ -417,7 +419,7 @@ if has_test "json-tls"; then
     for jtp in "${jt_params[@]}"; do
         jtcount="${jtp%%:*}"
         jtm="${jtp##*:}"
-        jt_response=$(curl -sk --max-time 30 "https://localhost:$H1TLS_PORT/json/$jtcount?m=$jtm")
+        jt_response=$(curl -sk --max-time 30 "https://localhost:$H1TLS_PORT/json/$jtcount?m=$jtm" || true)
         jt_result=$(echo "$jt_response" | python3 -c "
 import sys, json
 m = $jtm
@@ -474,7 +476,7 @@ if has_test "upload"; then
     # Anti-cheat: random body to detect hardcoded responses
     RANDOM_BODY=$(head -c 64 /dev/urandom | base64 | head -c 48)
     EXPECTED_RANDOM_LEN=${#RANDOM_BODY}
-    ACTUAL_LEN=$(curl -s --max-time 30 -X POST -H "Content-Type: application/octet-stream" --data-binary "$RANDOM_BODY" "http://localhost:$PORT/upload")
+    ACTUAL_LEN=$(curl -s --max-time 30 -X POST -H "Content-Type: application/octet-stream" --data-binary "$RANDOM_BODY" "http://localhost:$PORT/upload" || true)
     if [ "$ACTUAL_LEN" = "$EXPECTED_RANDOM_LEN" ]; then
         echo "  PASS [POST /upload random body] (bytes: $ACTUAL_LEN)"
         PASS=$((PASS + 1))
@@ -488,7 +490,7 @@ if has_test "upload"; then
         upload_label="${upload_spec%%:*}"
         upload_size="${upload_spec##*:}"
         upload_bs=$((upload_size / 1024))
-        ACTUAL_LARGE=$(dd if=/dev/urandom bs=1024 count=$upload_bs 2>/dev/null | curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" --data-binary @- "http://localhost:$PORT/upload")
+        ACTUAL_LARGE=$( { dd if=/dev/urandom bs=1024 count=$upload_bs 2>/dev/null | curl -s --max-time 60 -X POST -H "Content-Type: application/octet-stream" --data-binary @- "http://localhost:$PORT/upload"; } || true )
         if [ "$ACTUAL_LARGE" = "$upload_size" ]; then
             :
         else
@@ -509,7 +511,7 @@ if has_test "baseline-h2"; then
     echo "[test] baseline-h2 endpoint"
     if wait_h2; then
         # Verify server actually speaks HTTP/2
-        h2_proto=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{http_version}' "https://localhost:$H2PORT/baseline2?a=1&b=1")
+        h2_proto=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{http_version}' "https://localhost:$H2PORT/baseline2?a=1&b=1" || echo "0")
         if [ "$h2_proto" = "2" ]; then
             echo "  PASS [HTTP/2 protocol negotiation] (HTTP/$h2_proto)"
             PASS=$((PASS + 1))
@@ -546,7 +548,7 @@ if has_test "static"; then
     static_fail=false
     for sf in reset.css layout.css theme.css components.css utilities.css analytics.js helpers.js app.js vendor.js router.js header.html footer.html regular.woff2 bold.woff2 logo.svg icon-sprite.svg hero.webp thumb1.webp thumb2.webp manifest.json; do
         expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
-        actual_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/$sf")
+        actual_size=$(curl -s --max-time 30 -o /dev/null -w '%{size_download}' "http://localhost:$PORT/static/$sf" || echo "0")
         if [ "$actual_size" -eq "$expected_size" ] 2>/dev/null; then
             true
         else
@@ -567,7 +569,7 @@ if has_test "static"; then
         expected_size=$(wc -c < "$DATA_DIR/static/$sf" 2>/dev/null || echo "0")
         _hdr_tmp=$(mktemp)
         _body_tmp=$(mktemp)
-        curl -s --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "http://localhost:$PORT/static/$sf"
+        curl -s --max-time 30 --compressed -D "$_hdr_tmp" -o "$_body_tmp" "http://localhost:$PORT/static/$sf" || true
         comp_enc=$(grep -i "^content-encoding:" "$_hdr_tmp" | sed 's/^[^:]*: *//' | tr -d '\r' | awk '{print tolower($1)}' || true)
         decompressed=$(wc -c < "$_body_tmp")
         rm -f "$_hdr_tmp" "$_body_tmp"
@@ -613,7 +615,7 @@ if has_test "static-h2"; then
             -sk --http2 "https://localhost:$H2PORT/static/manifest.json"
 
         # Check response size is non-zero
-        static_size=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{size_download}' "https://localhost:$H2PORT/static/reset.css")
+        static_size=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{size_download}' "https://localhost:$H2PORT/static/reset.css" || echo "0")
         if [ "$static_size" -gt 0 ]; then
             echo "  PASS [static-h2 response size] ($static_size bytes)"
             PASS=$((PASS + 1))
@@ -636,7 +638,7 @@ if has_test "async-db" || has_test "api-4" || has_test "api-16"; then
     db_params=("min=5&max=80&limit=7" "min=20&max=150&limit=18" "min=100&max=400&limit=33" "min=10&max=50&limit=50")
     for dbp in "${db_params[@]}"; do
         dblimit=$(echo "$dbp" | grep -oP 'limit=\K[0-9]+')
-        response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?$dbp")
+        response=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?$dbp" || true)
         pgdb_result=$(echo "$response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -668,7 +670,7 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
         "http://localhost:$PORT/async-db?min=10&max=50&limit=50"
 
     # Anti-cheat: empty range should return 0 items
-    response_empty=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=9999&max=9999&limit=50")
+    response_empty=$(curl -s --max-time 30 "http://localhost:$PORT/async-db?min=9999&max=9999&limit=50" || true)
     pgdb_empty=$(echo "$response_empty" | python3 -c "import sys,json; print(json.load(sys.stdin).get('count','-1'))" 2>/dev/null || echo "-1")
     if [ "$pgdb_empty" = "0" ]; then
         echo "  PASS [GET /async-db empty range] (count=0)"
@@ -729,7 +731,7 @@ if has_test "gateway-64"; then
 
     if [ "$gw_ready" = "true" ]; then
         # 1. HTTP/2 protocol negotiation
-        gw_proto=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{http_version}' "https://localhost:$GW_PORT/static/reset.css")
+        gw_proto=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{http_version}' "https://localhost:$GW_PORT/static/reset.css" || echo "0")
         if [ "$gw_proto" = "2" ]; then
             echo "  PASS [gateway HTTP/2 negotiation] (HTTP/$gw_proto)"
             PASS=$((PASS + 1))
@@ -745,7 +747,7 @@ if has_test "gateway-64"; then
             -sk --http2 "https://localhost:$GW_PORT/static/app.js"
 
         # 3. Static file — non-zero size
-        gw_static_size=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{size_download}' "https://localhost:$GW_PORT/static/app.js")
+        gw_static_size=$(curl -sk --max-time 30 --http2 -o /dev/null -w '%{size_download}' "https://localhost:$GW_PORT/static/app.js" || echo "0")
         if [ "$gw_static_size" -gt 0 ]; then
             echo "  PASS [gateway static file size] ($gw_static_size bytes)"
             PASS=$((PASS + 1))
@@ -758,7 +760,7 @@ if has_test "gateway-64"; then
             -sk --http2 "https://localhost:$GW_PORT/static/nonexistent.txt"
 
         # 5. JSON endpoint — valid JSON with computed totals
-        gw_json_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/json/50")
+        gw_json_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/json/50" || true)
         gw_json_result=$(echo "$gw_json_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -788,7 +790,7 @@ print(f'{count} {has_total} {correct_totals}')
             -sk --http2 "https://localhost:$GW_PORT/json/50"
 
         # 6. Async database endpoint — valid result set
-        gw_db_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/async-db?min=10&max=50&limit=50")
+        gw_db_response=$(curl -sk --max-time 30 --http2 "https://localhost:$GW_PORT/async-db?min=10&max=50&limit=50" || true)
         gw_db_result=$(echo "$gw_db_response" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)

@@ -13,6 +13,7 @@ H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"
 OHA="${OHA:-$HOME/.cargo/bin/oha}"
 GHZ="${GHZ:-ghz}"
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 65536)
+[[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=65536
 ulimit -n "$HARD_NOFILE" 2>/dev/null || true
 DOCKER_NETWORK="httparena-bench-net"
 AVAILABLE_CORES=$(nproc 2>/dev/null || echo 4)

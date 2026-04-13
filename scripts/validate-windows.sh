@@ -61,6 +61,7 @@ docker network create "$PG_NETWORK" 2>/dev/null || true
 
 # Mount volumes based on subscribed tests
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 65536)
+[[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=65536
 docker_args=(-d --name "$CONTAINER_NAME" --network "$PG_NETWORK" -p "$PORT:8080"
     --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 docker_args+=(-v "$DATA_DIR/dataset.json:/data/dataset.json:ro")

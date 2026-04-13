@@ -1,0 +1,22 @@
+{
+  "display_name": "elysia",
+  "language": "TS",
+  "type": "production",
+  "engine": "jsc",
+  "description": "An ergonomic framework for Humans",
+  "repo": "https://github.com/elysiajs/elysia",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "pipelined",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "api-4",
+    "api-16",
+    "async-db",
+    "static"
+  ],
+  "maintainers": ["saltyaom"]
+}

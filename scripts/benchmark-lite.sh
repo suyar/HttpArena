@@ -12,8 +12,9 @@ H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:latest}"
 H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"
 OHA="${OHA:-$HOME/.cargo/bin/oha}"
 GHZ="${GHZ:-ghz}"
-HARD_NOFILE=$(ulimit -Hn)
-ulimit -n "$HARD_NOFILE"
+HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
+[[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
+ulimit -n "$HARD_NOFILE" 2>/dev/null || true
 AVAILABLE_CORES=$(nproc 2>/dev/null || echo 4)
 THREADS="${THREADS:-$(( AVAILABLE_CORES / 2 > 0 ? AVAILABLE_CORES / 2 : 1 ))}"
 H2THREADS="${H2THREADS:-$THREADS}"
