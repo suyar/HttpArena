@@ -8,14 +8,21 @@ cd "$ROOT_DIR"
 GCANNON="${GCANNON:-gcannon}"
 GCANNON_IMAGE="${GCANNON_IMAGE:-gcannon:latest}"
 GCANNON_CPUS="${GCANNON_CPUS:-32-63,96-127}"
-GCANNON_MODE=native
+GCANNON_MODE="${GCANNON_MODE:-native}"
+LOADGEN_DOCKER="${LOADGEN_DOCKER:-false}"
 H2LOAD="${H2LOAD:-h2load}"
+H2LOAD_IMAGE="${H2LOAD_IMAGE:-h2load:latest}"
+H2LOAD_H3="${H2LOAD_H3:-h2load-h3}"
+H2LOAD_H3_IMAGE="${H2LOAD_H3_IMAGE:-h2load-h3:local}"
+WRK="${WRK:-wrk}"
+WRK_IMAGE="${WRK_IMAGE:-wrk:local}"
 OHA="${OHA:-$HOME/.cargo/bin/oha}"
 GHZ="${GHZ:-ghz}"
 HARD_NOFILE=$(ulimit -Hn)
 ulimit -n "$HARD_NOFILE"
 THREADS="${THREADS:-64}"
 H2THREADS="${H2THREADS:-128}"
+H3THREADS="${H3THREADS:-64}"
 DURATION=5s
 RUNS=3
 PORT=8080
@@ -28,7 +35,7 @@ CERTS_DIR="$ROOT_DIR/certs"
 # Profile definitions: pipeline|req_per_conn|cpu_limit|connections|endpoint
 # endpoint: empty = /baseline11 (raw), "json" = /json (GET), "pipeline" = /pipeline, "upload" = POST /upload (raw),
 #           "json-tls" = /json/{count}?m=N over HTTP/1.1 + TLS on :8081 (wrk+lua),
-#           "h2" = /baseline2 (h2load), "static-h2" = multi-URI h2load, "h3" = /baseline2 (oha HTTP/3), "static-h3" = multi-URI oha,
+#           "h2" = /baseline2 (h2load), "static-h2" = multi-URI h2load, "h3" = /baseline2 (h2load-h3), "static-h3" = multi-URI h2load-h3,
 #           "grpc" = gRPC unary (h2load h2c), "grpc-tls" = gRPC unary (h2load TLS),
 #           "static" = multi-URI static files (gcannon --raw), "ws-echo" = WebSocket echo (gcannon --ws),
 #           "gateway-64" = multi-URI h2load through reverse proxy (TLS)
@@ -45,13 +52,15 @@ declare -A PROFILES=(
     [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
+    [baseline-h3]="1|0|0-31,64-95|64|h3"
+    [static-h3]="1|0|0-31,64-95|64|static-h3"
     [unary-grpc]="1|0|0-31,64-95|256,1024|grpc"
     [unary-grpc-tls]="1|0|0-31,64-95|256,1024|grpc-tls"
     [gateway-64]="1|0|0-31,64-95|256,1024|gateway-64"
     [echo-ws]="1|0|0-31,64-95|512,4096,16384|ws-echo"
     [async-db]="1|0|0-31,64-95|1024|async-db"
 )
-PROFILE_ORDER=(baseline pipelined limited-conn json json-comp json-tls upload api-4 api-16 static async-db baseline-h2 static-h2 gateway-64 unary-grpc unary-grpc-tls echo-ws)
+PROFILE_ORDER=(baseline pipelined limited-conn json json-comp json-tls upload api-4 api-16 static async-db baseline-h2 static-h2 baseline-h3 static-h3 gateway-64 unary-grpc unary-grpc-tls echo-ws)
 
 # Parse flags
 SAVE_RESULTS=false
@@ -319,6 +328,33 @@ docker ps -aq --filter "name=httparena-" | xargs -r docker rm -f -v 2>/dev/null 
 AVAILABLE_CPUS=$(nproc 2>/dev/null || echo "64")
 echo "[info] Available CPUs: $AVAILABLE_CPUS"
 
+# Build load-generator command prefixes (native vs docker)
+if [ "$LOADGEN_DOCKER" = "true" ]; then
+    echo "[info] Load generators: docker mode (gcannon=$GCANNON_IMAGE, h2load=$H2LOAD_IMAGE, h2load-h3=$H2LOAD_H3_IMAGE, wrk=$WRK_IMAGE)"
+    GCANNON_MODE=docker
+    DOCKER_LOADGEN_FLAGS=(--rm --network host
+        --cpuset-cpus="$GCANNON_CPUS"
+        --security-opt seccomp=unconfined
+        --ulimit memlock=-1:-1
+        --ulimit nofile=1048576:1048576
+        -v "$REQUESTS_DIR:$REQUESTS_DIR:ro")
+    H2LOAD_CMD=(docker run "${DOCKER_LOADGEN_FLAGS[@]}" "$H2LOAD_IMAGE")
+    H2LOAD_H3_CMD=(docker run "${DOCKER_LOADGEN_FLAGS[@]}" "$H2LOAD_H3_IMAGE")
+    WRK_CMD=(docker run "${DOCKER_LOADGEN_FLAGS[@]}" "$WRK_IMAGE")
+    # Build images on first use
+    for entry in "$GCANNON_IMAGE:gcannon.Dockerfile" "$H2LOAD_IMAGE:h2load.Dockerfile" "$H2LOAD_H3_IMAGE:h2load-h3.Dockerfile" "$WRK_IMAGE:wrk.Dockerfile"; do
+        img="${entry%%:*}"; df="${entry##*:}"
+        if ! docker image inspect "$img" >/dev/null 2>&1; then
+            echo "[build] $img from docker/$df ..."
+            docker build -t "$img" -f "$ROOT_DIR/docker/$df" "$ROOT_DIR/docker"
+        fi
+    done
+else
+    H2LOAD_CMD=("$H2LOAD")
+    H2LOAD_H3_CMD=("$H2LOAD_H3")
+    WRK_CMD=("$WRK")
+fi
+
 echo "[tune] Setting CPU governor to performance..."
 if command -v cpupower &>/dev/null; then
     sudo cpupower frequency-set -g performance 2>/dev/null && echo "[tune] CPU governor set to performance" || echo "[warn] Could not set CPU governor (no sudo?). Results may vary."
@@ -574,7 +610,7 @@ for profile in "${profiles_to_run[@]}"; do
             -c "$CONNS" -t "$THREADS" -d "$DURATION" -p "$pipeline")
     elif [ "$endpoint" = "grpc" ]; then
         USE_H2LOAD=true
-        gc_args=("$H2LOAD"
+        gc_args=("${H2LOAD_CMD[@]}"
             "http://localhost:$PORT/benchmark.BenchmarkService/GetSum"
             -d "$REQUESTS_DIR/grpc-sum.bin"
             -H 'content-type: application/grpc'
@@ -582,45 +618,38 @@ for profile in "${profiles_to_run[@]}"; do
             -c "$CONNS" -m 100 -t "$H2THREADS" -D "$DURATION")
     elif [ "$endpoint" = "grpc-tls" ]; then
         USE_H2LOAD=true
-        gc_args=("$H2LOAD"
+        gc_args=("${H2LOAD_CMD[@]}"
             "https://localhost:$H2PORT/benchmark.BenchmarkService/GetSum"
             -d "$REQUESTS_DIR/grpc-sum.bin"
             -H 'content-type: application/grpc'
             -H 'te: trailers'
             -c "$CONNS" -m 100 -t "$H2THREADS" -D "$DURATION")
     elif [ "$endpoint" = "static-h3" ]; then
-        USE_OHA=true
-        oha_out=$(mktemp)
-        gc_args=("$OHA"
-            "$REQUESTS_DIR/static-h2-uris.txt"
-            --urls-from-file
-            --http-version 3 --insecure
+        USE_H2LOAD=true
+        gc_args=("${H2LOAD_H3_CMD[@]}" --alpn-list=h3
+            -i "$REQUESTS_DIR/static-h2-uris.txt"
             -H "Accept-Encoding: br;q=1, gzip;q=0.8"
-            -o "$oha_out" --output-format json
-            -c "$CONNS" -p "$pipeline" -z "$DURATION")
+            -c "$CONNS" -m 64 -t "$H3THREADS" -D "$DURATION")
     elif [ "$endpoint" = "h3" ]; then
-        USE_OHA=true
-        oha_out=$(mktemp)
-        gc_args=("$OHA"
+        USE_H2LOAD=true
+        gc_args=("${H2LOAD_H3_CMD[@]}" --alpn-list=h3
             "https://localhost:$H2PORT/baseline2?a=1&b=1"
-            --http-version 3 --insecure
-            -o "$oha_out" --output-format json
-            -c "$CONNS" -p "$pipeline" -z "$DURATION")
+            -c "$CONNS" -m 64 -t "$H3THREADS" -D "$DURATION")
     elif [ "$endpoint" = "gateway-64" ]; then
         USE_H2LOAD=true
-        gc_args=("$H2LOAD"
+        gc_args=("${H2LOAD_CMD[@]}"
             -i "$REQUESTS_DIR/gateway-64-uris.txt"
             -H "Accept-Encoding: br;q=1, gzip;q=0.8"
             -c "$CONNS" -m 100 -t "$H2THREADS" -D "$DURATION")
     elif [ "$endpoint" = "static-h2" ]; then
         USE_H2LOAD=true
-        gc_args=("$H2LOAD"
+        gc_args=("${H2LOAD_CMD[@]}"
             -i "$REQUESTS_DIR/static-h2-uris.txt"
             -H "Accept-Encoding: br;q=1, gzip;q=0.8"
             -c "$CONNS" -m 100 -t "$H2THREADS" -D "$DURATION")
     elif [ "$endpoint" = "h2" ]; then
         USE_H2LOAD=true
-        gc_args=("$H2LOAD"
+        gc_args=("${H2LOAD_CMD[@]}"
             "https://localhost:$H2PORT/baseline2?a=1&b=1"
             -c "$CONNS" -m 100 -t "$H2THREADS" -D "$DURATION")
     elif [ "$endpoint" = "pipeline" ]; then
@@ -640,12 +669,12 @@ for profile in "${profiles_to_run[@]}"; do
             -c "$CONNS" -t "$THREADS" -d 10s -p "$pipeline" -r 25)
     elif [ "$endpoint" = "static" ]; then
         USE_WRK=true
-        gc_args=(wrk -t "$THREADS" -c "$CONNS" -d "$DURATION"
+        gc_args=("${WRK_CMD[@]}" -t "$THREADS" -c "$CONNS" -d "$DURATION"
             -s "$REQUESTS_DIR/static-rotate.lua"
             "http://localhost:$PORT")
     elif [ "$endpoint" = "json-tls" ]; then
         USE_WRK=true
-        gc_args=(wrk -t "$THREADS" -c "$CONNS" -d "$DURATION"
+        gc_args=("${WRK_CMD[@]}" -t "$THREADS" -c "$CONNS" -d "$DURATION"
             -s "$REQUESTS_DIR/json-tls-rotate.lua"
             "https://localhost:$H1TLS_PORT")
     elif [ "$endpoint" = "json" ]; then
@@ -703,11 +732,11 @@ for profile in "${profiles_to_run[@]}"; do
         if [ "$USE_WRK" = "true" ]; then
             output=$(timeout 45 taskset -c "$GCANNON_CPUS" "${gc_args[@]}" 2>&1) || true
         elif [ "$USE_OHA" = "true" ]; then
-            timeout --foreground 45 "${gc_args[@]}" || true
+            timeout --foreground 45 taskset -c "$GCANNON_CPUS" "${gc_args[@]}" || true
             output=$(cat "$oha_out" 2>/dev/null)
             rm -f "$oha_out"
         elif [ "$USE_H2LOAD" = "true" ]; then
-            output=$(timeout 45 "${gc_args[@]}" 2>&1) || true
+            output=$(timeout 45 taskset -c "$GCANNON_CPUS" "${gc_args[@]}" 2>&1) || true
         elif [ "$GCANNON_MODE" = "native" ]; then
             output=$(timeout 45 taskset -c "$GCANNON_CPUS" \
                 env LD_LIBRARY_PATH=/usr/lib "$GCANNON" "${gc_args[@]}" 2>&1) || true
@@ -727,7 +756,7 @@ for profile in "${profiles_to_run[@]}"; do
         peak_mem=$(awk '{split($2,a,"/"); gsub(/[^0-9.]/,"",a[1]); unit=$2; gsub(/[0-9.]/,"",unit); if(a[1]+0>max){max=a[1]+0; u=unit}} END{if(max>0) printf "%.1f%s", max, u; else print "0MiB"}' "$stats_log")
         rm -f "$stats_log"
 
-        echo "$output"
+        echo "$output" | grep -Ev '^(Warm-up (started|phase)|Main benchmark duration (is started|is over)|Stopped all clients|progress: [0-9]+% of clients started)' || true
         echo "  CPU: $avg_cpu | Mem: $peak_mem"
 
         if [ "$USE_WRK" = "true" ]; then
@@ -786,8 +815,14 @@ for profile in "${profiles_to_run[@]}"; do
         bandwidth=$(echo "$best_output" | python3 -c "import sys,json; d=json.load(sys.stdin); v=d['summary']['sizePerSec']; print(f'{v/1024/1024:.2f}MB/s' if v>0 else '0')" 2>/dev/null || echo "0")
     elif [ "$USE_H2LOAD" = "true" ]; then
         # h2load: "time for request:  min  max  mean  sd  +/-sd" all on one line
-        avg_lat=$(echo "$best_output" | awk '/time for request:/{print $6}')
-        p99_lat="$avg_lat"  # h2load doesn't report p99; use mean as placeholder
+        # h2 "time for request:" line → mean at $6; h3 "request     :" line → mean at $8, p99 at $7
+        if echo "$best_output" | grep -q '^[[:space:]]*request[[:space:]]*:'; then
+            avg_lat=$(echo "$best_output" | awk '/^[[:space:]]*request[[:space:]]*:/{print $8; exit}')
+            p99_lat=$(echo "$best_output" | awk '/^[[:space:]]*request[[:space:]]*:/{print $7; exit}')
+        else
+            avg_lat=$(echo "$best_output" | awk '/time for request:/{print $6}')
+            p99_lat="$avg_lat"  # h2load h2 mode doesn't report p99; use mean as placeholder
+        fi
         reconnects="0"
         bandwidth=$(echo "$best_output" | grep -oP 'finished in [\d.]+s, [\d.]+ req/s, \K[\d.]+[KMGT]?B/s' || echo "0")
     else

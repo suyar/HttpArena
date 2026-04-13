@@ -151,13 +151,16 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
 .lb-row:not(.lb-header):hover .lb-fav-star { color:#d1d5db; }
 .lb-fav-star:hover { color:#fbbf24 !important; }
 .lb-fav-star.lb-fav-active { color:#f59e0b !important; }
-.lb-fav { box-shadow:inset 3px 0 0 #f59e0b; }
+.lb-fav { box-shadow:inset 3px 0 0 #f59e0b; background:rgba(245,158,11,0.10) !important; padding-top:0.25rem !important; padding-bottom:0.25rem !important; }
+.lb-fav:hover { background:rgba(245,158,11,0.16) !important; }
 .lb-fav .lb-name { font-weight:700 !important; }
 html.dark .lb-fav-star { border-right-color:rgba(255,255,255,0.06); }
 html.dark .lb-header .lb-fav-star { color:#64748b !important; }
 html.dark .lb-row:not(.lb-header):hover .lb-fav-star { color:#4b5563; }
 html.dark .lb-fav-star:hover { color:#fbbf24 !important; }
 html.dark .lb-fav-star.lb-fav-active { color:#f59e0b !important; }
+html.dark .lb-fav { background:rgba(245,158,11,0.14) !important; }
+html.dark .lb-fav:hover { background:rgba(245,158,11,0.22) !important; }
 </style>
 <script>
 (function() {
