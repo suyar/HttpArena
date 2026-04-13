@@ -21,20 +21,9 @@ TcpConnection::$defaultMaxPackageSize = 30 * 1024 * 1024;
 
 // benchmark data
 define('JSON_DATA', json_decode(file_get_contents('/data/dataset.json'), true));
-define('LARGE_JSON', largeJson());
 
-function largeJson()
-{
-    $data = json_decode(file_get_contents('/data/dataset-large.json'), true);
-    foreach ($data as &$item) {
-        $item['total'] = $item['price'] * $item['quantity'];
-    }
-
-    return json_encode(['items' => $data, 'count' => count($data)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-}
 
 $http_worker->onWorkerStart = static function () {
-    Db::Init();
     Pgsql::init();
 };
 
@@ -54,56 +43,82 @@ $http_worker->onMessage = static function ($connection, $request) {
             
             $connection->headers = ['Content-Type' => 'text/plain'];
             return $connection->send($sum);
-
-        case '/json':
-            $total = [];
-            foreach (JSON_DATA as $item) {
-                $item['total'] = $item['price'] * $item['quantity'];
-                $total[] = $item;
-            }
-
-            $connection->headers = ['Content-Type' => 'application/json'];
-            return $connection->send(json_encode(['items' => $total, 'count' => count($total)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         
         case '/upload':
             $connection->headers = ['Content-Type' => 'text/plain'];
             return $connection->send(strlen($request->rawBody()));
-
-        case '/compression':
-            if (str_contains($request->header('Accept-Encoding', ''), 'gzip')) {
-                 $connection->headers = [
-                    'Content-Type' => 'application/json',
-                    'Content-Encoding' => 'gzip'
-                ];
-                return $connection->send(gzencode(LARGE_JSON, 1));
-            }
-
-            $resp = new Response(200, ['Content-Type' => 'application/json'], LARGE_JSON);
-            return $connection->send($resp);
-
-        case '/db':
-            $connection->headers = ['Content-Type' => 'application/json'];
-            return $connection->send(
-                Db::query(
-                    $request->get('min', 10),
-                    $request->get('max', 50)
-                )
-            );
 
         case '/async-db':
             $connection->headers = ['Content-Type' => 'application/json'];
             return $connection->send( 
                 Pgsql::query(
                     $request->get('min', 10),
-                    $request->get('max', 50)
+                    $request->get('max', 50),
+                    $request->get('limit', 50)
                 )
             );
+    }
+
+    if (str_starts_with($path, '/json/')) {
+        $count = explode('/', $path)[2];
+        $m = $request->get('m', 1);
+        $total = [];
+        $i = 0;
+        while ($i < $count) {
+            $item = JSON_DATA[$i++];
+            $item['total'] = $item['price'] * $item['quantity'] * $m;
+            $total[] = $item;
+        }
+        $connection->headers = ['Content-Type' => 'application/json'];
+        return $connection->send(json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     //Serve static files
     if (str_starts_with($path, '/static/')) {
         $response = (new Response())->withFile('/data' . $path);
         return $connection->send($response);
+    }
+
+    return $connection->send(new Response(
+        404,
+        ['Content-Type' => 'text/plain'],
+        '404 Not Found')
+    );
+};
+
+
+// #### https worker ####
+// SSL context.
+$context = [
+    'ssl' => [
+        'local_cert'  => '/certs/server.crt',
+        'local_pk'    => '/certs/server.key',
+        'verify_peer' => false,
+    ]
+];
+
+$https = new Worker('http://0.0.0.0:8081', $context);
+$https->transport = 'ssl';
+$https->reusePort = true;
+$https->count = shell_exec('nproc');
+$https->name = 'bench';
+
+
+
+$https->onMessage = static function ($connection, $request) {
+
+    if(str_starts_with($request->path(), '/json/')) {
+        $count = explode('/', $request->path())[2];
+        $m = $request->get('m', 1);
+        $total = [];
+        $i = 0;
+        while ($i < $count) {
+            $item = JSON_DATA[$i++];
+            $item['total'] = $item['price'] * $item['quantity'] * $m;
+            $total[] = $item;
+        }
+        $connection->headers = ['Content-Type' => 'application/json'];
+        return $connection->send(json_encode(['items' => $total, 'count' => $count], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 
     return $connection->send(new Response(

@@ -27,7 +27,7 @@ class Pgsql
                 ]
             );
             self::$bench = $pdo->prepare(
-                'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT 50'
+                'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?'
             );
     }
 
@@ -37,14 +37,14 @@ class Pgsql
         return self::$bench;
     }
 
-    public static function query($min, $max)
+    public static function query($min, $max, $limit)
     {
         $result = self::$bench;
         if (!$result instanceof PDOStatement) {
             $result = self::reConnect();
         }
 
-        $result->execute([$min, $max]);
+        $result->execute([$min, $max, $limit]);
         $data = [];
         while ($row = $result->fetch()) {
             $data[] = [

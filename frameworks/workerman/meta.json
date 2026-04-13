@@ -11,13 +11,13 @@
     "pipelined",
     "limited-conn",
     "json",
-    "json-comp",
-    "upload",
+    "json-tls",
     "noisy",
     "static",
     "api-4",
     "api-16",
-    "async-db"
+    "async-db",
+    "upload"
   ],
   "maintainers": [
     "joanhey"
