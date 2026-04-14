@@ -1,9 +1,9 @@
 {
-    "display_name": "helidon-production",
+    "display_name": "helidon-tuned",
     "language": "Java",
-    "type": "production",
+    "type": "tuned",
     "engine": "níma",
-    "description": "Helidon SE 4.4.1 on Níma WebServer with Java 25, config-based static content, HTTP/2, gRPC, and WebSocket support.",
+    "description": "Helidon SE 4.4.1 on Níma WebServer with Java 25, tuned socket options, precompressed static content, HTTP/2, gRPC, and WebSocket support.",
     "repo": "https://github.com/helidon-io/helidon",
     "enabled": true,
     "tests": [

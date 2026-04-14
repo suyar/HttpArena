@@ -10,9 +10,9 @@
         <relativePath/>
     </parent>
     <groupId>com.httparena</groupId>
-    <artifactId>helidon-httparena-production</artifactId>
+    <artifactId>helidon-httparena-tuned</artifactId>
     <version>1.0.0</version>
-    <name>HttpArena Helidon SE Production</name>
+    <name>HttpArena Helidon SE Tuned</name>
 
     <properties>
         <mainClass>com.httparena.Main</mainClass>
@@ -45,10 +45,6 @@
             <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.webserver</groupId>
-            <artifactId>helidon-webserver-static-content</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
@@ -63,10 +59,6 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.http.encoding</groupId>
-            <artifactId>helidon-http-encoding-gzip</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
