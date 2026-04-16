@@ -479,6 +479,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ring-http-exchange",
+    "language": "Clojure",
+    "rps": 1298104,
+    "avg_latency": "3.17ms",
+    "p99_latency": "5.49ms",
+    "cpu": "6382.4%",
+    "memory": "32.3GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "162.13MB/s",
+    "input_bw": "100.28MB/s",
+    "reconnects": 0,
+    "status_2xx": 6490524,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "ringzero",
     "language": "C",
     "rps": 4051757,

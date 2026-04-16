@@ -264,6 +264,13 @@
     "type": "tuned",
     "engine": "puma"
   },
+  "ring-http-exchange": {
+    "dir": "ring-http-exchange",
+    "description": "",
+    "repo": "https://github.com/ruroru/ring-http-exchange",
+    "type": "production",
+    "engine": "robaho-httpserver"
+  },
   "ringzero": {
     "dir": "ringzero",
     "description": "Custom C HTTP server built on io_uring with a multi-reactor architecture. No epoll, no thread-per-connection.",

@@ -1,0 +1,25 @@
+{
+  "display_name": "ring-http-exchange",
+  "language": "Clojure",
+  "type": "production",
+  "engine": "robaho-httpserver",
+  "description": "",
+  "repo": "https://github.com/ruroru/ring-http-exchange",
+  "enabled": true,
+  "tests": [
+    "baseline",
+    "limited-conn",
+    "json",
+    "json-comp",
+    "upload",
+    "noisy",
+    "short-lived",
+    "mixed",
+    "api-4",
+    "api-16",
+    "async-db",
+    "sync-db",
+    "static",
+    "tcp-frag"
+  ]
+}

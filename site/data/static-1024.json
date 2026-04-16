@@ -419,6 +419,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "ring-http-exchange",
+    "language": "Clojure",
+    "rps": 217754,
+    "avg_latency": "59.67ms",
+    "p99_latency": "59.67ms",
+    "cpu": "6550.4%",
+    "memory": "4.1GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "12.92GB",
+    "input_bw": "",
+    "reconnects": 0,
+    "status_2xx": 1110476,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "roda",
     "language": "Ruby",
     "rps": 232085,
