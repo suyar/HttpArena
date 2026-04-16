@@ -15,7 +15,6 @@ class App < Sinatra::Base
     set :show_exceptions, false
 
     # Disable unused protections
-    disable :static
     disable :protection
     set :host_authorization, { permitted_hosts: [] }
 
@@ -31,33 +30,8 @@ class App < Sinatra::Base
       set :dataset_items, nil
     end
 
-    # Static files
-    mime_types = {
-      '.css'   => 'text/css',
-      '.js'    => 'application/javascript',
-      '.html'  => 'text/html',
-      '.woff2' => 'font/woff2',
-      '.svg'   => 'image/svg+xml',
-      '.webp'  => 'image/webp',
-      '.json'  => 'application/json'
-    }.freeze
-
-    static_dir = File.join DATA_DIR, 'static'
-    if Dir.exist?(static_dir)
-      cache = {}
-      Dir.foreach(static_dir) do |name|
-        next if name == '.' || name == '..'
-        path = File.join(static_dir, name)
-        next unless File.file?(path)
-        ext = File.extname(name)
-        ct = mime_types.fetch(ext, 'application/octet-stream')
-        cache[name] = { data: File.binread(path), content_type: ct }
-      end
-      set :static_files_cache, cache.freeze
-    else
-      set :static_files_cache, {}
-    end
-
+    set :static, true
+    set :public_folder, DATA_DIR
   end
 
   PG_QUERY = 'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN $1 AND $2 LIMIT $3'.freeze
@@ -138,18 +112,6 @@ class App < Sinatra::Base
       }
     end
     render_json JSON.generate({ 'items' => items, 'count' => items.length })
-  end
-
-  get '/static/:filename' do
-    filename = params['filename']
-    entry = settings.static_files_cache[filename]
-    if entry
-      headers 'server' => SERVER_NAME, 'content-type' => entry[:content_type]
-      entry[:data]
-    else
-      headers 'server' => SERVER_NAME
-      halt 404, 'Not Found'
-    end
   end
 
   private
