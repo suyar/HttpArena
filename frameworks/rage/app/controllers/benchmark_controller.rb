@@ -3,12 +3,22 @@
 require 'zlib'
 require 'concurrent/utility/processor_counter'
 
+class Hash
+  def symbolize_keys!
+    transform_keys! { |key| key.to_sym }
+  end
+end
+
 class BenchmarkController < RageController::API
   DATA_DIR = ENV.fetch('DATA_DIR', '/data')
 
   dataset_path = File.join DATA_DIR, 'dataset.json'
   if File.exist?(dataset_path)
-    @dataset_items = JSON.parse(File.read(dataset_path))
+    @dataset_items = JSON.parse(File.read(dataset_path)).map do |item|
+      item.symbolize_keys!
+      item[:rating].symbolize_keys!
+      item
+    end
   end
   def self.dataset_items = @dataset_items
 
@@ -52,13 +62,13 @@ class BenchmarkController < RageController::API
 
     if self.class.dataset_items
       items = self.class.dataset_items.slice(0, count).map do |d|
-        d.merge('total' => d['price'] * d['quantity'] * m)
+        d.merge(total: d[:price] * d[:quantity] * m)
       end
     else
       items = []
     end
 
-    result = { 'items' => items, 'count' => items.length }
+    result = { items: items, count: items.length }
 
     if accept_encodings = request.headers['Accept-Encoding']
       types = accept_encodings.split(',').map(&:strip)
@@ -89,14 +99,14 @@ class BenchmarkController < RageController::API
 
     items = rows.map do |r|
       {
-        'id' => r['id'],
-        'name' => r['name'],
-        'category' => r['category'],
-        'price' => r['price'],
-        'quantity' => r['quantity'],
-        'active' => r['active'] == 't',
-        'tags' => JSON.parse(r['tags']),
-        'rating' => { 'score' => r['rating_score'], 'count' => r['rating_count'] }
+        id: r['id'],
+        name: r['name'],
+        category: r['category'],
+        price: r['price'],
+        quantity: r['quantity'],
+        active: r['active'] == 't',
+        tags: JSON.parse(r['tags']),
+        rating: { score: r['rating_score'], count: r['rating_count'] }
       }
     end
     render json: { items: items, count: items.length }
