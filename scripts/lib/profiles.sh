@@ -21,6 +21,7 @@ declare -A PROFILES=(
     [api-16]="1|5|0-7,64-71|1024|api-16"
     [static]="1|200|0-31,64-95|1024,4096,6800|static"
     [async-db]="1|0|0-31,64-95|1024|async-db"
+    [crud]="1|0|0-31,64-95|512,4096|crud"
     [baseline-h2]="1|0|0-31,64-95|256,1024|h2"
     [static-h2]="1|0|0-31,64-95|256,1024|static-h2"
     [baseline-h3]="1|0|0-31,64-95|64|h3"
@@ -39,7 +40,7 @@ PROFILE_ORDER=(
     baseline pipelined limited-conn
     json json-comp json-tls
     upload api-4 api-16
-    static async-db
+    static async-db crud
     baseline-h2 static-h2
     baseline-h3 static-h3
     gateway-64 gateway-h3

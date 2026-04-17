@@ -20,6 +20,10 @@ Minimal ASP.NET Core HTTP server using .NET 10 with Kestrel and minimal API rout
 | `/json/{count}` | GET | Returns `count` items from the preloaded dataset; honors `Accept-Encoding: gzip/br/deflate` for the `json-comp` profile |
 | `/async-db` | GET | Postgres range query: `SELECT ... WHERE price BETWEEN $min AND $max LIMIT $limit` |
 | `/upload` | POST | Streams the request body and returns the byte count |
+| `/crud/items` | GET | Paginated list by category with two queries (data + count) |
+| `/crud/items/{id}` | GET | Single item read with `IMemoryCache` (1s TTL), returns `X-Cache: HIT/MISS` |
+| `/crud/items` | POST | Create item via INSERT with ON CONFLICT upsert, returns 201 |
+| `/crud/items/{id}` | PUT | Update item and invalidate cache entry |
 | `/static/*` | GET | Serves files from `/data/static` via `MapStaticAssets` with precomputed ETags + compression |
 
 ## Notes

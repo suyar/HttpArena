@@ -111,7 +111,14 @@ if [ "$LOADGEN_DOCKER" = "true" ]; then
         df="${_loadgen_files[$i]}"
         if ! docker image inspect "$img" >/dev/null 2>&1; then
             info "building $img from docker/$df"
-            docker build -t "$img" -f "$ROOT_DIR/docker/$df" "$ROOT_DIR/docker" \
+            local _build_args=""
+            # gcannon: bust the git-clone cache so we always get the
+            # latest source from the repo. Other images are version-
+            # pinned and don't need this.
+            if [ "$df" = "gcannon.Dockerfile" ]; then
+                _build_args="--build-arg CACHE_BUST=$(date +%s)"
+            fi
+            docker build $_build_args -t "$img" -f "$ROOT_DIR/docker/$df" "$ROOT_DIR/docker" \
                 || fail "$img build failed"
         fi
     done
@@ -144,7 +151,7 @@ system_tune
 
 # Start the postgres sidecar if any subscribed test needs it.
 need_pg=false
-for t in async-db api-4 api-16 gateway-64 gateway-h3 production-stack; do
+for t in async-db crud api-4 api-16 gateway-64 gateway-h3 production-stack; do
     if framework_subscribes_to "$t"; then need_pg=true; break; fi
 done
 $need_pg && postgres_start

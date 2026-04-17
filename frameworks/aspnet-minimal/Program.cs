@@ -2,9 +2,11 @@ using System.Security.Cryptography.X509Certificates;
 
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
+builder.Services.AddMemoryCache();
 
 var certPath = Environment.GetEnvironmentVariable("TLS_CERT") ?? "/certs/server.crt";
 var keyPath = Environment.GetEnvironmentVariable("TLS_KEY") ?? "/certs/server.key";
@@ -63,6 +65,15 @@ app.MapGet("/baseline2", Handlers.Sum);
 app.MapPost("/upload", Handlers.Upload);
 app.MapGet("/json/{count}", Handlers.Json);
 app.MapGet("/async-db", Handlers.AsyncDatabase);
+
+// ── CRUD endpoints ─────────────────────────────────────────────────────────
+// Realistic REST API: paginated list, cached single-item read, create, update.
+// In-process IMemoryCache with 1s TTL on single-item reads, invalidated on PUT.
+
+app.MapGet("/crud/items", Handlers.CrudList);
+app.MapGet("/crud/items/{id:int}", Handlers.CrudRead);
+app.MapPost("/crud/items", Handlers.CrudCreate);
+app.MapPut("/crud/items/{id:int}", Handlers.CrudUpdate);
 
 app.MapStaticAssets();
 

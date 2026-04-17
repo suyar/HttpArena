@@ -91,6 +91,27 @@ docker run $DFLAGS gcannon:latest \
 
 Useful flags: `-r <N>` force-reconnect every N requests (`0` = keep-alive forever), `-s <code>` expected status, `--recv-buf <bytes>` receive buffer size, `--json` machine-readable output.
 
+#### Dynamic placeholders in raw templates
+
+Raw request files support `{RAND:min:max}` and `{SEQ:start}` placeholders that are substituted per-request at send time. Useful for CRUD benchmarks where each request should target a different database row:
+
+```bash
+# Template with {RAND} — each request reads a random item
+printf 'GET /crud/{RAND:1:100000} HTTP/1.1\r\nHost: localhost:8080\r\n\r\n' > /tmp/crud-read.raw
+
+# Template with {SEQ} — each request creates a unique item
+printf 'POST /crud HTTP/1.1\r\nHost: localhost:8080\r\nContent-Type: application/json\r\nContent-Length: 72\r\n\r\n{"id":{SEQ:100001},"name":"Bench","category":"test","price":100,"qty":50}' > /tmp/crud-create.raw
+
+# Mix them — gcannon round-robins across templates
+docker run $DFLAGS \
+    -v /tmp:/requests:ro \
+    gcannon:latest http://localhost:8080 \
+    --raw /requests/crud-read.raw,/requests/crud-create.raw \
+    -c 512 -t 64 -d 5s
+```
+
+Values are zero-padded to a fixed width so `Content-Length` stays correct. `{RAND}` uses per-connection RNG (no contention), `{SEQ}` uses a global atomic counter (unique across all threads).
+
 ### h2load — HTTP/2 and h2/h2c gRPC unary
 
 ```bash

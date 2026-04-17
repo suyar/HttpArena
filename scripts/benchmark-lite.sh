@@ -176,7 +176,11 @@ for i in "${!_loadgen_images[@]}"; do
     df="${_loadgen_files[$i]}"
     if ! docker image inspect "$img" >/dev/null 2>&1; then
         info "building $img from docker/$df"
-        docker build -t "$img" -f "$ROOT_DIR/docker/$df" "$ROOT_DIR/docker" \
+        _build_args=""
+        if [ "$df" = "gcannon.Dockerfile" ]; then
+            _build_args="--build-arg CACHE_BUST=$(date +%s)"
+        fi
+        docker build $_build_args -t "$img" -f "$ROOT_DIR/docker/$df" "$ROOT_DIR/docker" \
             || fail "$img build failed"
     fi
 done

@@ -68,7 +68,7 @@ html.dark .test-card-endpoint { color: #64748b; }
 </style>
 
 <div class="tests-section">
-<h2>19 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
+<h2>20 Test Profiles Across H/1.1, H/2, H/3, gRPC and WebSocket</h2>
 <p class="tests-sub">Every framework is tested under diverse, realistic workloads — from raw throughput to JSON processing, gRPC unary calls, and WebSocket echo.</p>
 
 <div class="tests-proto">
@@ -118,6 +118,11 @@ html.dark .test-card-endpoint { color: #64748b; }
     <div class="test-card-title">Pipelined (16x)</div>
     <div class="test-card-desc">16 requests sent back-to-back per connection. Tests pipeline batching.</div>
     <div class="test-card-endpoint">GET /pipeline</div>
+  </a>
+  <a class="test-card" href="docs/test-profiles/h1/isolated/crud">
+    <div class="test-card-title">CRUD (REST API)</div>
+    <div class="test-card-desc">Realistic REST API with paginated list, cached reads, create, and update against Postgres.</div>
+    <div class="test-card-endpoint">GET/POST/PUT /crud/items</div>
   </a>
 </div>
 </div>

@@ -84,7 +84,7 @@ fi
 HARD_NOFILE=$(ulimit -Hn 2>/dev/null || echo 1048576)
 # Docker --ulimit nofile rejects "unlimited"; fall back to a large numeric cap
 [[ "$HARD_NOFILE" =~ ^[0-9]+$ ]] || HARD_NOFILE=1048576
-if has_test "async-db" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
+if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
     docker_args=(-d --name "$CONTAINER_NAME" --network host --security-opt seccomp=unconfined
         --ulimit memlock=-1:-1 --ulimit nofile="$HARD_NOFILE:$HARD_NOFILE")
 else
@@ -125,7 +125,7 @@ if [ "$ENGINE" = "io_uring" ]; then
 fi
 
 # Start Postgres sidecar if async-db is needed
-if has_test "async-db" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
+if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16" || has_test "gateway-64" || has_test "gateway-h3" || has_test "production-stack"; then
     echo "[postgres] Starting Postgres sidecar for validation..."
     docker rm -f "$PG_CONTAINER" 2>/dev/null || true
     docker run -d --name "$PG_CONTAINER" --network host \
@@ -643,7 +643,7 @@ fi
 
 # ───── Async Database (GET /async-db) ─────
 
-if has_test "async-db" || has_test "api-4" || has_test "api-16"; then
+if has_test "async-db" || has_test "crud" || has_test "api-4" || has_test "api-16"; then
     ASYNCDB_DOCS="$DOCS_BASE/h1/isolated/async-database/validation"
     echo "[test] async-db endpoint"
     asyncdb_fail=false
@@ -689,6 +689,95 @@ print(f'{count} {has_rating} {has_tags} {has_active_bool}')
         PASS=$((PASS + 1))
     else
         fail_with_link "[GET /async-db empty range]: expected count=0, got $pgdb_empty" "$ASYNCDB_DOCS"
+    fi
+fi
+
+# ───── CRUD (list + read + create + update /crud/items) ─────
+
+if has_test "crud"; then
+    CRUD_DOCS="$DOCS_BASE/h1/isolated/crud/validation"
+    echo "[test] crud endpoints"
+
+    # 1. GET list — paginated with category filter
+    crud_list=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items?category=electronics&page=1&limit=5" || true)
+    crud_list_result=$(echo "$crud_list" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+items = d.get('items', [])
+total = d.get('total', 0)
+page = d.get('page', 0)
+has_rating = all('rating' in i for i in items) if items else False
+print(f'{len(items)} {total} {page} {has_rating}')
+" 2>/dev/null || echo "0 0 0 False")
+    crud_list_count=$(echo "$crud_list_result" | cut -d' ' -f1)
+    crud_list_total=$(echo "$crud_list_result" | cut -d' ' -f2)
+    crud_list_page=$(echo "$crud_list_result" | cut -d' ' -f3)
+    crud_list_rating=$(echo "$crud_list_result" | cut -d' ' -f4)
+    if [ "$crud_list_count" = "5" ] && [ "$crud_list_total" -gt 0 ] 2>/dev/null && [ "$crud_list_page" = "1" ] && [ "$crud_list_rating" = "True" ]; then
+        echo "  PASS [GET /crud/items?category=electronics] ($crud_list_count items, total=$crud_list_total, page=$crud_list_page)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /crud/items list]: count=$crud_list_count, total=$crud_list_total, page=$crud_list_page, rating=$crud_list_rating" "$CRUD_DOCS"
+    fi
+
+    # 2. GET single item — with cache check
+    crud_get=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items/1" || true)
+    crud_get_id=$(echo "$crud_get" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id','-1'))" 2>/dev/null || echo "-1")
+    if [ "$crud_get_id" = "1" ]; then
+        echo "  PASS [GET /crud/items/1] (returned id=1)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /crud/items/1]: expected id=1, got $crud_get_id" "$CRUD_DOCS"
+    fi
+
+    # 3. Cache-aside check — first call MISS, second call HIT
+    crud_cache1=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/42" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
+    crud_cache2=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/42" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
+    if [ "$crud_cache1" = "MISS" ] && [ "$crud_cache2" = "HIT" ]; then
+        echo "  PASS [crud cache-aside] (first=MISS, second=HIT)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[crud cache-aside]: expected MISS then HIT, got '$crud_cache1' then '$crud_cache2'" "$CRUD_DOCS"
+    fi
+
+    # 4. GET non-existent item — 404
+    check_status "GET /crud/items/999999 (not found)" "404" "$CRUD_DOCS" \
+        -s --max-time 30 "http://localhost:$PORT/crud/items/999999"
+
+    # 5. POST — create a new item
+    crud_post_status=$(curl -s --max-time 30 -o /tmp/crud-post.json -w '%{http_code}' \
+        -X POST -H "Content-Type: application/json" \
+        -d '{"id":200001,"name":"ValidateItem","category":"test","price":42,"quantity":7}' \
+        "http://localhost:$PORT/crud/items" || echo "0")
+    if [ "$crud_post_status" = "201" ]; then
+        echo "  PASS [POST /crud/items] (201 Created)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[POST /crud/items]: expected 201, got $crud_post_status" "$CRUD_DOCS"
+    fi
+
+    # 6. GET back the created item
+    crud_verify=$(curl -s --max-time 30 "http://localhost:$PORT/crud/items/200001" || true)
+    crud_verify_id=$(echo "$crud_verify" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id','-1'))" 2>/dev/null || echo "-1")
+    if [ "$crud_verify_id" = "200001" ]; then
+        echo "  PASS [GET /crud/items/200001] (read back created item)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[GET /crud/items/200001]: expected id=200001, got $crud_verify_id" "$CRUD_DOCS"
+    fi
+
+    # 7. PUT — update, then verify cache was invalidated
+    curl -s --max-time 30 -o /dev/null "http://localhost:$PORT/crud/items/200001"  # warm cache
+    crud_put_status=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' \
+        -X PUT -H "Content-Type: application/json" \
+        -d '{"name":"UpdatedItem","category":"test","price":99,"quantity":1}' \
+        "http://localhost:$PORT/crud/items/200001" || echo "0")
+    crud_after_put=$(curl -s --max-time 30 -D- -o /dev/null "http://localhost:$PORT/crud/items/200001" | grep -i "^x-cache:" | tr -d '\r' | awk '{print $2}')
+    if [ "$crud_put_status" = "200" ] && [ "$crud_after_put" = "MISS" ]; then
+        echo "  PASS [PUT /crud/items/200001] (200 OK, cache invalidated)"
+        PASS=$((PASS + 1))
+    else
+        fail_with_link "[PUT /crud/items/200001]: status=$crud_put_status, cache_after=$crud_after_put" "$CRUD_DOCS"
     fi
 fi
 

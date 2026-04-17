@@ -55,6 +55,20 @@ gcannon_build_args() {
             args=("http://localhost:$PORT/ws" --ws
                   -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
             ;;
+        crud)
+            # CRUD mix: 40% list + 30% single-item read + 15% create + 15% update.
+            # List queries always hit DB (two queries: data + count).
+            # Single-item reads are cached in-process with 1s TTL.
+            # Uses {RAND} and {SEQ} placeholders for realistic ID distribution.
+            local _crud_files=""
+            for f in $(ls "$REQUESTS_DIR"/crud-list-*.raw "$REQUESTS_DIR"/crud-get-*.raw \
+                         "$REQUESTS_DIR"/crud-create-*.raw "$REQUESTS_DIR"/crud-update-*.raw 2>/dev/null | sort); do
+                _crud_files="${_crud_files:+$_crud_files,}$f"
+            done
+            args=("http://localhost:$PORT"
+                  --raw "$_crud_files"
+                  -c "$conns" -t "$THREADS" -d "$duration" -p "$pipeline")
+            ;;
         *)
             fail "gcannon_build_args: unknown endpoint '$endpoint'"
             ;;

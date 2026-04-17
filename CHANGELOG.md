@@ -4,6 +4,18 @@ Notable changes to test profiles, scoring, and validation.
 
 ## 2026-04-16
 
+### CRUD — realistic REST API benchmark (H/1.1 Isolated)
+
+New `crud` profile that benchmarks a realistic REST API with four operations: paginated list, cached single-item read, create, and update.
+
+**Workload mix:** 40% paginated list queries (two SQL queries each: data + count), 30% single-item reads (in-process cached with 1s TTL), 15% creates (INSERT with ON CONFLICT upsert), 15% updates (UPDATE + cache invalidation). Uses gcannon's `{RAND:min:max}` and `{SEQ:start}` placeholders for realistic per-request ID distribution — GET reads randomize across 50K items, POST creates use auto-incrementing IDs starting at 100K, PUT updates randomize across the existing 50K range.
+
+**Cache-aside pattern:** Single-item reads use `IMemoryCache` (or equivalent) with 1s absolute expiration. First request returns `X-Cache: MISS`, subsequent requests within the TTL return `X-Cache: HIT`. PUT invalidates the cache entry, so the next read is a fresh DB query.
+
+**Connections:** 512, 4,096. **CPU:** 64 threads (cores 0-31, 64-95). **Duration:** 10s per run, best of 3.
+
+**Validation:** 7 checks — list pagination (count, total, page, rating structure), single-item read, cache-aside MISS→HIT sequence, 404 for missing items, POST 201 Created, read-back of created item, PUT with cache invalidation verification.
+
 ### Production Stack — JWT auth, HybridCache, 10K-item CRUD
 
 Major rework of the `production-stack` profile. The test now models a realistic CRUD API with stateless JWT authentication, a three-tier cache hierarchy under real pressure, and concurrent read+write load.
