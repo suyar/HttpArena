@@ -34,10 +34,7 @@ class App < Roda
     end
 
     r.is('baseline11') do
-      total = 0
-      request.GET.each do |_k, v|
-        total += v.to_i
-      end
+      total = request.params['a'].to_i + request.params['b'].to_i
       if request.post?
         total += request.body.read.to_i
       end
@@ -45,10 +42,7 @@ class App < Roda
     end
 
     r.is 'baseline2' do
-      total = 0
-      request.GET.each do |_k, v|
-        total += v.to_i
-      end
+      total = request.params['a'].to_i + request.params['b'].to_i
       render_plain total.to_s
     end
 
