@@ -7,7 +7,7 @@ class Pgsql
     public static function init()
     {
         // Parse postgres://user:pass@host:port/dbname
-        //$parts = parse_url( getenv('DATABASE_URL' ));
+        $parts = parse_url( getenv('DATABASE_URL' ));
         $parts = [];
         $host = $parts['host'] ?? 'localhost';
         $port = $parts['port'] ?? 5432;
@@ -15,24 +15,29 @@ class Pgsql
         $user = $parts['user'] ?? 'bench';
         $pass = $parts['pass'] ?? 'bench';
 
-        $pdo = new PDO(
-            "pgsql:host=$host;port=$port;dbname=$db",
-            $user,
-            $pass,
-            [
-                PDO::ATTR_DEFAULT_FETCH_MODE  => PDO::FETCH_ASSOC,
-                PDO::ATTR_ERRMODE             => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_EMULATE_PREPARES    => false
-            ]
-        );
-        self::$bench = $pdo->prepare(
-            'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?'
-        );
+        try {
+            $pdo = new PDO(
+                "pgsql:host=$host;port=$port;dbname=$db",
+                $user,
+                $pass,
+                [
+                    PDO::ATTR_DEFAULT_FETCH_MODE  => PDO::FETCH_ASSOC,
+                    PDO::ATTR_ERRMODE             => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_EMULATE_PREPARES    => false
+                ]
+            );
+            self::$bench = $pdo->prepare(
+                'SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count FROM items WHERE price BETWEEN ? AND ? LIMIT ?'
+            );
+        } catch (\PDOException $e) {
+            self::$bench = null;
+        }
     }
 
     public static function reConnect(): PDOStatement
     {
         self::init();
+        
         return self::$bench;
     }
 
@@ -40,7 +45,7 @@ class Pgsql
     {
         $result = self::$bench;
         if (!$result instanceof PDOStatement) {
-            $result = self::reConnect();
+            return json_encode(['items' => [], 'count' => 0]);
         }
 
         $result->execute([$min, $max, $limit]);
