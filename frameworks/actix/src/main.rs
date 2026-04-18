@@ -266,6 +266,7 @@ async fn baseline11_get(query: web::Query<BaselineQuery>) -> HttpResponse {
     let sum = query.a.unwrap_or(0) + query.b.unwrap_or(0);
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
+        .content_type(ContentType::plaintext())
         .body(sum.to_string())
 }
 
@@ -286,6 +287,7 @@ async fn baseline2(query: web::Query<BaselineQuery>) -> HttpResponse {
     let sum = query.a.unwrap_or(0) + query.b.unwrap_or(0);
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
+        .content_type(ContentType::plaintext())
         .body(sum.to_string())
 }
 
