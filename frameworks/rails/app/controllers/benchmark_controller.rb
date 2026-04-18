@@ -23,10 +23,7 @@ class BenchmarkController < ActionController::API
   end
 
   def baseline11
-    total = 0
-    request.query_parameters.each_value do |v|
-      total += v.to_i
-    end
+    total = params[:a].to_i + params[:b].to_i
     if request.post?
       total += request.body.read.to_i
     end
@@ -34,18 +31,15 @@ class BenchmarkController < ActionController::API
   end
 
   def baseline2
-    total = 0
-    request.query_parameters.each_value do |v|
-      total += v.to_i
-    end
+    total = params[:a].to_i + params[:b].to_i
     render plain: total.to_s
   end
 
   def json_endpoint
     return head(500) unless dataset
 
-    m = (params['m'] || 1).to_i
-    count = params['count'].to_i
+    m = (params[:m] || 1).to_i
+    count = params[:count].to_i
     items = dataset.slice(0, count).map do |d|
       d.merge('total' => d['price'] * d['quantity'] * m)
     end
