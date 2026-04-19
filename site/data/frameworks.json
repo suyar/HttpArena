@@ -206,6 +206,13 @@
     "type": "tuned",
     "engine": "netty"
   },
+  "mark": {
+    "dir": "mark",
+    "description": "Mark is a high performance API micro framework based on workerman, helps you quickly write APIs with PHP.",
+    "repo": "https://github.com/passwalls/mark",
+    "type": "production",
+    "engine": "workerman"
+  },
   "may-minihttp": {
     "dir": "may-minihttp",
     "description": "Mini HTTP server built on May stackful coroutines. Uses cooperative scheduling with coroutine-per-connection model for high concurrency.",
@@ -377,6 +384,13 @@
     "repo": "https://github.com/dimdenGD/ultimate-express",
     "type": "tuned",
     "engine": "uwebsockets"
+  },
+  "uvicorn": {
+    "dir": "uvicorn",
+    "description": "An ASGI web server implementation for Python (uvloop)",
+    "repo": "https://github.com/Kludex/uvicorn",
+    "type": "engine",
+    "engine": "uvloop"
   },
   "workerman-websocket": {
     "dir": "workerman-websocket",

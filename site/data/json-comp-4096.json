@@ -491,5 +491,24 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 0
+  },
+  {
+    "framework": "uvicorn",
+    "language": "Python",
+    "rps": 332935,
+    "avg_latency": "11.21ms",
+    "p99_latency": "162.10ms",
+    "cpu": "6274.1%",
+    "memory": "3.6GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "349.56MB/s",
+    "reconnects": 65804,
+    "status_2xx": 1664675,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
   }
 ]
