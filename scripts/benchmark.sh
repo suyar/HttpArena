@@ -292,6 +292,43 @@ run_one() {
 
     echo ""; echo "=== Best: ${best_rps} req/s (CPU: $best_cpu, Mem: $best_mem) ==="
 
+    # Input bandwidth — bytes the server ingests per second. Matters for
+    # profiles where the *request* body dominates (upload, api-4/16 mixed
+    # fixtures, crud writes) and where the response bandwidth alone
+    # understates the actual work done. Computed as
+    #    rps × mean(--raw fixture size)
+    # which is the avg bytes/request sent by gcannon. Skipped when the
+    # endpoint doesn't use --raw (baseline, pipeline, ws-echo, grpc, h2/h3
+    # via other tools).
+    local raw_arg=""
+    local prev_was_raw=false
+    local arg
+    for arg in "${gc_args[@]}"; do
+        if [ "$prev_was_raw" = "true" ]; then
+            raw_arg="$arg"
+            break
+        fi
+        [ "$arg" = "--raw" ] && prev_was_raw=true || prev_was_raw=false
+    done
+    if [ -n "$raw_arg" ] && [ "$best_rps" -gt 0 ] 2>/dev/null; then
+        local avg_tpl_size
+        avg_tpl_size=$(IFS=','; total=0; count=0
+            for f in $raw_arg; do
+                s=$(wc -c < "$f" 2>/dev/null || echo 0)
+                total=$((total + s))
+                count=$((count + 1))
+            done
+            [ "$count" -gt 0 ] && echo "$((total / count))" || echo "0")
+        BEST_M[input_bw]=$(python3 -c "
+bps = $best_rps * $avg_tpl_size
+if bps >= 1073741824: print(f'{bps/1073741824:.2f}GB/s')
+elif bps >= 1048576: print(f'{bps/1048576:.2f}MB/s')
+elif bps >= 1024: print(f'{bps/1024:.2f}KB/s')
+else: print(f'{bps}B/s')
+" 2>/dev/null || echo "")
+        [ -n "${BEST_M[input_bw]}" ] && info "input BW: ${BEST_M[input_bw]} (avg template: ${avg_tpl_size} bytes)"
+    fi
+
     # ── Save results (--save) ───────────────────────────────────────────
     if [ "$SAVE_RESULTS" = "true" ]; then
         save_result "$profile" "$CONNS" "$best_rps" "$best_cpu" "$best_mem"
@@ -373,7 +410,7 @@ save_result() {
   "threads": $THREADS,
   "duration": "$DURATION",
   "pipeline": $PROF_PIPELINE,
-  "bandwidth": "${BEST_M[bandwidth]:-0}",
+  "bandwidth": "${BEST_M[bandwidth]:-0}",$([ -n "${BEST_M[input_bw]:-}" ] && printf '\n  "input_bw": "%s",' "${BEST_M[input_bw]}")
   "reconnects": ${BEST_M[reconnects]:-0},
   "status_2xx": ${BEST_M[status_2xx]:-0},
   "status_3xx": ${BEST_M[status_3xx]:-0},
