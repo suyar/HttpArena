@@ -13,14 +13,14 @@ fn cgroup_cpus() -> usize {
         .unwrap_or_else(num_cpus::get)
 }
 
+use actix_files::Files;
 use actix_web::http::header::{ContentType, HeaderValue, SERVER};
-use actix_web::web::Bytes;
+use actix_web::middleware::Compress;
 use actix_web::{web, App, HttpResponse, HttpServer};
 use deadpool_postgres::{Manager, ManagerConfig, Pool as PgPool, RecyclingMethod};
 use futures_util::StreamExt;
 use rustls::ServerConfig;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::io;
 
 static SERVER_HDR: HeaderValue = HeaderValue::from_static("actix");
@@ -91,26 +91,6 @@ struct AppState {
     dataset: Vec<DatasetItem>,
 }
 
-fn gzip_bytes(input: &[u8]) -> Bytes {
-    use flate2::write::GzEncoder;
-    use flate2::Compression;
-    use std::io::Write;
-    let mut enc = GzEncoder::new(Vec::with_capacity(input.len()), Compression::new(1));
-    enc.write_all(input).ok();
-    Bytes::from(enc.finish().unwrap_or_default())
-}
-
-fn brotli_bytes(input: &[u8]) -> Bytes {
-    use std::io::Write;
-    let mut out = Vec::with_capacity(input.len());
-    {
-        let mut enc = brotli::CompressorWriter::new(&mut out, 4096, 1, 22);
-        enc.write_all(input).ok();
-        enc.flush().ok();
-    }
-    Bytes::from(out)
-}
-
 fn build_json_body(dataset: &[DatasetItem], count: usize, m: i64) -> Vec<u8> {
     let count = count.min(dataset.len());
     let items: Vec<ProcessedItem> = dataset[..count]
@@ -141,119 +121,6 @@ fn load_dataset() -> Vec<DatasetItem> {
         Err(_) => Vec::new(),
     }
 }
-
-struct StaticAsset {
-    identity: Bytes,
-    gzip: Option<Bytes>,
-    brotli: Option<Bytes>,
-    content_type: &'static str,
-}
-
-type StaticAssets = HashMap<String, StaticAsset>;
-
-fn mime_for(name: &str) -> &'static str {
-    match name.rsplit('.').next().unwrap_or("") {
-        "css" => "text/css; charset=utf-8",
-        "js" => "application/javascript; charset=utf-8",
-        "html" => "text/html; charset=utf-8",
-        "json" => "application/json",
-        "svg" => "image/svg+xml",
-        "webp" => "image/webp",
-        "woff2" => "font/woff2",
-        "woff" => "font/woff",
-        "ico" => "image/x-icon",
-        "png" => "image/png",
-        _ => "application/octet-stream",
-    }
-}
-
-fn load_static_assets() -> StaticAssets {
-    type Slot = (Option<Bytes>, Option<Bytes>, Option<Bytes>);
-    let mut slots: HashMap<String, Slot> = HashMap::new();
-    let dir = match std::fs::read_dir("/data/static") {
-        Ok(d) => d,
-        Err(_) => return HashMap::new(),
-    };
-    for entry in dir.flatten() {
-        let path = entry.path();
-        let fname = match path.file_name().and_then(|f| f.to_str()) {
-            Some(s) => s.to_string(),
-            None => continue,
-        };
-        let data = match std::fs::read(&path) {
-            Ok(d) => Bytes::from(d),
-            Err(_) => continue,
-        };
-        if let Some(stem) = fname.strip_suffix(".br") {
-            slots.entry(stem.to_string()).or_default().2 = Some(data);
-        } else if let Some(stem) = fname.strip_suffix(".gz") {
-            slots.entry(stem.to_string()).or_default().1 = Some(data);
-        } else {
-            slots.entry(fname).or_default().0 = Some(data);
-        }
-    }
-    slots
-        .into_iter()
-        .filter_map(|(name, (identity, gzip, brotli))| {
-            let identity = identity?;
-            let content_type = mime_for(&name);
-            Some((
-                name,
-                StaticAsset {
-                    identity,
-                    gzip,
-                    brotli,
-                    content_type,
-                },
-            ))
-        })
-        .collect()
-}
-
-async fn static_handler(
-    req: actix_web::HttpRequest,
-    assets: web::Data<StaticAssets>,
-    path: web::Path<String>,
-) -> HttpResponse {
-    let name = path.into_inner();
-    let asset = match assets.get(&name) {
-        Some(a) => a,
-        None => return HttpResponse::NotFound().finish(),
-    };
-
-    let ae = req
-        .headers()
-        .get("accept-encoding")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
-    if ae.contains("br") {
-        if let Some(br) = &asset.brotli {
-            return HttpResponse::Ok()
-                .insert_header((SERVER, SERVER_HDR.clone()))
-                .insert_header(("Content-Type", asset.content_type))
-                .insert_header(("Content-Encoding", "br"))
-                .insert_header(("Vary", "Accept-Encoding"))
-                .body(br.clone());
-        }
-    }
-    if ae.contains("gzip") {
-        if let Some(gz) = &asset.gzip {
-            return HttpResponse::Ok()
-                .insert_header((SERVER, SERVER_HDR.clone()))
-                .insert_header(("Content-Type", asset.content_type))
-                .insert_header(("Content-Encoding", "gzip"))
-                .insert_header(("Vary", "Accept-Encoding"))
-                .body(gz.clone());
-        }
-    }
-    HttpResponse::Ok()
-        .insert_header((SERVER, SERVER_HDR.clone()))
-        .insert_header(("Content-Type", asset.content_type))
-        .insert_header(("Vary", "Accept-Encoding"))
-        .body(asset.identity.clone())
-}
-
 
 async fn pipeline() -> HttpResponse {
     HttpResponse::Ok()
@@ -304,41 +171,20 @@ async fn upload(mut payload: web::Payload) -> HttpResponse {
         .body(size.to_string())
 }
 
+// JSON endpoint. Serialize fresh per request with serde_json; the Compress
+// middleware on the App handles Accept-Encoding negotiation and response
+// encoding so the handler body stays encoding-agnostic.
 async fn json_endpoint(
-    req: actix_web::HttpRequest,
     state: web::Data<AppState>,
     path: web::Path<usize>,
     query: web::Query<JsonQuery>,
 ) -> HttpResponse {
     let count = path.into_inner().min(state.dataset.len());
     let m = query.m.unwrap_or(1);
-    let ae = req
-        .headers()
-        .get("accept-encoding")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
     let body = build_json_body(&state.dataset, count, m);
-    if ae.contains("br") {
-        return HttpResponse::Ok()
-            .insert_header((SERVER, SERVER_HDR.clone()))
-            .insert_header(("Content-Type", "application/json"))
-            .insert_header(("Content-Encoding", "br"))
-            .insert_header(("Vary", "Accept-Encoding"))
-            .body(brotli_bytes(&body));
-    }
-    if ae.contains("gzip") {
-        return HttpResponse::Ok()
-            .insert_header((SERVER, SERVER_HDR.clone()))
-            .insert_header(("Content-Type", "application/json"))
-            .insert_header(("Content-Encoding", "gzip"))
-            .insert_header(("Vary", "Accept-Encoding"))
-            .body(gzip_bytes(&body));
-    }
     HttpResponse::Ok()
         .insert_header((SERVER, SERVER_HDR.clone()))
         .content_type(ContentType::json())
-        .insert_header(("Vary", "Accept-Encoding"))
         .body(body)
 }
 
@@ -422,6 +268,9 @@ fn load_tls_config() -> Option<ServerConfig> {
         .with_no_client_auth()
         .with_single_cert(certs, key)
         .ok()?;
+    // ALPN protocol identifier for HTTP/2. Required to negotiate H2 over TLS;
+    // rustls doesn't pick a default. This is the minimum configuration to
+    // enable HTTP/2, not "custom TLS tuning".
     config.alpn_protocols = vec![b"h2".to_vec()];
     Some(config)
 }
@@ -430,8 +279,6 @@ fn load_tls_config() -> Option<ServerConfig> {
 async fn main() -> io::Result<()> {
     let dataset = load_dataset();
     let state = web::Data::new(AppState { dataset });
-
-    let static_assets = web::Data::new(load_static_assets());
 
     let pg_pool: Option<PgPool> = std::env::var("DATABASE_URL").ok().and_then(|url| {
         let pg_config: tokio_postgres::Config = url.parse().ok()?;
@@ -455,11 +302,13 @@ async fn main() -> io::Result<()> {
     let mut server = HttpServer::new({
         let state = state.clone();
         let pg_pool = pg_pool.clone();
-        let static_assets = static_assets.clone();
         move || {
             App::new()
+                // Compress middleware performs on-the-fly response compression
+                // based on the request's Accept-Encoding. Framework-standard —
+                // no handmade gzip/brotli, no pre-compressed caches.
+                .wrap(Compress::default())
                 .app_data(state.clone())
-                .app_data(static_assets.clone())
                 .app_data(web::PayloadConfig::new(25 * 1024 * 1024))
                 .app_data(web::Data::new(pg_pool.clone()))
                 .route("/pipeline", web::get().to(pipeline))
@@ -468,12 +317,15 @@ async fn main() -> io::Result<()> {
                 .route("/baseline2", web::get().to(baseline2))
                 .route("/upload", web::post().to(upload))
                 .route("/async-db", web::get().to(pgdb_endpoint))
-                .route("/static/{name:.*}", web::get().to(static_handler))
                 .route("/json/{count}", web::get().to(json_endpoint))
+                // actix-files Files service reads from disk per request.
+                // Combined with the Compress middleware above, identity files
+                // are served from disk and compressed on the wire when the
+                // client advertises gzip/brotli in Accept-Encoding.
+                .service(Files::new("/static", "/data/static"))
         }
     })
     .workers(workers)
-    .backlog(4096)
     .bind("0.0.0.0:8080")?;
 
     if let Some(tls_cfg) = tls_config {

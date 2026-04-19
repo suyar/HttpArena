@@ -958,20 +958,8 @@ function renderComposite() {
       var pid = activeIds[i];
       var proto = profileProtos[pid];
       var scored = isScoredForFw(pid, r.framework);
-      var bgStyle;
-      if (!scored) {
-        bgStyle = ' background:rgba(148,163,184,0.08); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px; opacity:0.5;';
-      } else if (proto === 'h3') {
-        bgStyle = ' background:rgba(34,197,94,0.12); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else if (proto === 'h2') {
-        bgStyle = ' background:rgba(234,179,8,0.12); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else if (proto === 'grpc') {
-        bgStyle = ' background:rgba(124,58,237,0.10); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else if (proto === 'ws') {
-        bgStyle = ' background:rgba(8,145,178,0.10); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      } else {
-        bgStyle = ' background:rgba(59,130,246,0.08); margin:-0.5rem -0.25rem; padding:0.5rem 0.25rem; border-radius:4px;';
-      }
+      // Value cells are unstyled except for a dim on unscored profiles.
+      var bgStyle = scored ? '' : ' opacity:0.5;';
       if (s === 0) {
         profileCells += '<div class="lb-stat" style="text-align:right; color:#cbd5e1;' + bgStyle + '">—</div>';
       } else {
