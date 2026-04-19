@@ -5,12 +5,13 @@ import json
 from contextlib import asynccontextmanager
 
 import asyncpg
-import orjson
+
 from fastapi import FastAPI, Request, Response, Path, Query, HTTPException
 from fastapi.responses import PlainTextResponse, JSONResponse
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.applications import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
+
 
 # -- Dataset and constants --------------------------------------------------------
 
@@ -26,6 +27,7 @@ try:
         DATASET_ITEMS = json.load(file)
 except Exception:
     pass
+
 
 # -- Postgres DB ------------------------------------------------------------
 
@@ -68,6 +70,8 @@ async def lifespan(application: FastAPI):
     PG_POOL = None
 
 
+# -- APP ---------------------------------------------------------------------
+
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(GZipMiddleware, minimum_size=1, compresslevel=5)
@@ -91,9 +95,9 @@ async def pipeline():
 @app.api_route("/baseline11", methods=["GET", "POST"])
 async def baseline11(request: Request):
     total = 0
-    for v in request.query_params.values():
+    for val in request.query_params.values():
         try:
-            total += int(v)
+            total += int(val)
         except ValueError:
             pass
     if request.method == "POST":
@@ -106,7 +110,9 @@ async def baseline11(request: Request):
     return PlainTextResponse(str(total))
 
 
-def json_common(request: Request, count: int, m_val: float):
+@app.get("/json/{count}")
+@app.get("/json-comp/{count}")
+async def json_endpoint(request: Request, count: int = Path(...), m: float = Query(...)):
     global DATASET_ITEMS
     if not DATASET_ITEMS:
         return PlainTextResponse("No dataset", 500)
@@ -116,21 +122,11 @@ def json_common(request: Request, count: int, m_val: float):
             if idx >= count:
                 break
             item = dict(dsitem)
-            item["total"] = dsitem["price"] * dsitem["quantity"] * m_val
+            item["total"] = dsitem["price"] * dsitem["quantity"] * m
             items.append(item)
         return JSONResponse( { "items": items, "count": len(items) } )
     except Exception:
         return JSONResponse( { "items": [ ], "count": 0 } )
-
-
-@app.get("/json/{count}")
-async def json_endpoint(request: Request, count: int = Path(...), m: float = Query(...)):
-    return json_common(request, count, m)
-
-
-@app.get("/json-comp/{count}")
-async def json_comp_endpoint(request: Request, count: int = Path(...), m: float = Query(...)):
-    return json_common(request, count, m)
 
 
 @app.get("/async-db")
@@ -173,7 +169,5 @@ async def upload_endpoint(request: Request):
     return PlainTextResponse(str(size))
 
 
-try:
-    app.mount("/static", StaticFiles(directory="/data/static/"), name="static")
-except Exception:
-    pass
+app.mount("/static", StaticFiles(directory="/data/static/"), name="static")
+
