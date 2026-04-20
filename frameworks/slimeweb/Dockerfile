@@ -11,8 +11,6 @@ WORKDIR /app/arena
 RUN slime add asyncpg
 
 COPY main.py /app/arena/main.py
-COPY /data/static/ /app/arena/static/
-
 
 EXPOSE 8080
 
