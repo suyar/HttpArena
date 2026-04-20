@@ -10,7 +10,6 @@ declare(strict_types=1);
  * @license  https://github.com/hyperf/hyperf/blob/master/LICENSE
  */
 use App\Controller\IndexController;
-use App\Controller\WebSocketController;
 use Hyperf\HttpServer\Router\Router;
 
 Router::addServer('http', function () {
@@ -19,8 +18,4 @@ Router::addServer('http', function () {
     Router::get('/json/{count}', [IndexController::class, 'handleJson']);
     Router::post('/upload', [IndexController::class, 'handleUpload']);
     Router::get('/async-db', [IndexController::class, 'handleAsyncDb']);
-});
-
-Router::addServer('ws', function () {
-    Router::get('/ws', WebSocketController::class);
 });
