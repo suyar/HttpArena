@@ -19,6 +19,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "aleph",
+    "language": "Clojure",
+    "rps": 29226,
+    "avg_latency": "203.09ms",
+    "p99_latency": "203.09ms",
+    "cpu": "7079.6%",
+    "memory": "4.0GiB",
+    "connections": 6800,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "514.37MB",
+    "reconnects": 0,
+    "status_2xx": 150627,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "apache",
     "language": "C",
     "rps": 261333,

@@ -629,37 +629,79 @@ function renderComposite() {
     }
   }
 
+  // Per-profile normalization denominators (max of effective-rps and max of
+  // memory-efficiency) across all frameworks in the current filter. These
+  // feed profileScoreFor() below, which is the one score function used by
+  // medals, crowns, bananas, and eggplants — so they all react to the
+  // memory-efficiency toggle the same way the composite score does.
+  var allMaxRps = {};
+  var allMaxMemEffByProfile = {};
+  allProfileIds.forEach(function(pid) {
+    allMaxRps[pid] = 0;
+    allMaxMemEffByProfile[pid] = 0;
+    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
+      if (isExcluded(fw)) return;
+      var rps = avgByProfile[pid][fw] || 0;
+      var effective = rps;
+      if ((pid === 'api-4' || pid === 'api-16') && avgTplByProfile[pid] && avgTplByProfile[pid][fw]) {
+        var t = avgTplByProfile[pid][fw];
+        effective = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+      } else if (pid === 'json-comp' && minBwPerReq['json-comp']) {
+        var bw = avgBwByProfile['json-comp'][fw] || 0;
+        if (bw > 0 && rps > 0) {
+          effective = rps * Math.pow(minBwPerReq['json-comp'] / (bw / rps), 2);
+        }
+      }
+      if (effective > allMaxRps[pid]) allMaxRps[pid] = effective;
+      var mem = avgMemByProfile[pid][fw] || 0;
+      if (mem > 0 && rps > 0) {
+        var memEff = Math.sqrt(rps) / mem;
+        if (memEff > allMaxMemEffByProfile[pid]) allMaxMemEffByProfile[pid] = memEff;
+      }
+    });
+  });
+
+  // Memory-aware per-profile score (0..150) — the same shape the composite
+  // uses, so badges and awards track whatever the visible leaderboard shows.
+  // When useMem=false this is just the normalized rps score and the ranking
+  // is identical to the pre-toggle behavior.
+  function profileScoreFor(pid, fw) {
+    var rps = (avgByProfile[pid] && avgByProfile[pid][fw]) || 0;
+    if (rps <= 0) return 0;
+    var maxRps = allMaxRps[pid] || 0;
+    if (maxRps <= 0) return 0;
+    var effectiveRps = rps;
+    if ((pid === 'api-4' || pid === 'api-16') && avgTplByProfile[pid] && avgTplByProfile[pid][fw]) {
+      var t = avgTplByProfile[pid][fw];
+      effectiveRps = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
+    } else if (pid === 'json-comp' && minBwPerReq['json-comp']) {
+      var bwJc = avgBwByProfile['json-comp'][fw] || 0;
+      if (bwJc > 0) {
+        effectiveRps = rps * Math.pow(minBwPerReq['json-comp'] / (bwJc / rps), 2);
+      }
+    }
+    var rpsScore = (effectiveRps / maxRps) * 100;
+    if (!useMem) return rpsScore;
+    var maxMemEff = allMaxMemEffByProfile[pid] || 0;
+    if (maxMemEff <= 0) return rpsScore;
+    var mem = avgMemByProfile[pid][fw] || 0;
+    if (mem <= 0) return rpsScore;
+    var memEff = Math.sqrt(rps) / mem;
+    return rpsScore + (memEff / maxMemEff) * 100 * 0.5;
+  }
+
   // Determine top-3 frameworks per profile for badges (always all profiles)
   var topFwByProfile = {}, secondFwByProfile = {}, thirdFwByProfile = {};
   allProfileIds.forEach(function(pid) {
     var bestFw = null, bestScore = 0, secondFw = null, secondScore = 0, thirdFw = null, thirdScore = 0;
-    if (pid === 'api-4' || pid === 'api-16') {
-      Object.keys(avgTplByProfile[pid] || {}).forEach(function(fw) {
-        if (isExcluded(fw)) return;
-        var t = avgTplByProfile[pid][fw];
-        var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-        if (w > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = w; bestFw = fw; }
-        else if (w > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = w; secondFw = fw; }
-        else if (w > thirdScore) { thirdScore = w; thirdFw = fw; }
-      });
-    } else {
-      Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
-        if (isExcluded(fw)) return;
-        var rps = avgByProfile[pid][fw] || 0;
-        var score = rps;
-        // Match the json-comp bandwidth adjustment so badges reflect the
-        // composite-score winners, not raw rps.
-        if (pid === 'json-comp' && minBwPerReq['json-comp']) {
-          var bw = avgBwByProfile['json-comp'][fw] || 0;
-          if (bw > 0 && rps > 0) {
-            score = rps * Math.pow(minBwPerReq['json-comp'] / (bw / rps), 2);
-          }
-        }
-        if (score > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = score; bestFw = fw; }
-        else if (score > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = score; secondFw = fw; }
-        else if (score > thirdScore) { thirdScore = score; thirdFw = fw; }
-      });
-    }
+    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
+      if (isExcluded(fw)) return;
+      var score = profileScoreFor(pid, fw);
+      if (score <= 0) return;
+      if (score > bestScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = bestScore; secondFw = bestFw; bestScore = score; bestFw = fw; }
+      else if (score > secondScore) { thirdScore = secondScore; thirdFw = secondFw; secondScore = score; secondFw = fw; }
+      else if (score > thirdScore) { thirdScore = score; thirdFw = fw; }
+    });
     if (bestFw) topFwByProfile[pid] = bestFw;
     if (secondFw) secondFwByProfile[pid] = secondFw;
     if (thirdFw) thirdFwByProfile[pid] = thirdFw;
@@ -768,31 +810,12 @@ function renderComposite() {
     else if (proto === 'grpc') sectionGroups.grpc.push(pid);
     else if (proto === 'ws') sectionGroups.ws.push(pid);
   });
-  // Compute max RPS per profile across all profiles (for normalization)
-  var allMaxRps = {};
-  allProfileIds.forEach(function(pid) {
-    allMaxRps[pid] = 0;
-    Object.keys(avgByProfile[pid] || {}).forEach(function(fw) {
-      if (isExcluded(fw)) return;
-      var rps = avgByProfile[pid][fw] || 0;
-      if (rps > allMaxRps[pid]) allMaxRps[pid] = rps;
-    });
-  });
+  // allMaxRps + allMaxMemEffByProfile (and the mix/json-comp adjustments) are
+  // already computed up front and used by profileScoreFor(); nothing extra to
+  // build here.
   var crownsByFw = {};
   var sectionLabels = { h1iso: 'H/1.1 Isolated', h1wk: 'H/1.1 Workload', h2: 'H/2', h3: 'H/3', grpc: 'gRPC', ws: 'WebSocket' };
   var sectionColors = { h1iso: '#3b82f6', h1wk: '#2563eb', h2: '#eab308', h3: '#22c55e', grpc: '#7c3aed', ws: '#0891b2' };
-  // Compute max weighted score for api profiles (for crown normalization)
-  var allMaxWeighted = {};
-  ['api-4', 'api-16'].forEach(function(mpid) {
-    var maxW = 0;
-    Object.keys(avgTplByProfile[mpid] || {}).forEach(function(fw) {
-      if (isExcluded(fw)) return;
-      var t = avgTplByProfile[mpid][fw];
-      var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-      if (w > maxW) maxW = w;
-    });
-    allMaxWeighted[mpid] = maxW;
-  });
   Object.keys(sectionGroups).forEach(function(section) {
     var pids = sectionGroups[section];
     if (pids.length === 0) return;
@@ -802,20 +825,7 @@ function renderComposite() {
       if (isExcluded(fw)) return;
       var sum = 0;
       pids.forEach(function(pid) {
-        if (pid === 'api-4' || pid === 'api-16') {
-          var t = avgTplByProfile[pid] && avgTplByProfile[pid][fw];
-          var maxW = allMaxWeighted[pid] || 0;
-          if (t && maxW > 0) {
-            var w = t.baseline * mixedWeights.baseline + t.json * mixedWeights.json + t.upload * mixedWeights.upload + (t.static || 0) * mixedWeights.static + (t.async_db || 0) * mixedWeights.async_db;
-            sum += (w / maxW) * 100;
-          }
-        } else {
-          var rps = (avgByProfile[pid] && avgByProfile[pid][fw]) || 0;
-          var maxRps = allMaxRps[pid] || 0;
-          if (rps > 0 && maxRps > 0) {
-            sum += (rps / maxRps) * 100;
-          }
-        }
+        sum += profileScoreFor(pid, fw);
       });
       var avg = totalPids > 0 ? sum / totalPids : 0;
       if (avg > bestAvg) { thirdAvg = secondAvg; thirdFw = secondFw; secondAvg = bestAvg; secondFw = bestFw; bestAvg = avg; bestFw = fw; }
@@ -859,20 +869,19 @@ function renderComposite() {
     }
   });
 
-  // Compute eggplant points per framework across ALL profiles
-  // Each scored test below 15 = 1 point (uses allMaxRps, not active-only maxRpsByProfile)
+  // Compute eggplant points per framework across ALL profiles.
+  // One point per scored profile where the framework's profileScoreFor is
+  // below 10. When the memory toggle is on, a bad-on-rps framework that's
+  // also memory-efficient gets pulled above the threshold — which is why
+  // this goes through profileScoreFor rather than raw rps.
   var eggplantByFw = {};
   Object.keys(allFw).forEach(function(fw) {
     if (isExcluded(fw)) return;
     var points = 0;
     allProfileIds.forEach(function(pid) {
       if (!isScoredForFw(pid, fw)) return;
-      var rps = (avgByProfile[pid] && avgByProfile[pid][fw]) || 0;
-      if (rps <= 0) return;
-      var maxRps = allMaxRps[pid] || 0;
-      if (maxRps <= 0) return;
-      var score = (rps / maxRps) * 100;
-      if (score < 10) points++;
+      var score = profileScoreFor(pid, fw);
+      if (score > 0 && score < 10) points++;
     });
     if (points >= 5) {
       var tier = points >= 12 ? 'diamond' : points >= 9 ? 'gold' : points >= 7 ? 'silver' : 'bronze';

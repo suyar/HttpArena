@@ -15,6 +15,13 @@
       }
     ]
   },
+  "aleph": {
+    "dir": "aleph",
+    "description": "",
+    "repo": "https://github.com/clj-commons/aleph",
+    "type": "production",
+    "engine": "netty"
+  },
   "apache": {
     "dir": "apache",
     "description": "Apache HTTPD 2.4 with event MPM and mod_lua for the dynamic /baseline11 handler. Native file serving for /static/.",
@@ -340,6 +347,13 @@
     "repo": "https://github.com/MDA2AV/ringzero",
     "type": "engine",
     "engine": "io_uring"
+  },
+  "robyn": {
+    "dir": "robyn",
+    "description": "Robyn is a High-Performance Web Framework with a Rust runtime",
+    "repo": "https://github.com/sparckles/Robyn",
+    "type": "production",
+    "engine": "uvloop"
   },
   "roda": {
     "dir": "roda",

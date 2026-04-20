@@ -19,6 +19,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "aleph",
+    "language": "Clojure",
+    "rps": 553392,
+    "avg_latency": "2.75ms",
+    "p99_latency": "42.40ms",
+    "cpu": "5137.8%",
+    "memory": "21.0GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.89GB/s",
+    "input_bw": "26.39MB/s",
+    "reconnects": 110132,
+    "status_2xx": 2766960,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "aspnet-minimal",
     "language": "C#",
     "rps": 597272,
