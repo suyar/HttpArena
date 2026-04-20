@@ -21,12 +21,6 @@ var lbH3CurrentMeta = {{ site.Data.frameworks | jsonify | safeJS }};
 var lbH3Profiles = {{ $profiles | jsonify | safeJS }};
 </script>
 
-<div class="h3-disclaimer" style="margin-top:1rem; padding:0.75rem 1.25rem; border-radius:0.5rem; background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.3); color:#78350f; font-size:0.95rem; line-height:1.6;">
-  <span style="margin-right:0.4rem;">&#9888;&#65039;</span><strong>Experimental:</strong> HTTP/3 benchmarks use <strong>oha</strong> as the load generator, which has known limitations with QUIC — including performance issues in headless mode and inability to fully saturate high-performance servers. These results are useful for relative comparison between frameworks but may not reflect true peak throughput. We'll update these benchmarks as better HTTP/3 load generators become available.
-</div>
-<style>
-html.dark .h3-disclaimer { color: #fff !important; background: rgba(234,179,8,0.12) !important; border-color: rgba(234,179,8,0.4) !important; }
-</style>
 
 <div class="lb-type-note-h3" style="margin-top:1rem; margin-bottom:0.75rem; padding:0.85rem 1.25rem; border-radius:0.5rem; background:linear-gradient(135deg, rgba(59,130,246,0.04), rgba(139,92,246,0.04)); border:1px solid rgba(59,130,246,0.15); color:#1e293b; font-size:1.02rem; line-height:1.7;">
 </div>
