@@ -235,6 +235,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp",
+    "language": "C#",
+    "rps": 179805,
+    "avg_latency": "6.70ms",
+    "p99_latency": "6.70ms",
+    "cpu": "6282.4%",
+    "memory": "632MiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "10.67GB",
+    "reconnects": 0,
+    "status_2xx": 916884,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "go-fasthttp",
     "language": "Go",
     "rps": 653856,

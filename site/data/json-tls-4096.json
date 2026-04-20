@@ -96,6 +96,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp",
+    "language": "C#",
+    "rps": 549740,
+    "avg_latency": "7.08ms",
+    "p99_latency": "7.08ms",
+    "cpu": "6266.8%",
+    "memory": "1.4GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.88GB",
+    "reconnects": 0,
+    "status_2xx": 2803267,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "helidon-production",
     "language": "Java",
     "rps": 249863,
