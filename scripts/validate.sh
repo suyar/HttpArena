@@ -350,6 +350,14 @@ if has_test "baseline" || has_test "limited-conn" || has_test "api-4" || has_tes
         -X POST -H "Content-Type: text/plain" -H "Transfer-Encoding: chunked" -d "20" \
         "http://localhost:$PORT/baseline11?a=13&b=42"
 
+    # Response Content-Type must be text/plain (bare or with ;charset=…). A
+    # missing header or application/json is a spec violation. Issue #526.
+    check_header "GET /baseline11 Content-Type" "Content-Type" "text/plain" "$BASELINE_DOCS" \
+        "http://localhost:$PORT/baseline11?a=13&b=42"
+    check_header "POST /baseline11 Content-Type" "Content-Type" "text/plain" "$BASELINE_DOCS" \
+        -X POST -H "Content-Type: text/plain" -d "20" \
+        "http://localhost:$PORT/baseline11?a=13&b=42"
+
     # Anti-cheat: randomized inputs to detect hardcoded responses
     echo "[test] baseline anti-cheat (randomized inputs)"
     A1=$((RANDOM % 900 + 100))
@@ -403,6 +411,8 @@ if has_test "pipelined"; then
     PIPELINED_DOCS="$DOCS_BASE/h1/isolated/pipelined/validation"
     echo "[test] pipelined endpoint"
     check "GET /pipeline" "ok" "$PIPELINED_DOCS" \
+        "http://localhost:$PORT/pipeline"
+    check_header "GET /pipeline Content-Type" "Content-Type" "text/plain" "$PIPELINED_DOCS" \
         "http://localhost:$PORT/pipeline"
 fi
 
@@ -646,6 +656,9 @@ if has_test "baseline-h2"; then
         B3=$((RANDOM % 900 + 100))
         check "GET /baseline2?a=$A3&b=$B3 over HTTP/2 (random)" "$((A3 + B3))" "$H2_DOCS" \
             -sk --http2 "https://localhost:$H2PORT/baseline2?a=$A3&b=$B3"
+
+        check_header "GET /baseline2 Content-Type" "Content-Type" "text/plain" "$H2_DOCS" \
+            -sk --http2 "https://localhost:$H2PORT/baseline2?a=1&b=1"
     fi
 fi
 
