@@ -194,6 +194,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "pyronova",
+    "language": "Python",
+    "rps": 328809,
+    "avg_latency": "12.40ms",
+    "p99_latency": "12.40ms",
+    "cpu": "5356.2%",
+    "memory": "1.4GiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "1.26GB",
+    "reconnects": 0,
+    "status_2xx": 1676073,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "uvicorn",
     "language": "Python",
     "rps": 336946,

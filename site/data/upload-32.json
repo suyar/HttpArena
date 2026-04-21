@@ -479,6 +479,26 @@
     "status_5xx": 0
   },
   {
+    "framework": "pyronova",
+    "language": "Python",
+    "rps": 2315,
+    "avg_latency": "13.78ms",
+    "p99_latency": "48.20ms",
+    "cpu": "2654.5%",
+    "memory": "1.7GiB",
+    "connections": 32,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "298.83KB/s",
+    "input_bw": "18.36GB/s",
+    "reconnects": 2318,
+    "status_2xx": 11576,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "quarkus-jvm",
     "language": "Java",
     "rps": 1289,
