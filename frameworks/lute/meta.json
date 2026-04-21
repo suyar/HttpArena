@@ -1,7 +1,7 @@
 {
   "display_name": "lute",
   "language": "Luau",
-  "type": "tuned",
+  "type": "production",
   "engine": "lute",
   "description": "Lute standalone Luau runtime",
   "repo": "https://github.com/luau-lang/lute",
@@ -16,5 +16,5 @@
     "static",
     "echo-ws"
   ],
-  "maintainers": []
+  "maintainers": ["nicell"]
 }

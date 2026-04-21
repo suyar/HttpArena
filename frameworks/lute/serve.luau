@@ -13,6 +13,20 @@ local CONTENT_TYPES: { [string]: string } = {
 	webp = "image/webp",
 }
 
+local COMPRESSIBLE: { [string]: boolean } = {
+	css = true, js = true, json = true, html = true, svg = true,
+}
+
+local STATIC_HEADERS: { [string]: { [string]: string } } = {}
+local STATIC_HEADERS_BR: { [string]: { [string]: string } } = {}
+local STATIC_HEADERS_GZ: { [string]: { [string]: string } } = {}
+for ext, mime in CONTENT_TYPES do
+	STATIC_HEADERS[ext] = { ["Content-Type"] = mime }
+	STATIC_HEADERS_BR[ext] = { ["Content-Type"] = mime, ["Content-Encoding"] = "br" }
+	STATIC_HEADERS_GZ[ext] = { ["Content-Type"] = mime, ["Content-Encoding"] = "gzip" }
+end
+local OCTET_HEADERS = { ["Content-Type"] = "application/octet-stream" }
+
 local TEXT_HEADERS = { ["Content-Type"] = "text/plain" }
 local JSON_HEADERS = { ["Content-Type"] = "application/json" }
 local NOT_FOUND = { status = 404, body = "", headers = TEXT_HEADERS }
@@ -21,7 +35,6 @@ local PIPELINE_OK = { body = "ok", headers = TEXT_HEADERS }
 
 local dataset: any = nil
 local datasetLen = 0
-local staticCache: { [string]: { body: string, headers: { [string]: string } } } = {}
 
 local function buildJson(count: number, m: number): string
 	local items = table.create(count)
@@ -81,11 +94,37 @@ local function handle(req, srv)
 	end
 
 	if string.sub(path, 1, 8) == "/static/" then
-		local hit = staticCache[string.sub(path, 9)]
-		if hit then
-			return { body = hit.body, headers = hit.headers }
+		local name = string.sub(path, 9)
+
+		if name == "" or string.find(name, "/", 1, true) then
+			return NOT_FOUND
 		end
-		return NOT_FOUND
+		local ext = string.match(name, "%.([%w]+)$") or ""
+		local fullPath = STATIC_DIR .. "/" .. name
+
+		if COMPRESSIBLE[ext] then
+			local accept = req.headers["accept-encoding"] or req.headers["Accept-Encoding"]
+			if accept then
+				if string.find(accept, "br", 1, true) then
+					local ok, body = pcall(fs.readFileToString, fullPath .. ".br")
+					if ok then
+						return { body = body, headers = STATIC_HEADERS_BR[ext] }
+					end
+				end
+				if string.find(accept, "gzip", 1, true) then
+					local ok, body = pcall(fs.readFileToString, fullPath .. ".gz")
+					if ok then
+						return { body = body, headers = STATIC_HEADERS_GZ[ext] }
+					end
+				end
+			end
+		end
+
+		local ok, body = pcall(fs.readFileToString, fullPath)
+		if not ok then
+			return NOT_FOUND
+		end
+		return { body = body, headers = STATIC_HEADERS[ext] or OCTET_HEADERS }
 	end
 
 	return NOT_FOUND
@@ -101,25 +140,6 @@ return {
 	serve = function()
 		dataset = json.deserialize(fs.readFileToString("/data/dataset.json")) :: any
 		datasetLen = #dataset
-
-		for _, entry in fs.listDirectory(STATIC_DIR) do
-			if entry.type ~= "file" then
-				continue
-			end
-			local name = entry.name
-			local ext = string.match(name, "%.([%w]+)$") or ""
-			-- Skip pre-compressed variants; this server doesn't negotiate encoding.
-			if ext == "br" or ext == "gz" then
-				continue
-			end
-			local body = fs.readFileToString(STATIC_DIR .. "/" .. name)
-			staticCache[name] = {
-				body = body,
-				headers = {
-					["Content-Type"] = CONTENT_TYPES[ext] or "application/octet-stream",
-				},
-			}
-		end
 
 		server.serve({
 			hostname = "0.0.0.0",
