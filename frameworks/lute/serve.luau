@@ -22,7 +22,6 @@ local PIPELINE_OK = { body = "ok", headers = TEXT_HEADERS }
 local dataset: any = nil
 local datasetLen = 0
 local staticCache: { [string]: { body: string, headers: { [string]: string } } } = {}
-local jsonCache: { [string]: string } = {}
 
 local function buildJson(count: number, m: number): string
 	local items = table.create(count)
@@ -76,13 +75,7 @@ local function handle(req, srv)
 		local count = tonumber(string.sub(path, 7))
 		if count and count >= 0 and count <= datasetLen then
 			local m = tonumber(req.query.m) or 1
-			local key = count .. "|" .. m
-			local body = jsonCache[key]
-			if not body then
-				body = buildJson(count, m)
-				jsonCache[key] = body
-			end
-			return { body = body, headers = JSON_HEADERS }
+			return { body = buildJson(count, m), headers = JSON_HEADERS }
 		end
 		return NOT_FOUND
 	end
