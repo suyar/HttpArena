@@ -430,21 +430,34 @@ document.querySelectorAll('.lb-panel-h3 .lb-search-input').forEach(function(inpu
   });
 });
 
+/* Type filters — mirrored across every panel's copy so the selection
+ * survives inner-tab (profile) switches. Each panel pre-renders its own
+ * button set; toggling only the clicked element would leave sibling
+ * panels at their defaults. */
 w.querySelectorAll('.lb-type-filter').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var type = btn.dataset.type;
-    var allBtn = w.querySelector('.lb-type-filter[data-type="all"]');
-    var typeButtons = w.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+    var allBtns = w.querySelectorAll('.lb-type-filter[data-type="all"]');
     if (type === 'all') {
-      var allActive = allBtn.classList.contains('active');
-      typeButtons.forEach(function(f) { f.classList.toggle('active', !allActive); });
-      allBtn.classList.toggle('active', !allActive);
+      var allActive = btn.classList.contains('active');
+      w.querySelectorAll('.lb-type-filter').forEach(function(f) {
+        f.classList.toggle('active', !allActive);
+      });
     } else {
-      btn.classList.toggle('active');
-      var allOn = Array.from(typeButtons).every(function(f) { return f.classList.contains('active'); });
-      allBtn.classList.toggle('active', allOn);
-      var anyOn = Array.from(typeButtons).some(function(f) { return f.classList.contains('active'); });
-      if (!anyOn) { btn.classList.add('active'); }
+      var isNowActive = !btn.classList.contains('active');
+      w.querySelectorAll('.lb-type-filter[data-type="' + type + '"]').forEach(function(f) {
+        f.classList.toggle('active', isNowActive);
+      });
+      var firstPanel = w.querySelector('.lb-panel-h3') || w;
+      var panelTypeBtns = firstPanel.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+      var everyOn = Array.from(panelTypeBtns).every(function(f) { return f.classList.contains('active'); });
+      allBtns.forEach(function(f) { f.classList.toggle('active', everyOn); });
+      var anyOn = Array.from(panelTypeBtns).some(function(f) { return f.classList.contains('active'); });
+      if (!anyOn) {
+        w.querySelectorAll('.lb-type-filter[data-type="' + type + '"]').forEach(function(f) {
+          f.classList.add('active');
+        });
+      }
     }
     applyFilters_h3();
     if (window.dlScheduleUpdate) window.dlScheduleUpdate();

@@ -220,11 +220,21 @@ function buildBest() {
 }
 buildBest();
 
-/* Profile tabs — clicking switches panels */
+/* Profile tabs — clicking switches panels. Each panel carries its own
+ * full set of tab buttons, and initial markup pre-renders an `active`
+ * class on the tab that matches the panel's profile. We also sync tab
+ * active state across every panel on click so the highlight tracks the
+ * clicked profile regardless of which panel the user is currently in,
+ * instead of relying on the pre-rendered class staying in lockstep. */
 w.querySelectorAll('.lb-tab-h2').forEach(function(tab) {
   tab.addEventListener('click', function() {
+    var targetId = tab.dataset.tab;
     w.querySelectorAll('.lb-panel-h2').forEach(function(p) { p.classList.remove('active'); });
-    w.querySelector('.lb-panel-h2[data-panel="' + tab.dataset.tab + '"]').classList.add('active');
+    w.querySelector('.lb-panel-h2[data-panel="' + targetId + '"]').classList.add('active');
+    w.querySelectorAll('.lb-tab-h2').forEach(function(t) { t.classList.remove('active'); });
+    w.querySelectorAll('.lb-tab-h2[data-tab="' + targetId + '"]').forEach(function(t) {
+      t.classList.add('active');
+    });
     applyFilters_h2();
     if (window.dlScheduleUpdate) window.dlScheduleUpdate();
   });
@@ -431,21 +441,38 @@ document.querySelectorAll('.lb-panel-h2 .lb-search-input').forEach(function(inpu
   });
 });
 
+/* Type filters — mutually mirrored across every panel's copy so switching
+ * profile tabs preserves the current Production/Tuned/Infrastructure/Engine
+ * selection. Each panel renders its own set of buttons, so toggling only
+ * the clicked element would leave other panels at their pre-rendered
+ * default and "reset" the filter on tab switch. */
 w.querySelectorAll('.lb-type-filter').forEach(function(btn) {
   btn.addEventListener('click', function() {
     var type = btn.dataset.type;
-    var allBtn = w.querySelector('.lb-type-filter[data-type="all"]');
-    var typeButtons = w.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+    var allBtns = w.querySelectorAll('.lb-type-filter[data-type="all"]');
     if (type === 'all') {
-      var allActive = allBtn.classList.contains('active');
-      typeButtons.forEach(function(f) { f.classList.toggle('active', !allActive); });
-      allBtn.classList.toggle('active', !allActive);
+      var allActive = btn.classList.contains('active');
+      w.querySelectorAll('.lb-type-filter').forEach(function(f) {
+        f.classList.toggle('active', !allActive);
+      });
     } else {
-      btn.classList.toggle('active');
-      var allOn = Array.from(typeButtons).every(function(f) { return f.classList.contains('active'); });
-      allBtn.classList.toggle('active', allOn);
-      var anyOn = Array.from(typeButtons).some(function(f) { return f.classList.contains('active'); });
-      if (!anyOn) { btn.classList.add('active'); }
+      var isNowActive = !btn.classList.contains('active');
+      w.querySelectorAll('.lb-type-filter[data-type="' + type + '"]').forEach(function(f) {
+        f.classList.toggle('active', isNowActive);
+      });
+      // Recompute whether "All" should show as active by looking at any
+      // one panel's buttons (they are all in sync after the toggle above).
+      var firstPanel = w.querySelector('.lb-panel-h2') || w;
+      var panelTypeBtns = firstPanel.querySelectorAll('.lb-type-filter:not([data-type="all"])');
+      var everyOn = Array.from(panelTypeBtns).every(function(f) { return f.classList.contains('active'); });
+      allBtns.forEach(function(f) { f.classList.toggle('active', everyOn); });
+      // Never allow zero type filters — re-enable the clicked one.
+      var anyOn = Array.from(panelTypeBtns).some(function(f) { return f.classList.contains('active'); });
+      if (!anyOn) {
+        w.querySelectorAll('.lb-type-filter[data-type="' + type + '"]').forEach(function(f) {
+          f.classList.add('active');
+        });
+      }
     }
     applyFilters_h2();
     if (window.dlScheduleUpdate) window.dlScheduleUpdate();

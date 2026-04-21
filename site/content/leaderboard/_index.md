@@ -101,9 +101,19 @@ html.dark .http-ver[data-ver="ws"].active { color: #22d3ee; background: rgba(8,1
         if (f.dataset.lang === 'all') f.classList.toggle('active', allActive);
         else f.classList.toggle('active', allActive || activeLangs.has(f.dataset.lang));
       });
-      /* Trigger re-filter on all visible wrappers */
+      /* Trigger re-filter on every wrapper so the newly-reset
+       * Production+Tuned type filter actually takes effect on the
+       * just-switched-to table. h2/h3/gateway/grpc/ws were previously
+       * missing and their tables kept stale rows visible even though
+       * the Production/Tuned buttons were visually toggled. */
       if (typeof applyH1IsoFilters === 'function') applyH1IsoFilters();
       if (typeof applyH1WkFilters === 'function') applyH1WkFilters();
+      if (typeof applyFilters_h2 === 'function') applyFilters_h2();
+      if (typeof applyFilters_h3 === 'function') applyFilters_h3();
+      if (typeof applyFilters_gw === 'function') applyFilters_gw();
+      if (typeof applyFilters_prodstack === 'function') applyFilters_prodstack();
+      if (typeof applyFilters_grpc === 'function') applyFilters_grpc();
+      if (typeof applyFilters_ws === 'function') applyFilters_ws();
       if (typeof renderComposite === 'function') renderComposite();
       if (typeof updateCompositeNote === 'function') updateCompositeNote();
     });
