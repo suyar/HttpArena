@@ -232,6 +232,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "servicestack",
+    "language": "C#",
+    "rps": 14116,
+    "avg_latency": "199.89ms",
+    "p99_latency": "199.89ms",
+    "cpu": "1190.1%",
+    "memory": "548MiB",
+    "connections": 4096,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "26.09MB",
+    "reconnects": 0,
+    "status_2xx": 71994,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "uvicorn",
     "language": "Python",
     "rps": 336946,

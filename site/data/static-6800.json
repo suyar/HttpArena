@@ -737,6 +737,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "servicestack",
+    "language": "C#",
+    "rps": 351745,
+    "avg_latency": "19.03ms",
+    "p99_latency": "19.03ms",
+    "cpu": "5980.5%",
+    "memory": "619MiB",
+    "connections": 6800,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "5.43GB",
+    "reconnects": 0,
+    "status_2xx": 1793887,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "sinatra",
     "language": "Ruby",
     "rps": 202810,
