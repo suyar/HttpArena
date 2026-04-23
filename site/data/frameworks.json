@@ -292,6 +292,13 @@
     "type": "engine",
     "engine": "io_uring"
   },
+  "lute": {
+    "dir": "lute",
+    "description": "Lute standalone Luau runtime",
+    "repo": "https://github.com/luau-lang/lute",
+    "type": "production",
+    "engine": "lute"
+  },
   "mark": {
     "dir": "mark",
     "description": "Mark is a high performance API micro framework based on workerman, helps you quickly write APIs with PHP.",
