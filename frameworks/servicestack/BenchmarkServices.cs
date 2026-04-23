@@ -1,7 +1,6 @@
 namespace ServiceStack.Benchmarks;
 
 using System.Text.Json;
-using Microsoft.Data.Sqlite;
 using Npgsql;
 using ServiceStack;
 
@@ -53,58 +52,17 @@ public class BenchmarkServices : Service
         int m = 1;
         if (Request?.QueryString["m"] is string mStr && int.TryParse(mStr, out var pm)) m = pm;
 
-        var count = Math.Clamp(req.Count, 0, Items.Count);
+        var count = req.Count;
+        
+        if (count > Items.Count) count = Items.Count;
+        if (count < 0) count = 0;
+
         var processed = new List<ProcessedItem>(count);
-        for (int i = 0; i < count; i++)
+        
+        for (var i = 0; i < count; i++)
             processed.Add(Items[i].ToProcessed(m));
 
         return new ListWithCount<ProcessedItem>(processed);
-    }
-
-    // ── /db (SQLite) ──────────────────────────────────────────────────────────
-    public ListWithCount<ProcessedItem> Get(DbGet req)
-    {
-        var pool = TryResolve<SqlitePool>();
-        if (pool == null) return new ListWithCount<ProcessedItem>(new());
-
-        var conn = pool.Rent();
-        try
-        {
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText =
-                "SELECT id, name, category, price, quantity, active, tags, rating_score, rating_count " +
-                "FROM items WHERE price BETWEEN @min AND @max LIMIT 50";
-            cmd.Parameters.AddWithValue("@min", req.Min);
-            cmd.Parameters.AddWithValue("@max", req.Max);
-
-            using var reader = cmd.ExecuteReader();
-            var items = new List<ProcessedItem>();
-
-            while (reader.Read())
-            {
-                items.Add(new ProcessedItem
-                {
-                    Id       = reader.GetInt32(0),
-                    Name     = reader.GetString(1),
-                    Category = reader.GetString(2),
-                    Price    = reader.GetInt32(3),
-                    Quantity = reader.GetInt32(4),
-                    Active   = reader.GetInt32(5) == 1,
-                    Tags     = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                    Rating   = new RatingInfo
-                    {
-                        Score = reader.GetInt32(7),
-                        Count = reader.GetInt32(8)
-                    }
-                });
-            }
-
-            return new ListWithCount<ProcessedItem>(items);
-        }
-        finally
-        {
-            pool.Return(conn);
-        }
     }
 
     // ── /async-db (PostgreSQL) ────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /app
+COPY data/static/ wwwroot/static/
 COPY . .
 RUN dotnet publish -c Release -o out
 
