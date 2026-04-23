@@ -527,6 +527,13 @@
     "type": "tuned",
     "engine": "uwebsockets"
   },
+  "userver": {
+    "dir": "userver",
+    "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
+    "repo": "https://github.com/userver-framework/userver",
+    "type": "tuned",
+    "engine": "userver"
+  },
   "uvicorn": {
     "dir": "uvicorn",
     "description": "An ASGI web server implementation for Python (uvloop)",
