@@ -109,7 +109,7 @@ class ResponseBuffers final {
   boost::container::small_vector<Response, kMaxResponses> responses_;
 };
 
-constexpr std::string_view kCommonHeaders{"HTTP/1.1 200 OK\r\nServer: us\r\n"};
+constexpr std::string_view kCommonHeaders{"HTTP/1.1 200 OK\r\nServer: userver\r\n"};
 constexpr std::string_view kHeadersEnd{"\r\n\r\n"};
 
 std::string MakeHttpDate(std::chrono::system_clock::time_point date) {

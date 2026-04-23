@@ -11,8 +11,8 @@ namespace userver_httparena::bare {
 
 namespace {
 
-constexpr std::string_view kPlainTextUrlPrefix{"/plaintext"};
-constexpr std::string_view kPlainTextUrlPrefix{"/baseline11"};
+constexpr std::string_view kPlainTextUrlPrefix{"/pipeline"};
+constexpr std::string_view kBaseLine11UrlPrefix{"/baseline11"};
 constexpr std::string_view kJsonUrlPrefix{"/json"};
 constexpr std::string_view kSingleQueryUrlPrefix{"/async-db"};
 
@@ -43,8 +43,8 @@ SimpleResponse SimpleRouter::RouteRequest(std::string_view url) const
     return {plaintext::Handler::GetResponse(), kContentTypePlain};
   }
 
-  if (StartsWith(url, kPlainTextUrlPrefix)) {
-    return {baseline11::Handler::GetResponse(), kContentTypePlain};
+  if (StartsWith(url, kBaseLine11UrlPrefix)) {
+    return {baseline11::Handler::GetResponse("1000", "2000", "3000"), kContentTypePlain};
   }
 
   if (StartsWith(url, kJsonUrlPrefix)) {

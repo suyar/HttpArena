@@ -25,9 +25,9 @@ components_manager:
             listener:                   # configuring the main listening socket...
                 port: 8080              # ...to listen on this port and...
                 task_processor: main-task-processor    # ...process incoming requests on this task processor.
-                handler-defaults:
-                    set_tracing_headers: false
-            server-name: us
+                #handler-defaults:
+                #    set_tracing_headers: false
+            server-name: userver
         simple-router:
         simple-server:
             port: 8081
@@ -63,8 +63,14 @@ components_manager:
             component-name: noop-tracing-manager
 
         plaintext-handler:
-            path: /plaintext
+            path: /pipeline
             method: GET
+            decompress_request: false
+            task_processor: main-task-processor
+
+        baseline11-handler:
+            path: /baseline11
+            method: GET,POST
             decompress_request: false
             task_processor: main-task-processor
 
@@ -85,39 +91,7 @@ components_manager:
             connlimit_mode: manual
 
         single-query-handler:
-            path: /db
+            path: /async-db
             method: GET
             decompress_request: false
             task_processor: main-task-processor
-
-        multiple-queries-handler:
-            path: /queries
-            method: GET
-            decompress_request: false
-            task_processor: main-task-processor
-
-        updates-handler:
-            path: /updates
-            method: GET
-            decompress_request: false
-            task_processor: main-task-processor
-
-        world-pg-cache:
-            pgcomponent: hello-world-db
-            chunk-size: 0 # fetch all rows at once
-            update-types: only-full
-            update-interval: 60s
-            update-correction: 50ms
-
-        cached-queries-handler:
-            path: /cached-queries
-            method: GET
-            decompress_request: false
-            task_processor: main-task-processor
-
-        fortunes-handler:
-            path: /fortunes
-            method: GET
-            decompress_request: false
-            task_processor: main-task-processor
-

@@ -14,7 +14,7 @@ public:
 
     std::string HandleRequestThrow(const userver::server::http::HttpRequest& request, userver::server::request::RequestContext&) const final;
 
-    static std::string GetResponse();
+    static std::string GetResponse(const std::string& a, const std::string& b, const std::string& body);
 };
 
 }  // namespace userver_httparena::baseline11

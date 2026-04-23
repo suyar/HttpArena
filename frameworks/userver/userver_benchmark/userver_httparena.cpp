@@ -62,8 +62,8 @@ int Main(int argc, char* argv[])
             .Append<NoopTracingManager>()
             // bare (not used in the benchmark currently)
             .Append<bare::SimpleRouter>()
-            .Append<bare::SimpleServer>();
-
+            .Append<bare::SimpleServer>()
+            ;
     return userver::utils::DaemonMain(argc, argv, component_list);
 }
 
