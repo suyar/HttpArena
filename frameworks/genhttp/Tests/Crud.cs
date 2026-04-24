@@ -1,13 +1,11 @@
 ﻿using System.Text.Json;
 using GenHTTP.Api.Content;
-using GenHTTP.Api.Content.Caching;
 using GenHTTP.Api.Protocol;
 using genhttp.Infrastructure;
-using GenHTTP.Modules.Caching;
 using GenHTTP.Modules.IO;
 using GenHTTP.Modules.Reflection;
 using GenHTTP.Modules.Webservices;
-using StringContent = GenHTTP.Modules.IO.Strings.StringContent;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace genhttp.Tests;
 
@@ -15,7 +13,9 @@ public class Crud
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private static readonly ICache<string> ItemCache = Cache.Memory<string>().Build();
+    private static readonly IMemoryCache ItemCache = new MemoryCache(new MemoryCacheOptions());
+
+    private static readonly MemoryCacheEntryOptions ItemCacheOptions = new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(200) };
 
     [ResourceMethod]
     public async Task<CrudListResponse> List(string category = "electronics", int page = 1, int limit = 10)
@@ -42,28 +42,34 @@ public class Crud
         {
             items.Add(new ProcessedItem
             {
-                Id       = reader.GetInt32(0),
-                Name     = reader.GetString(1),
+                Id = reader.GetInt32(0),
+                Name = reader.GetString(1),
                 Category = reader.GetString(2),
-                Price    = reader.GetInt32(3),
+                Price = reader.GetInt32(3),
                 Quantity = reader.GetInt32(4),
-                Active   = reader.GetBoolean(5),
-                Tags     = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-                Rating   = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
+                Active = reader.GetBoolean(5),
+                Tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
+                Rating = new RatingInfo
+                {
+                    Score = (int)reader.GetDouble(7),
+                    Count = reader.GetInt32(8)
+                }
             });
         }
 
-        return new CrudListResponse { Items = items, Total = items.Count, Page = page, Limit = limit };
+        return new CrudListResponse
+        {
+            Items = items,
+            Total = items.Count,
+            Page = page,
+            Limit = limit
+        };
     }
 
     [ResourceMethod(":id")]
     public async ValueTask<IResponse> Get(int id, IRequest request)
     {
-        var cacheKey = id.ToString();
-
-        var cached = await ItemCache.GetEntryAsync(cacheKey, string.Empty);
-
-        if (cached != null)
+        if (ItemCache.TryGetValue(id, out string cached))
         {
             return request.Respond()
                           .Content(cached)
@@ -81,8 +87,8 @@ public class Crud
 
         var json = JsonSerializer.Serialize(item, JsonOptions);
 
-        await ItemCache.StoreAsync(cacheKey, string.Empty, json);
-
+        ItemCache.Set(id, json, ItemCacheOptions);
+        
         return request.Respond()
                       .Content(json)
                       .Type(ContentType.ApplicationJson)
@@ -130,7 +136,7 @@ public class Crud
             throw new ProviderException(ResponseStatus.NotFound, $"Item with ID {id} does not exist");
         }
 
-        await ItemCache.StoreAsync(id.ToString(), string.Empty, null);
+        ItemCache.Remove(id);
 
         return item;
     }
@@ -149,14 +155,18 @@ public class Crud
 
         return new ProcessedItem()
         {
-            Id       = reader.GetInt32(0),
-            Name     = reader.GetString(1),
+            Id = reader.GetInt32(0),
+            Name = reader.GetString(1),
             Category = reader.GetString(2),
-            Price    = reader.GetInt32(3),
+            Price = reader.GetInt32(3),
             Quantity = reader.GetInt32(4),
-            Active   = reader.GetBoolean(5),
-            Tags     = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
-            Rating   = new RatingInfo { Score = (int)reader.GetDouble(7), Count = reader.GetInt32(8) }
+            Active = reader.GetBoolean(5),
+            Tags = JsonSerializer.Deserialize<List<string>>(reader.GetString(6)),
+            Rating = new RatingInfo
+            {
+                Score = (int)reader.GetDouble(7),
+                Count = reader.GetInt32(8)
+            }
         };
     }
 
