@@ -7,6 +7,13 @@
     "engine": "actix",
     "variants": [
       {
+        "dir": "actix-h2c",
+        "description": "Actix-web 4 h2c-only listener on port 8082 using bind_auto_h2c. A middleware rejects HTTP/1.1 requests so the port serves HTTP/2 cleartext prior-knowledge exclusively. Handlers share the same shape as the main actix entry (serde_json per request).",
+        "repo": "https://github.com/actix/actix-web",
+        "type": "production",
+        "engine": "actix"
+      },
+      {
         "dir": "actix-websocket",
         "description": "Actix-web WebSocket echo server",
         "repo": "https://github.com/actix/actix-web",
@@ -87,6 +94,20 @@
     "type": "production",
     "engine": "kestrel"
   },
+  "bjoern": {
+    "dir": "bjoern",
+    "description": "A screamingly fast, ultra-lightweight WSGI server",
+    "repo": "https://github.com/jonashaag/bjoern",
+    "type": "engine",
+    "engine": "libev"
+  },
+  "bottle": {
+    "dir": "bottle",
+    "description": "Fast, simple and lightweight WSGI micro web-framework for Python",
+    "repo": "https://github.com/bottlepy/bottle",
+    "type": "tuned",
+    "engine": "gunicorn"
+  },
   "bun-websocket": {
     "dir": "bun-websocket",
     "description": "Bun WebSocket echo server",
@@ -164,6 +185,13 @@
     "type": "tuned",
     "engine": "frankenphp"
   },
+  "genhttp-kestrel": {
+    "dir": "genhttp-kestrel",
+    "description": "Lightweight, embeddable and modular C# web server.",
+    "repo": "https://github.com/Kaliumhexacyanoferrat/GenHTTP",
+    "type": "production",
+    "engine": "kestrel"
+  },
   "genhttp": {
     "dir": "genhttp",
     "description": "Lightweight, embeddable and modular C# web server.",
@@ -192,18 +220,27 @@
     "type": "tuned",
     "engine": "grpc-go"
   },
-  "h2o-mruby": {
-    "dir": "h2o-mruby",
-    "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
-    "repo": "https://github.com/h2o/h2o",
-    "type": "tuned",
-    "engine": "h2o"
-  },
   "h2o": {
     "dir": "h2o",
     "description": "High-performance C HTTP server using libh2o with multi-threaded event loops and native HTTP/2 support.",
     "repo": "https://github.com/h2o/h2o",
     "type": "infrastructure",
+    "engine": "h2o",
+    "variants": [
+      {
+        "dir": "h2o-h2c",
+        "description": "libh2o evloop with a dedicated h2c-only listener on port 8082. The accept callback calls h2o_http2_accept directly instead of h2o_accept, so the connection must begin with the HTTP/2 client preface \u2014 plain HTTP/1.1 clients are dropped at protocol negotiation. Handlers for /baseline2 (query sum) and /json/{count} (serialized via cJSON).",
+        "repo": "https://github.com/h2o/h2o",
+        "type": "infrastructure",
+        "engine": "h2o"
+      }
+    ]
+  },
+  "h2o-mruby": {
+    "dir": "h2o-mruby",
+    "description": "h2o config-based server with mruby handlers and native HTTP/3 (QUIC) support.",
+    "repo": "https://github.com/h2o/h2o",
+    "type": "tuned",
     "engine": "h2o"
   },
   "helidon-production": {
@@ -255,6 +292,20 @@
     "type": "tuned",
     "engine": "netty"
   },
+  "libreactorng": {
+    "dir": "libreactorng",
+    "description": "libreactorng \u2014 Fredrik Widlund's io_uring-native event framework, the successor to the long-running epoll-based libreactor. Built directly on Linux io_uring syscalls with zero third-party runtime deps. Minimal server dispatches /pipeline, /baseline11, /baseline2 via the built-in HTTP parser; one reactor process per logical CPU via SO_REUSEPORT.",
+    "repo": "https://github.com/fredrikwidlund/libreactorng",
+    "type": "engine",
+    "engine": "io_uring"
+  },
+  "lute": {
+    "dir": "lute",
+    "description": "Lute standalone Luau runtime",
+    "repo": "https://github.com/luau-lang/lute",
+    "type": "production",
+    "engine": "lute"
+  },
   "mark": {
     "dir": "mark",
     "description": "Mark is a high performance API micro framework based on workerman, helps you quickly write APIs with PHP.",
@@ -304,6 +355,13 @@
     "type": "infrastructure",
     "engine": "pingora"
   },
+  "pyronova": {
+    "dir": "pyronova",
+    "description": "Pyronova \u2014 Python web framework with a Rust core (hyper + tokio + rustls + mimalloc) and PEP 684 sub-interpreter workers for true multi-core parallelism. Opt-in features: gzip/brotli compression, rustls TLS with h2/h1 ALPN, streaming body ingest, async Postgres via sqlx::PgPool. Handlers are standard Python functions routed via decorators.",
+    "repo": "https://github.com/moomoo-tech/pyronova",
+    "type": "tuned",
+    "engine": "pyronova"
+  },
   "quarkus-jvm": {
     "dir": "quarkus-jvm",
     "description": "Quarkus with RESTEasy Reactive on Vert.x/Netty, JDK 21, optimized JVM tuning.",
@@ -317,6 +375,13 @@
         "repo": "https://github.com/quarkusio/quarkus",
         "type": "tuned",
         "engine": "vert.x (grpc)"
+      },
+      {
+        "dir": "quarkus-jvm-h2c",
+        "description": "Standalone Vert.x 4.5 on JDK 25, shaded fat jar. One Vertx instance per CPU so each HttpServer binds its own listening socket with SO_REUSEPORT (Netty epoll native transport) \u2014 the kernel distributes accepts across cores. Quarkus proper is not used here: its package step filters classifier-carrying jars like netty-transport-native-epoll out of the runtime image, and without native transport SO_REUSEPORT is a no-op. The HTTP stack (Vert.x + Netty epoll) is identical to what quarkus-jvm uses underneath. HTTP/1.1 is rejected by the handler with 400 to keep the port h2c-only.",
+        "repo": "https://github.com/quarkusio/quarkus",
+        "type": "tuned",
+        "engine": "netty"
       }
     ]
   },
@@ -359,7 +424,7 @@
     "dir": "roda",
     "description": "Roda routing tree web toolkit",
     "repo": "https://github.com/jeremyevans/roda",
-    "type": "tuned",
+    "type": "production",
     "engine": "puma"
   },
   "rust-epoll": {
@@ -373,7 +438,7 @@
     "dir": "servicestack",
     "description": "One framework to power them all. Write your HTTP APIs once and take advantage of end to end typed integrations for all popular Web, Mobile and Desktop platforms.",
     "repo": "https://github.com/ServiceStack/ServiceStack",
-    "type": "tuned",
+    "type": "production",
     "engine": "kestrel"
   },
   "simplew": {
@@ -396,6 +461,13 @@
     "repo": "https://github.com/sisk-http",
     "type": "tuned",
     "engine": "sisk"
+  },
+  "SlimeWeb": {
+    "dir": "slimeweb",
+    "description": "SlimeWeb is a fast lightweight framework for python powered by rust",
+    "repo": "https://github.com/ATOMMAX-2001/Slime/",
+    "type": "tuned",
+    "engine": "hyper"
   },
   "spring-boot": {
     "dir": "spring-boot",
@@ -455,6 +527,13 @@
     "type": "tuned",
     "engine": "uwebsockets"
   },
+  "userver": {
+    "dir": "userver",
+    "description": "Asynchronous framework with a rich set of abstractions for fast and comfortable creation of C++ microservices, services and utilities",
+    "repo": "https://github.com/userver-framework/userver",
+    "type": "tuned",
+    "engine": "userver"
+  },
   "uvicorn": {
     "dir": "uvicorn",
     "description": "An ASGI web server implementation for Python (uvloop)",
@@ -475,5 +554,12 @@
     "repo": "https://github.com/walkor/Workerman",
     "type": "production",
     "engine": "workerman"
+  },
+  "wtx": {
+    "dir": "wtx-http2",
+    "description": "WTX - HTTP/2 Framework Server",
+    "repo": "https://github.com/c410-f3r/wtx",
+    "type": "production",
+    "engine": "wtx"
   }
 }

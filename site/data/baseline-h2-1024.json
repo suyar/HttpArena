@@ -117,6 +117,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp-kestrel",
+    "language": "C#",
+    "rps": 1655065,
+    "avg_latency": "60.70ms",
+    "p99_latency": "60.70ms",
+    "cpu": "5921.7%",
+    "memory": "3.8GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "44.87MB/s",
+    "reconnects": 0,
+    "status_2xx": 8391180,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "h2o",
     "language": "C",
     "rps": 14283360,
@@ -274,6 +293,25 @@
     "status_3xx": 0,
     "status_4xx": 0,
     "status_5xx": 1462506
+  },
+  {
+    "framework": "pyronova",
+    "language": "Python",
+    "rps": 314232,
+    "avg_latency": "161.20ms",
+    "p99_latency": "161.20ms",
+    "cpu": "2581.4%",
+    "memory": "1.6GiB",
+    "connections": 1024,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "23.81MB/s",
+    "reconnects": 0,
+    "status_2xx": 1590015,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 1432491
   },
   {
     "framework": "quarkus-jvm",

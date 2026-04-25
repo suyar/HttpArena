@@ -135,14 +135,6 @@
         compression-body (when large-dataset
                            (let [items (mapv #(process-item % 1) large-dataset)]
                              (json/write-value-as-string {:items items :count (clojure.core/count items)})))
-        static-cache (let [dir (io/file static-dir)]
-                       (when (.isDirectory dir)
-                         (into {}
-                               (map (fn [^java.io.File f]
-                                      [(.getName f)
-                                       {:ct   (get-content-type (.getName f))
-                                        :body (java.nio.file.Files/readAllBytes (.toPath f))}]))
-                               (.listFiles dir))))
         adapter (->NextJdbcAdapter)
         sqlite-tag-parser #(json/read-value % json/keyword-keys-object-mapper)
         sqlite-active #(== 1 (long %))
@@ -229,9 +221,11 @@
                                            dfd)
                                          empty-db-response)))]
            "/static/:filename" [(GET (fn [req]
-                                       (let [name (get-in req [:params :filename])]
-                                         (if-let [entry (and static-cache (get static-cache name))]
-                                           {:status 200 :headers {hdr-ct (:ct entry) hdr-server server-name} :body (:body entry)}
+                                       (let [name (get-in req [:params :filename])
+                                             path (str "/data" (:uri req))
+                                             f (io/file path)]
+                                         (if (.isFile f)
+                                           {:status 200 :headers {hdr-ct (get-content-type name) hdr-server server-name} :body (java.io.FileInputStream. path)}
                                            {:status 404 :body not-found-body}))))]
            "/"                 [(GET (fn [_] (text-response server-name)))]})]
 
