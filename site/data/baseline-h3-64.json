@@ -58,6 +58,25 @@
     "status_5xx": 0
   },
   {
+    "framework": "genhttp-kestrel",
+    "language": "C#",
+    "rps": 623585,
+    "avg_latency": "5.95ms",
+    "p99_latency": "18.67ms",
+    "cpu": "6199.6%",
+    "memory": "1.8GiB",
+    "connections": 64,
+    "threads": 64,
+    "duration": "5s",
+    "pipeline": 1,
+    "bandwidth": "61.97MB/s",
+    "reconnects": 0,
+    "status_2xx": 3124163,
+    "status_3xx": 0,
+    "status_4xx": 0,
+    "status_5xx": 0
+  },
+  {
     "framework": "h2o-mruby",
     "language": "Ruby",
     "rps": 3042433,
