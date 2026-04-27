@@ -9,7 +9,8 @@
   "tests": [
     "baseline",
     "pipelined",
+    "limited-conn",
     "static"
   ],
-  "maintainers": []
+  "maintainers": ["botanegg"]
 }
