@@ -506,6 +506,13 @@
       }
     ]
   },
+  "symfony-spawn-franken": {
+    "dir": "symfony-spawn-franken",
+    "description": "Symfony with symfony-spawn bundle: coroutine-per-request isolation via TrueAsync PHP core, Doctrine DBAL connection pooling, and FrankenPHP.",
+    "repo": "https://github.com/yangusik/symfony-spawn",
+    "type": "tuned",
+    "engine": "frankenphp"
+  },
   "tonic-grpc": {
     "dir": "tonic-grpc",
     "description": "Rust gRPC server using tonic, a native Rust gRPC implementation built on top of hyper and tower.",
